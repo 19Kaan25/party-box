@@ -927,15 +927,15 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
           )}
 
           {isMyTurn && myRole === 'SPYMASTER' && !gameState.currentClue && (
-             <div className="flex flex-col gap-3 w-full sm:w-72 mt-4 sm:mt-0">
-               <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 w-full"/>
+             <div className="flex flex-col gap-3 w-full sm:w-80 mt-4 sm:mt-0">
+               <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-slate-500 w-full"/>
                <div className="flex items-center gap-3">
-                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shrink-0">
-                   <button onClick={() => setClueCount(Math.max(1, clueCount - 1))} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl leading-none">-</button>
-                   <div className="w-12 font-bold text-white text-center text-lg">{clueCount}</div>
-                   <button onClick={() => setClueCount(Math.min(9, clueCount + 1))} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl leading-none">+</button>
+                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shrink-0 h-12">
+                   <button onClick={() => setClueCount(Math.max(1, clueCount - 1))} className="w-12 h-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-2xl">-</button>
+                   <div className="w-10 font-bold text-white text-center text-lg">{clueCount}</div>
+                   <button onClick={() => setClueCount(Math.min(9, clueCount + 1))} className="w-12 h-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-2xl">+</button>
                  </div>
-                 <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold transition-colors flex-grow h-full">Senden</button>
+                 <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 rounded-lg font-bold transition-colors flex-grow h-12">Senden</button>
                </div>
              </div>
           )}
