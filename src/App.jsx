@@ -46,13 +46,15 @@ const shuffleArray = (array) => {
   return newArr;
 };
 
-const GameHeader = ({ isHost, leaveLobby, updateLobbyStatus, absolute = false, maxWidthClass = "max-w-2xl" }) => {
+const GameHeader = ({ isHost, leaveLobby, updateLobbyStatus, absolute = false, maxWidthClass = "max-w-2xl", hideHostButton = false }) => {
   const content = (
     <>
       {isHost ? (
-        <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 backdrop-blur-sm shadow-lg">
-          <X size={16} /> Spiel beenden
-        </button>
+        !hideHostButton && (
+          <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 backdrop-blur-sm shadow-lg">
+            <X size={16} /> Spiel beenden
+          </button>
+        )
       ) : (
         <button onClick={leaveLobby} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 backdrop-blur-sm shadow-lg">
           <LogOut size={16} /> Spiel verlassen
@@ -257,17 +259,29 @@ export default function App() {
     const userRef = doc(db, 'users', user.uid);
     
     try {
+      const remainingPlayers = currentLobby.players.filter(p => p.id !== user.uid);
+
       if (currentLobby.hostId === user.uid) {
-        setLobbyCode('');
-        setCurrentLobby(null);
-        await updateDoc(userRef, { currentLobby: null });
+        if (remainingPlayers.length > 0) {
+          const randomIndex = Math.floor(Math.random() * remainingPlayers.length);
+          const newHostId = remainingPlayers[randomIndex].id;
+          
+          const updatedPlayers = remainingPlayers.map(p => 
+            p.id === newHostId ? { ...p, isHost: true } : p
+          );
+
+          await updateDoc(lobbyRef, {
+            hostId: newHostId,
+            players: updatedPlayers
+          });
+        }
       } else {
-        const updatedPlayers = currentLobby.players.filter(p => p.id !== user.uid);
-        await updateDoc(lobbyRef, { players: updatedPlayers });
-        await updateDoc(userRef, { currentLobby: null });
-        setLobbyCode('');
-        setCurrentLobby(null);
+        await updateDoc(lobbyRef, { players: remainingPlayers });
       }
+      
+      await updateDoc(userRef, { currentLobby: null });
+      setLobbyCode('');
+      setCurrentLobby(null);
     } catch (err) {
       console.error("Fehler beim Verlassen:", err);
     }
@@ -995,7 +1009,7 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
 
     return (
       <div className="min-h-screen bg-slate-900 text-white p-8 flex flex-col items-center justify-center relative">
-        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} hideHostButton={true} />
         <h2 className="text-4xl sm:text-5xl font-black mb-4 uppercase tracking-widest text-center">
           {winnerColor === 'red' ? <span className="text-red-500">Team Rot</span> : <span className="text-blue-500">Team Blau</span>} gewinnt!
         </h2>
@@ -1610,7 +1624,7 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
 
     return (
       <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
-         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-3xl" />
+         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-3xl" hideHostButton={true} />
          <div className="max-w-3xl mx-auto flex flex-col items-center">
             <div className="text-center mb-10 mt-6">
               <h2 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4 tracking-wider uppercase drop-shadow-md">Endergebnisse</h2>
