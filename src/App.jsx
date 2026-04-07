@@ -102,18 +102,57 @@ export default function App() {
   const [currentLobby, setCurrentLobby] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Initialize Auth
+  // Initialize Auth & Check Active Session
   useEffect(() => {
     const initAuth = async () => {
       try {
         await signInAnonymously(auth);
       } catch (err) {
         console.error("Auth Error:", err);
+        setIsInitializing(false);
       }
     };
     initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
+    
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Prüfe, ob der Nutzer bereits in einer Lobby war
+        try {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.currentLobby) {
+              // Prüfe, ob diese Lobby noch existiert
+              const lobbyRef = doc(db, 'lobbies', userData.currentLobby);
+              const lobbySnap = await getDoc(lobbyRef);
+              
+              if (lobbySnap.exists()) {
+                const lobbyData = lobbySnap.data();
+                // Sicherheitscheck: Ist der Spieler wirklich noch in der Lobby-Liste?
+                const isInLobby = lobbyData.players.some(p => p.id === currentUser.uid);
+                if (isInLobby) {
+                  setPlayerName(userData.name || '');
+                  setLobbyCode(userData.currentLobby);
+                } else {
+                  await updateDoc(userRef, { currentLobby: null });
+                }
+              } else {
+                await updateDoc(userRef, { currentLobby: null });
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Session restore error:", err);
+        }
+      }
+      setIsInitializing(false);
+    });
+    
     return () => unsubscribe();
   }, []);
 
@@ -129,6 +168,8 @@ export default function App() {
         setCurrentLobby(null);
         setLobbyCode('');
         setErrorMsg('Lobby wurde geschlossen oder existiert nicht.');
+        // Cleanup beim Nutzer, falls Lobby gelöscht wurde
+        updateDoc(doc(db, 'users', user.uid), { currentLobby: null }).catch(() => {});
       }
     }, (error) => {
       console.error("Snapshot error:", error);
@@ -158,6 +199,12 @@ export default function App() {
 
     try {
       await setDoc(lobbyRef, initialLobbyData);
+      // Profil speichern
+      await setDoc(doc(db, 'users', user.uid), {
+        currentLobby: newCode,
+        name: playerName.trim()
+      }, { merge: true });
+      
       setLobbyCode(newCode);
       setErrorMsg('');
     } catch (err) {
@@ -191,6 +238,12 @@ export default function App() {
       const updatedPlayers = [...data.players, { id: user.uid, name: playerName.trim(), isHost: false, globalScore: 0 }];
       await updateDoc(lobbyRef, { players: updatedPlayers });
       
+      // Profil speichern
+      await setDoc(doc(db, 'users', user.uid), {
+        currentLobby: code,
+        name: playerName.trim()
+      }, { merge: true });
+      
       setLobbyCode(code);
       setErrorMsg('');
     } catch (err) {
@@ -207,13 +260,17 @@ export default function App() {
     }
 
     const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const userRef = doc(db, 'users', user.uid);
+    
     try {
       if (currentLobby.hostId === user.uid) {
         setLobbyCode('');
         setCurrentLobby(null);
+        await updateDoc(userRef, { currentLobby: null });
       } else {
         const updatedPlayers = currentLobby.players.filter(p => p.id !== user.uid);
         await updateDoc(lobbyRef, { players: updatedPlayers });
+        await updateDoc(userRef, { currentLobby: null });
         setLobbyCode('');
         setCurrentLobby(null);
       }
@@ -239,6 +296,10 @@ export default function App() {
   };
 
   // --- Renderers ---
+  if (isInitializing) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 animate-pulse">Lade Sitzung...</div>;
+  }
+
   if (!user) {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Lade Authentifizierung...</div>;
   }
