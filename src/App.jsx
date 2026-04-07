@@ -888,15 +888,19 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
       <div className="min-h-screen bg-slate-900 text-white p-2 sm:p-8 flex flex-col items-center relative">
         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-5xl" />
         
-        <div className="w-full max-w-5xl flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-2xl border border-slate-700">
-          <div className="flex items-center gap-4">
-            <div className={`px-4 py-2 rounded-xl font-bold ${currentTeam === 'red' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
-              ZUG: TEAM {currentTeam.toUpperCase()} ({currentRole === 'SPYMASTER' ? 'GEHEIMDIENSTCHEF' : 'ERMITTLER'})
+        <div className="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+          <div className="w-full sm:w-auto flex items-center justify-center">
+            <div className={`w-full sm:w-auto text-center px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-inner ${currentTeam === 'red' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+              ZUG: TEAM {currentTeam === 'red' ? 'ROT' : 'BLAU'} ({currentRole === 'SPYMASTER' ? 'GEHEIMDIENSTCHEF' : 'ERMITTLER'})
             </div>
           </div>
-          <div className="flex gap-6 font-mono text-xl font-bold">
-            <span className="text-red-500">ROT: {redLeft}</span>
-            <span className="text-blue-500">BLAU: {blueLeft}</span>
+          <div className="w-full sm:w-auto flex justify-center gap-6 font-mono text-lg sm:text-xl font-bold bg-slate-900/60 px-6 py-2.5 rounded-xl border border-slate-700/50">
+            <span className="text-red-500 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span> ROT: {redLeft}
+            </span>
+            <span className="text-blue-500 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></span> BLAU: {blueLeft}
+            </span>
           </div>
         </div>
 
@@ -1429,34 +1433,37 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
   if (gameState.phase === 'REVIEW') {
     const { roundScores, detailedScores } = calculateDynamicScores();
     const threshold = Math.floor(players.length / 2) + 1;
+    const isLastRound = gameState.currentRound >= gameState.maxRounds;
 
     const baseScores = gameState.gameScores || {};
     const displayScores = {};
     players.forEach(p => { displayScores[p.id] = (baseScores[p.id] || 0) + (roundScores[p.id] || 0); });
-    const sortedPlayers = [...players].sort((a, b) => displayScores[b.id] - displayScores[a.id]);
     
-    const isLastRound = gameState.currentRound >= gameState.maxRounds;
-
-    const returnToLobby = async () => {
-      const finalGameScores = { ...(gameState.gameScores || {}) };
-      players.forEach(p => { finalGameScores[p.id] = (finalGameScores[p.id] || 0) + (roundScores[p.id] || 0); });
-
-      if (lobby.settings.globalLeaderboard) {
-        let newPlayers = [...players];
-        if (sortedPlayers.length > 0) {
-          newPlayers = newPlayers.map(p => {
-            let addedPoints = 0;
-            const pRank = sortedPlayers.findIndex(s => s.id === p.id);
-            if (pRank === 0) addedPoints = 5;
-            else if (pRank === 1) addedPoints = 3;
-            else if (pRank === 2) addedPoints = 1;
-            return { ...p, globalScore: p.globalScore + addedPoints };
-          });
+    // Function to calculate exact ranks with ties
+    const getRankedPlayers = (scores) => {
+      const sorted = [...players].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
+      let currentRank = 1;
+      return sorted.map((p, i) => {
+        if (i > 0 && (scores[p.id] || 0) < (scores[sorted[i - 1].id] || 0)) {
+          currentRank = i + 1;
         }
-        await updateLobbyStatus('LOBBY_WAITING', null, { players: newPlayers, gameState: {} });
-      } else {
-        await updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} });
-      }
+        return { ...p, rank: currentRank, roundScore: scores[p.id] || 0 };
+      });
+    };
+    
+    const rankedPlayers = getRankedPlayers(displayScores);
+
+    // Host Action: Go to final results instead of directly to lobby
+    const showFinalResults = async () => {
+      const finalGameScores = { ...(gameState.gameScores || {}) };
+      players.forEach(p => { 
+        finalGameScores[p.id] = (finalGameScores[p.id] || 0) + (roundScores[p.id] || 0); 
+      });
+
+      await updateDoc(doc(db, 'lobbies', lobbyCode), {
+        'gameState.phase': 'FINAL_RESULTS',
+        'gameState.gameScores': finalGameScores
+      });
     };
 
     return (
@@ -1468,82 +1475,163 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
               <p className="text-slate-400">Runde {gameState.currentRound} von {gameState.maxRounds} — <b>Abstimmungs-Phase</b> ({threshold} Votes für Mehrheit benötigt)</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit">
-                <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Eingereichte Antworten & Voting</h3>
-                <div className="space-y-4">
-                  {Object.entries(gameState.answers || {}).map(([pId, ans]) => {
-                    const p = players.find(x => x.id === pId);
-                    const roundPts = roundScores[pId] || 0;
-                    return (
-                      <div key={pId} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                        <div className="flex justify-between items-start mb-4">
-                          <p className="font-medium text-purple-300">{p?.name || 'Unbekannt'}</p>
-                          <span className="text-sm font-bold bg-purple-500/20 text-purple-400 px-3 py-1 rounded shadow-inner">+{roundPts} Pkt</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-300">
-                          {(gameState.categories || []).map(cat => {
-                            const detailPts = detailedScores[pId]?.[cat] || 0;
-                            const word = ans[cat]?.trim();
-                            const votes = gameState.votes?.[pId]?.[cat] || { reject: [], duplicate: [] };
-                            const isRejected = votes.reject.length >= threshold;
-                            const isDuplicate = votes.duplicate.length >= threshold;
-                            const myReject = votes.reject.includes(user.uid);
-                            const myDupe = votes.duplicate.includes(user.uid);
+            <div className={`grid grid-cols-1 ${!isLastRound ? 'lg:grid-cols-3' : ''} gap-8`}>
+              <div className={`${!isLastRound ? 'lg:col-span-2' : 'w-full'} bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit`}>
+                <h3 className="text-xl font-bold mb-6 border-b border-slate-700 pb-2">Eingereichte Antworten & Voting</h3>
+                
+                <div className="space-y-8">
+                  {(gameState.categories || []).map(cat => (
+                    <div key={cat} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50 shadow-md">
+                      <h4 className="text-xl font-bold text-purple-300 mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2">
+                        <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-lg">{cat}</span>
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {players.map(p => {
+                          const pId = p.id;
+                          const ans = gameState.answers?.[pId] || {};
+                          const word = ans[cat]?.trim();
+                          const detailPts = detailedScores[pId]?.[cat] || 0;
+                          
+                          const votes = gameState.votes?.[pId]?.[cat] || { reject: [], duplicate: [] };
+                          const isRejected = votes.reject.length >= threshold;
+                          const isDuplicate = votes.duplicate.length >= threshold;
+                          const myReject = votes.reject.includes(user.uid);
+                          const myDupe = votes.duplicate.includes(user.uid);
 
-                            return (
-                              <div key={cat} className="mb-1 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 relative">
-                                <span className="text-slate-500 block text-[11px] uppercase tracking-wider mb-1" title={cat}>{cat}</span>
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex justify-between items-start gap-2">
-                                    <span className={`break-words block font-medium ${isRejected ? 'line-through text-slate-600' : isDuplicate ? 'text-orange-300' : 'text-slate-200'}`} title={word || '-'}>{word || '-'}</span>
-                                    {word && <span className={`text-[11px] font-bold shrink-0 ${detailPts > 0 ? 'text-green-400' : 'text-red-400'}`}>({detailPts})</span>}
-                                  </div>
-                                  {word && (
-                                    <div className="flex gap-2 mt-1 border-t border-slate-700/50 pt-2">
-                                      <button onClick={() => toggleVote(pId, cat, 'reject')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${myReject ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes nötig`}>
-                                        <ThumbsDown size={12} /> {votes.reject.length > 0 && `${votes.reject.length}/${threshold}`}
-                                      </button>
-                                      <button onClick={() => toggleVote(pId, cat, 'duplicate')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${myDupe ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes für Dopplung`}>
-                                        <Files size={12} /> {votes.duplicate.length > 0 && `${votes.duplicate.length}/${threshold}`}
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
+                          return (
+                            <div key={pId} className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2 relative">
+                              <div className="flex justify-between items-center mb-1">
+                                 <span className="text-xs font-medium text-slate-400">{p.name} {pId === user.uid && '(Du)'}</span>
+                                 {word && <span className={`text-[11px] font-bold shrink-0 px-2 py-0.5 rounded ${detailPts > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{detailPts > 0 ? `+${detailPts}` : '0'}</span>}
                               </div>
-                            );
-                          })}
-                        </div>
+                              
+                              <div className="flex justify-between items-start gap-2 min-h-[1.5rem]">
+                                <span className={`break-words block font-medium text-lg ${isRejected ? 'line-through text-slate-600' : isDuplicate ? 'text-orange-300' : 'text-slate-200'}`} title={word || '-'}>{word || '-'}</span>
+                              </div>
+                              
+                              {word && (
+                                <div className="flex gap-2 mt-2 border-t border-slate-700/50 pt-2">
+                                  <button onClick={() => toggleVote(pId, cat, 'reject')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${myReject ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes nötig`}>
+                                    <ThumbsDown size={14} /> {votes.reject.length > 0 && `${votes.reject.length}/${threshold}`}
+                                  </button>
+                                  <button onClick={() => toggleVote(pId, cat, 'duplicate')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${myDupe ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes für Dopplung`}>
+                                    <Files size={14} /> {votes.duplicate.length > 0 && `${votes.duplicate.length}/${threshold}`}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="lg:col-span-1 bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit">
-                <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Live-Ranking</h3>
-                <div className="space-y-2">
-                  {sortedPlayers.map((p, idx) => (
-                    <div key={p.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${idx === 0 ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' : 'bg-slate-900/50 text-slate-200'}`}>
-                      <div className="flex items-center gap-3"><span className="font-bold opacity-50">#{idx + 1}</span><span className="font-medium">{p.name} {p.id === user.uid && '(Du)'}</span></div>
-                      <span className="font-mono font-bold text-lg">{displayScores[p.id]} Pkt</span>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Hide Live Ranking on the very last round to keep tension */}
+              {!isLastRound && (
+                <div className="lg:col-span-1 bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit">
+                  <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Live-Ranking</h3>
+                  <div className="space-y-2">
+                    {rankedPlayers.map((p) => (
+                      <div key={p.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${p.rank === 1 ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' : 'bg-slate-900/50 text-slate-200'}`}>
+                        <div className="flex items-center gap-3"><span className="font-bold opacity-50">#{p.rank}</span><span className="font-medium">{p.name} {p.id === user.uid && '(Du)'}</span></div>
+                        <span className="font-mono font-bold text-lg">{p.roundScore} Pkt</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {isHost && (
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-medium transition-colors">Spiel beenden (Abbrechen)</button>
+                <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-medium transition-colors">Spiel abbrechen</button>
                 {isLastRound ? (
-                  <button onClick={returnToLobby} className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95">Punkte verteilen & zurück zur Lobby</button>
+                  <button onClick={showFinalResults} className="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95 text-lg">Zu den Endergebnissen</button>
                 ) : (
                   <button onClick={nextRound} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95">Nächste Runde ({gameState.currentRound + 1}/{gameState.maxRounds})</button>
                 )}
               </div>
             )}
             {!isHost && <p className="mt-10 text-center text-slate-500">Warte auf Host für die nächste Aktion...</p>}
+         </div>
+      </div>
+    );
+  }
+
+  // FINAL RESULTS (Podium) Phase
+  if (gameState.phase === 'FINAL_RESULTS') {
+    const finalScores = gameState.gameScores || {};
+    
+    // Compute exact rankings with ties
+    const getFinalRankings = (scores) => {
+      const sorted = [...players].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
+      let currentRank = 1;
+      return sorted.map((p, i) => {
+        if (i > 0 && (scores[p.id] || 0) < (scores[sorted[i - 1].id] || 0)) {
+          currentRank = i + 1;
+        }
+        return { ...p, rank: currentRank, finalScore: scores[p.id] || 0 };
+      });
+    };
+    
+    const finalRankedPlayers = getFinalRankings(finalScores);
+
+    const distributePointsAndReturnToLobby = async () => {
+      if (lobby.settings.globalLeaderboard) {
+        let newPlayers = [...players].map(p => {
+          const r = finalRankedPlayers.find(rp => rp.id === p.id);
+          let addedPoints = 0;
+          if (r) {
+            if (r.rank === 1) addedPoints = 5;
+            else if (r.rank === 2) addedPoints = 3;
+            else if (r.rank === 3) addedPoints = 1;
+          }
+          return { ...p, globalScore: p.globalScore + addedPoints };
+        });
+        await updateLobbyStatus('LOBBY_WAITING', null, { players: newPlayers, gameState: {} });
+      } else {
+        await updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} });
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
+         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-3xl" />
+         <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <div className="text-center mb-10 mt-6">
+              <h2 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4 tracking-wider uppercase drop-shadow-md">Endergebnisse</h2>
+              <p className="text-slate-400 text-lg">Das Spiel ist vorbei! Hier ist die finale Platzierung.</p>
+            </div>
+
+            <div className="w-full bg-slate-800 rounded-3xl p-6 sm:p-10 border border-slate-700 shadow-2xl mb-10 space-y-4">
+              {finalRankedPlayers.map((p) => {
+                let rowBg = 'bg-slate-900/50 text-slate-400 border-slate-700/50';
+                if (p.rank === 1) rowBg = 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.2)]';
+                else if (p.rank === 2) rowBg = 'bg-slate-300/20 border-slate-300/50 text-slate-200';
+                else if (p.rank === 3) rowBg = 'bg-orange-600/20 border-orange-600/50 text-orange-300';
+
+                return (
+                  <div key={p.id} className={`flex justify-between items-center p-5 rounded-2xl border transition-all ${rowBg}`}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl font-black opacity-80 w-10">#{p.rank}</span>
+                      <span className="text-xl font-bold">{p.name} {p.id === user.uid && '(Du)'}</span>
+                    </div>
+                    <span className="text-2xl font-mono font-black">{p.finalScore} <span className="text-sm font-medium opacity-70">Pkt</span></span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {isHost ? (
+              <button onClick={distributePointsAndReturnToLobby} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-xl transition-all active:scale-95">
+                Punkte verteilen & Zurück zur Lobby
+              </button>
+            ) : (
+              <p className="text-slate-500 italic text-lg">Warte auf Host für die Rückkehr zur Lobby...</p>
+            )}
          </div>
       </div>
     );
