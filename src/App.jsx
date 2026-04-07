@@ -520,7 +520,7 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
   const { gameState, players, id: lobbyCode } = lobby;
   
   const [clueWord, setClueWord] = useState('');
-  const [clueCount, setClueCount] = useState('1');
+  const [clueCount, setClueCount] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [customWordInput, setCustomWordInput] = useState('');
   const [pinnedWords, setPinnedWords] = useState([]);
@@ -630,7 +630,7 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
       'gameState.turn': `${currentTeam.toUpperCase()}_OPERATIVE`
     });
     setClueWord('');
-    setClueCount('1');
+    setClueCount(1);
   };
 
   const endTurn = async () => {
@@ -927,10 +927,16 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
           )}
 
           {isMyTurn && myRole === 'SPYMASTER' && !gameState.currentClue && (
-             <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-               <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 flex-grow sm:w-48"/>
-               <input type="number" min="1" max="9" value={clueCount} onChange={(e) => setClueCount(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 w-20"/>
-               <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold transition-colors">Senden</button>
+             <div className="flex flex-col gap-3 w-full sm:w-72 mt-4 sm:mt-0">
+               <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 w-full"/>
+               <div className="flex items-center gap-3">
+                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shrink-0">
+                   <button onClick={() => setClueCount(Math.max(1, clueCount - 1))} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl leading-none">-</button>
+                   <div className="w-12 font-bold text-white text-center text-lg">{clueCount}</div>
+                   <button onClick={() => setClueCount(Math.min(9, clueCount + 1))} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl leading-none">+</button>
+                 </div>
+                 <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold transition-colors flex-grow h-full">Senden</button>
+               </div>
              </div>
           )}
         </div>
@@ -1302,12 +1308,12 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                 <label className="block text-sm font-medium text-slate-400 mb-2">Anzahl der Runden</label>
-                <input type="number" min="1" max="20" value={setupRounds} onChange={(e) => setSetupRounds(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
+                <input type="text" inputMode="numeric" value={setupRounds} onChange={(e) => setSetupRounds(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
               </div>
 
               <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                 <label className="block text-sm font-medium text-slate-400 mb-2">Timer (Sekunden)</label>
-                <input type="number" min="30" max="240" value={setupTimer} onChange={(e) => setSetupTimer(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
+                <input type="text" inputMode="numeric" value={setupTimer} onChange={(e) => setSetupTimer(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
                 <p className="text-xs text-slate-500 mt-1">Zwischen 30s und 240s</p>
               </div>
 
