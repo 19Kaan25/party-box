@@ -520,7 +520,7 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
   const { gameState, players, id: lobbyCode } = lobby;
   
   const [clueWord, setClueWord] = useState('');
-  const [clueCount, setClueCount] = useState(1);
+  const [clueCount, setClueCount] = useState('1');
   const [searchTerm, setSearchTerm] = useState('');
   const [customWordInput, setCustomWordInput] = useState('');
   const [pinnedWords, setPinnedWords] = useState([]);
@@ -618,14 +618,19 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
 
   const submitClue = async () => {
     if (!clueWord.trim()) return;
+    
+    let parsedCount = parseInt(clueCount, 10);
+    if (isNaN(parsedCount) || parsedCount < 1) parsedCount = 1;
+    if (parsedCount > 9) parsedCount = 9;
+
     const currentTeam = gameState.turn.split('_')[0].toLowerCase();
     const lobbyRef = doc(db, 'lobbies', lobbyCode);
     await updateDoc(lobbyRef, {
-      'gameState.currentClue': { word: clueWord.trim(), count: clueCount, guessesLeft: clueCount + 1 },
+      'gameState.currentClue': { word: clueWord.trim(), count: parsedCount, guessesLeft: parsedCount + 1 },
       'gameState.turn': `${currentTeam.toUpperCase()}_OPERATIVE`
     });
     setClueWord('');
-    setClueCount(1);
+    setClueCount('1');
   };
 
   const endTurn = async () => {
@@ -924,7 +929,7 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
           {isMyTurn && myRole === 'SPYMASTER' && !gameState.currentClue && (
              <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-4 sm:mt-0">
                <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 flex-grow sm:w-48"/>
-               <input type="number" min="1" max="9" value={clueCount} onChange={(e) => setClueCount(parseInt(e.target.value) || 1)} className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 w-20"/>
+               <input type="number" min="1" max="9" value={clueCount} onChange={(e) => setClueCount(e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-slate-500 w-20"/>
                <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold transition-colors">Senden</button>
              </div>
           )}
