@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
@@ -9,7 +9,7 @@ const getFirebaseConfig = () => {
   if (typeof __firebase_config !== 'undefined') {
     return JSON.parse(__firebase_config);
   }
-  // Trage hier deine lokalen Firebase-Daten direkt ein (aus Schritt 2)
+  // Trage hier deine lokalen Firebase-Daten direkt ein
   return {
     apiKey: "AIzaSyCwRv6ZYW_EioY36FAfiqveGlB4u6TUIe8",
     authDomain: "party-box-45d2b.firebaseapp.com",
@@ -119,7 +119,6 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Prüfe, ob der Nutzer bereits in einer Lobby war
         try {
           const userRef = doc(db, 'users', currentUser.uid);
           const userSnap = await getDoc(userRef);
@@ -127,13 +126,11 @@ export default function App() {
           if (userSnap.exists()) {
             const userData = userSnap.data();
             if (userData.currentLobby) {
-              // Prüfe, ob diese Lobby noch existiert
               const lobbyRef = doc(db, 'lobbies', userData.currentLobby);
               const lobbySnap = await getDoc(lobbyRef);
               
               if (lobbySnap.exists()) {
                 const lobbyData = lobbySnap.data();
-                // Sicherheitscheck: Ist der Spieler wirklich noch in der Lobby-Liste?
                 const isInLobby = lobbyData.players.some(p => p.id === currentUser.uid);
                 if (isInLobby) {
                   setPlayerName(userData.name || '');
@@ -168,7 +165,6 @@ export default function App() {
         setCurrentLobby(null);
         setLobbyCode('');
         setErrorMsg('Lobby wurde geschlossen oder existiert nicht.');
-        // Cleanup beim Nutzer, falls Lobby gelöscht wurde
         updateDoc(doc(db, 'users', user.uid), { currentLobby: null }).catch(() => {});
       }
     }, (error) => {
@@ -199,7 +195,6 @@ export default function App() {
 
     try {
       await setDoc(lobbyRef, initialLobbyData);
-      // Profil speichern
       await setDoc(doc(db, 'users', user.uid), {
         currentLobby: newCode,
         name: playerName.trim()
@@ -238,7 +233,6 @@ export default function App() {
       const updatedPlayers = [...data.players, { id: user.uid, name: playerName.trim(), isHost: false, globalScore: 0 }];
       await updateDoc(lobbyRef, { players: updatedPlayers });
       
-      // Profil speichern
       await setDoc(doc(db, 'users', user.uid), {
         currentLobby: code,
         name: playerName.trim()
@@ -430,18 +424,18 @@ export default function App() {
             {/* Game Selection */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <h3 className="text-xl font-bold flex items-center gap-2"><Play className="text-pink-400" /> Spielekatalog</h3>
                   {isHost ? (
                     <button 
                       onClick={() => updateLobbyStatus(currentLobby.status, null, { settings: { ...currentLobby.settings, globalLeaderboard: !currentLobby.settings.globalLeaderboard } })}
-                      className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border transition-colors ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
+                      className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border transition-colors ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
                     >
                       <Settings size={14} />
                       <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
                     </button>
                   ) : (
-                    <div className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-900'}`}>
+                    <div className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-900'}`}>
                       <Trophy size={14} />
                       <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
                     </div>
@@ -1022,10 +1016,12 @@ function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobb
 function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
   const { gameState, players, id: lobbyCode } = lobby;
   const [localAnswers, setLocalAnswers] = useState({});
-  const isReady = gameState.readyPlayers?.includes(user.uid);
 
+  // Use strings to allow empty inputs in settings
+  const [setupRounds, setSetupRounds] = useState('3');
+  const [setupTimer, setSetupTimer] = useState('90');
+  
   const [setupCategories, setSetupCategories] = useState(['Stadt', 'Land', 'Fluss']);
-  const [setupRounds, setSetupRounds] = useState(3);
   const [newCatInput, setNewCatInput] = useState('');
   const [excludedLetters, setExcludedLetters] = useState([]);
   const [showCatModal, setShowCatModal] = useState(false);
@@ -1034,8 +1030,73 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
   const randomCategories = ['Marke', 'Automarke', 'Beruf', 'Tiere', 'Promi', 'Sänger', 'Fußballer', 'Schauspieler', 'Film', 'Serie', 'Film/Serie', 'Vorname', 'Nachname', 'Lebensmittel', 'Getränke', 'Grund für Verspätung'];
 
   useEffect(() => {
-    if (gameState.phase === 'PLAYING') setLocalAnswers({});
-  }, [gameState.phase, gameState.letter]);
+    if (gameState.phase === 'STARTING') setLocalAnswers({});
+  }, [gameState.phase]);
+
+  // Synchronized Start Logic
+  const [startingCountdown, setStartingCountdown] = useState(3);
+  useEffect(() => {
+    if (gameState.phase === 'STARTING') {
+      const interval = setInterval(() => {
+        const remaining = Math.ceil((gameState.startTimestamp - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearInterval(interval);
+          if (isHost) {
+            updateDoc(doc(db, 'lobbies', lobbyCode), {
+              'gameState.phase': 'PLAYING',
+              'gameState.playingStartTime': Date.now()
+            });
+          }
+        } else {
+          setStartingCountdown(remaining);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [gameState.phase, gameState.startTimestamp, isHost, lobbyCode, db]);
+
+  // Synchronized Playing Timer
+  const [timeLeft, setTimeLeft] = useState(gameState.timerLimit || 90);
+  useEffect(() => {
+    if (gameState.phase === 'PLAYING' && gameState.playingStartTime) {
+      setTimeLeft(gameState.timerLimit);
+      const interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - gameState.playingStartTime) / 1000);
+        const remaining = Math.max(0, (gameState.timerLimit || 90) - elapsed);
+        setTimeLeft(remaining);
+        
+        // Host automatically ends round when time runs out
+        if (remaining <= 0 && isHost) {
+          triggerRoundEnd();
+        }
+      }, 250);
+      return () => clearInterval(interval);
+    }
+  }, [gameState.phase, gameState.playingStartTime, gameState.timerLimit, isHost]);
+
+  // Submitting Phase: Everyone pushes answers automatically when phase turns to SUBMITTING
+  const localAnswersRef = useRef(localAnswers);
+  useEffect(() => {
+    localAnswersRef.current = localAnswers;
+  }, [localAnswers]);
+
+  useEffect(() => {
+    if (gameState.phase === 'SUBMITTING') {
+      const lobbyRef = doc(db, 'lobbies', lobbyCode);
+      // Auto-submit local data
+      updateDoc(lobbyRef, {
+        [`gameState.answers.${user.uid}`]: localAnswersRef.current
+      });
+      
+      // Host waits 2.5s for everyone to sync, then moves to REVIEW
+      if (isHost) {
+        const timer = setTimeout(() => {
+          endRound();
+        }, 2500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [gameState.phase, isHost, lobbyCode, db, user.uid]);
 
   const addRandomCategory = () => {
     const available = randomCategories.filter(c => !setupCategories.includes(c));
@@ -1079,17 +1140,27 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
 
   const startGame = async () => {
     if (setupCategories.length === 0) return alert('Bitte wähle mindestens eine Kategorie.');
+    
+    let finalRounds = parseInt(setupRounds, 10);
+    if (isNaN(finalRounds) || finalRounds < 1) finalRounds = 3;
+    
+    let finalTimer = parseInt(setupTimer, 10);
+    if (isNaN(finalTimer)) finalTimer = 90;
+    finalTimer = Math.max(30, Math.min(240, finalTimer));
+
     const letter = getValidLetter(excludedLetters);
     const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    
     await updateDoc(lobbyRef, {
       'gameState.categories': setupCategories,
-      'gameState.maxRounds': setupRounds,
+      'gameState.maxRounds': finalRounds,
+      'gameState.timerLimit': finalTimer,
       'gameState.currentRound': 1,
       'gameState.excludedLetters': excludedLetters,
       'gameState.letter': letter,
-      'gameState.phase': 'PLAYING',
+      'gameState.phase': 'STARTING',
+      'gameState.startTimestamp': Date.now() + 4000,
       'gameState.answers': {},
-      'gameState.readyPlayers': [],
       'gameState.votes': {}
     });
   };
@@ -1107,10 +1178,19 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
       'gameState.gameScores': updatedGameScores,
       'gameState.currentRound': gameState.currentRound + 1,
       'gameState.letter': letter,
-      'gameState.phase': 'PLAYING',
+      'gameState.phase': 'STARTING',
+      'gameState.startTimestamp': Date.now() + 4000,
       'gameState.answers': {},
-      'gameState.readyPlayers': [],
       'gameState.votes': {}
+    });
+  };
+
+  // Triggers end of round for everyone instantly
+  const triggerRoundEnd = async () => {
+    if (gameState.phase !== 'PLAYING') return;
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.phase': 'SUBMITTING'
     });
   };
 
@@ -1179,13 +1259,6 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
     return { roundScores, detailedScores };
   };
 
-  const submitAnswers = async () => {
-    const lobbyRef = doc(db, 'lobbies', lobbyCode);
-    const newAnswers = { ...gameState.answers, [user.uid]: localAnswers };
-    const newReady = [...(gameState.readyPlayers || []), user.uid];
-    await updateDoc(lobbyRef, { 'gameState.answers': newAnswers, 'gameState.readyPlayers': newReady });
-  };
-
   if (gameState.phase === 'SETUP') {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 relative">
@@ -1214,18 +1287,24 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
         <h2 className="text-4xl font-bold mb-2 text-purple-400 mt-8">Stadt Land Fluss</h2>
         
         {isHost ? (
-          <div className="w-full max-w-2xl bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mt-6">
+          <div className="w-full max-w-3xl bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mt-6">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Settings size={20} className="text-indigo-400" /> Spieleinstellungen</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                 <label className="block text-sm font-medium text-slate-400 mb-2">Anzahl der Runden</label>
-                <input type="number" min="1" max="20" value={setupRounds} onChange={(e) => setSetupRounds(parseInt(e.target.value) || 1)} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+                <input type="number" min="1" max="20" value={setupRounds} onChange={(e) => setSetupRounds(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
               </div>
 
               <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                <label className="block text-sm font-medium text-slate-400 mb-2">Ausgeschlossene Buchstaben ({excludedLetters.length})</label>
-                <div className="flex flex-wrap gap-1">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Timer (Sekunden)</label>
+                <input type="number" min="30" max="240" value={setupTimer} onChange={(e) => setSetupTimer(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
+                <p className="text-xs text-slate-500 mt-1">Zwischen 30s und 240s</p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Ausgeschlossen ({excludedLetters.length})</label>
+                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                   {ALPHABET.map(l => (
                     <button key={l} onClick={() => toggleLetter(l)} className={`w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition-colors ${excludedLetters.includes(l) ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>{l}</button>
                   ))}
@@ -1273,51 +1352,80 @@ function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leav
     );
   }
 
-  if (gameState.phase === 'PLAYING') {
+  // Countdown view right before the round officially starts
+  if (gameState.phase === 'STARTING') {
     return (
-      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
-        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-2xl" />
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-6">
-            <div className="inline-block bg-slate-800 border border-slate-700 px-4 py-1.5 rounded-full text-slate-400 text-sm font-medium mb-4">
-              Runde {gameState.currentRound} von {gameState.maxRounds}
-            </div>
-            <p className="text-slate-400 font-medium uppercase tracking-widest text-sm mb-2">Der Buchstabe ist</p>
-            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center text-7xl font-black shadow-2xl shadow-purple-900/40">
-              {gameState.letter}
-            </div>
-          </div>
-
-          {!isReady ? (
-            <div className="space-y-4 bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-xl">
-              {(gameState.categories || []).map((category) => (
-                <div key={category}>
-                  <label className="block text-sm font-medium text-slate-400 mb-1 pl-1">{category}</label>
-                  <input type="text" value={localAnswers[category] || ''} onChange={(e) => setLocalAnswers({...localAnswers, [category]: e.target.value})} placeholder={`${gameState.letter}...`} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-lg"/>
-                </div>
-              ))}
-              <button onClick={submitAnswers} className="w-full mt-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-green-900/20">Fertig!</button>
-            </div>
-          ) : (
-            <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 text-center">
-              <Check size={48} className="mx-auto text-green-400 mb-4" />
-              <h3 className="text-2xl font-bold mb-2">Antworten gesendet!</h3>
-              <p className="text-slate-400">Warte auf die anderen Spieler...</p>
-              
-              <div className="mt-8 flex justify-center gap-2">
-                {players.map(p => (
-                  <div key={p.id} className={`w-3 h-3 rounded-full ${gameState.readyPlayers?.includes(p.id) ? 'bg-green-500' : 'bg-slate-700'}`} title={p.name} />
-                ))}
-              </div>
-              
-              {isHost && <button onClick={endRound} className="mt-8 text-sm text-slate-500 hover:text-white underline">Runde manuell beenden (Scoring)</button>}
-            </div>
-          )}
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-slate-400">Runde {gameState.currentRound} startet in...</h2>
+        <div className="text-8xl sm:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-500 animate-pulse drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]">
+          {startingCountdown > 0 ? startingCountdown : 'LOS!'}
         </div>
       </div>
     );
   }
 
+  // During the game (answering)
+  if (gameState.phase === 'PLAYING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-2xl" />
+        <div className="max-w-2xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <div className="inline-block bg-slate-800 border border-slate-700 px-4 py-1.5 rounded-full text-slate-400 text-sm font-medium">
+              Runde {gameState.currentRound} von {gameState.maxRounds}
+            </div>
+            
+            {/* Countdown Timer Display */}
+            <div className={`text-2xl font-black tabular-nums tracking-wider px-4 py-1.5 rounded-lg border ${timeLeft <= 10 ? 'text-red-400 border-red-500/50 bg-red-500/10 animate-pulse' : 'text-slate-200 border-slate-700 bg-slate-800'}`}>
+               {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+          
+          <div className="text-center mb-6">
+            <p className="text-slate-400 font-medium uppercase tracking-widest text-sm mb-2">Der Buchstabe ist</p>
+            <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center text-6xl sm:text-7xl font-black shadow-2xl shadow-purple-900/40">
+              {gameState.letter}
+            </div>
+          </div>
+
+          <div className="space-y-4 bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-xl">
+            {(gameState.categories || []).map((category) => (
+              <div key={category}>
+                <label className="block text-sm font-medium text-slate-400 mb-1 pl-1">{category}</label>
+                <input 
+                  type="text" 
+                  value={localAnswers[category] || ''} 
+                  onChange={(e) => setLocalAnswers({...localAnswers, [category]: e.target.value})} 
+                  placeholder={`${gameState.letter}...`} 
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-lg"
+                />
+              </div>
+            ))}
+            
+            <button 
+              onClick={triggerRoundEnd} 
+              className="w-full mt-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-green-900/20"
+            >
+              Fertig! (Beendet Runde für alle)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Grace period to sync all answers to the server
+  if (gameState.phase === 'SUBMITTING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-6"></div>
+        <h2 className="text-3xl font-bold text-slate-200 mb-2">Runde beendet!</h2>
+        <p className="text-slate-400 text-center">Eingaben werden synchronisiert...<br/>Bitte warten.</p>
+      </div>
+    );
+  }
+
+  // Review & Voting Phase
   if (gameState.phase === 'REVIEW') {
     const { roundScores, detailedScores } = calculateDynamicScores();
     const threshold = Math.floor(players.length / 2) + 1;
