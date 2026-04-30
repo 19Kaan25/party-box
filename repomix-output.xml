@@ -1,0 +1,2590 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+eslint.config.js
+index.html
+package.json
+public/favicon.svg
+public/icon.png
+public/icons.svg
+public/manifest.json
+README.md
+src/App.css
+src/App.jsx
+src/assets/hero.png
+src/assets/react.svg
+src/assets/vite.svg
+src/components/GameHeader.jsx
+src/constants/gameData.js
+src/games/CodenamesEngine.jsx
+src/games/StadtLandFlussEngine.jsx
+src/games/WerwolfEngine.jsx
+src/index.css
+src/main.jsx
+src/utils/firebase.js
+src/utils/helpers.js
+vite.config.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+</file>
+
+<file path="package.json">
+{
+  "name": "party-game",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "firebase": "^12.11.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.4"
+  }
+}
+</file>
+
+<file path="public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="public/icons.svg">
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bluesky-icon" viewBox="0 0 16 17">
+    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
+    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
+  </symbol>
+  <symbol id="discord-icon" viewBox="0 0 20 19">
+    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
+  </symbol>
+  <symbol id="documentation-icon" viewBox="0 0 21 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
+  </symbol>
+  <symbol id="github-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
+  </symbol>
+  <symbol id="social-icon" viewBox="0 0 20 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
+  </symbol>
+  <symbol id="x-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
+  </symbol>
+</svg>
+</file>
+
+<file path="public/manifest.json">
+{
+  "name": "Party Box",
+  "short_name": "PartyBox",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a"
+}
+</file>
+
+<file path="README.md">
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+</file>
+
+<file path="src/App.css">
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+</file>
+
+<file path="src/assets/react.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+</file>
+
+<file path="src/assets/vite.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="src/components/GameHeader.jsx">
+import React from 'react';
+import { X, LogOut } from 'lucide-react';
+
+const GameHeader = ({ isHost, leaveLobby, updateLobbyStatus, absolute = false, maxWidthClass = "max-w-2xl", hideHostButton = false }) => {
+  
+  const handleEndGame = () => {
+    if (window.confirm("Bist du sicher, dass du das Spiel für ALLE beenden möchtest?")) {
+      updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} });
+    }
+  };
+
+  const handleLeaveGame = () => {
+    if (window.confirm("Bist du sicher, dass du das Spiel verlassen möchtest?")) {
+      leaveLobby();
+    }
+  };
+
+  const content = (
+    <>
+      {isHost && !hideHostButton ? (
+        <button onClick={handleEndGame} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 backdrop-blur-sm shadow-lg">
+          <X size={16} /> Spiel beenden
+        </button>
+      ) : (
+        <button onClick={handleLeaveGame} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 backdrop-blur-sm shadow-lg">
+          <LogOut size={16} /> Spiel verlassen
+        </button>
+      )}
+    </>
+  );
+
+  if (absolute) return <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50">{content}</div>;
+  return <div className={`w-full ${maxWidthClass} mx-auto flex justify-end mb-4 z-50`}>{content}</div>;
+};
+
+export default GameHeader;
+</file>
+
+<file path="src/constants/gameData.js">
+export const CODENAMES_WORDS = [
+  "Apfel", "Bank", "Berlin", "Brücke", "Ball", "Berg", "Box", "Brille", "Deckel", "Drache", 
+  "Eis", "Erde", "Feder", "Feuer", "Film", "Flügel", "Geist", "Gericht", "Glocke", "Hund", 
+  "Jet", "Kater", "Kette", "Kiefer", "Knopf", "Krone", "Leiter", "Licht", "Luft", "Mars", 
+  "Maske", "Maus", "Mine", "Mond", "Nagel", "Note", "Nuß", "Pfeffer", "Ring", "Ritter", 
+  "Satz", "Schalter", "Schiff", "Schloss", "Schule", "Stern", "Strom", "Tafel", "Taucher", "Zug", 
+  "Anker", "Arzt", "Auge", "Auto", "Baum", "Bogen", "Brief", "Burg", "Dame", "Daumen", 
+  "Diamant", "Dieb", "Dose", "Fackel", "Flasche", "Fuß", "Garten", "Gift", "Gold", "Gras", 
+  "Hahn", "Hai", "Hammer", "Hand", "Herz", "Hitze", "Honig", "Horn", "Käse", "Katze", 
+  "Kiwi", "Koch", "König", "Korken", "Kreuz", "Kuchen", "Kugel", "Laser", "Löwe", "Löffel", 
+  "Nadel", "Netz", "Ozean", "Palme", "Papier", "Park", "Pilz", "Rad", "Rakete", "Raum", 
+  "Abenteuer", "Agent", "Alibi", "Antenne", "Atlas", "Batterie", "Besen", "Blitz", "Boden", "Braten", 
+  "Buch", "Clown", "Computer", "Dampf", "Dschungel", "Ei", "Elefant", "Engel", "Faden", "Fallschirm", 
+  "Farbe", "Fenster", "Flöte", "Form", "Gabel", "Gefängnis", "Glas", "Gummi", "Gürtel", "Hafen", 
+  "Helm", "Insel", "Kaffee", "Kamera", "Kanone", "Karte", "Kleber", "Koffer", "Krawatte", "Leinwand", 
+  "Linse", "Mantel", "Messer", "Mikroskop", "Millionär", "Motor", "Musik", "Nase", "Nest", "Pfeife", 
+  "Amboss", "Anzug", "Affe", "Axt", "Bär", "Biene", "Birne", "Brot", "Bürste", "Dach", 
+  "Dinosaurier", "Dolch", "Echse", "Eimer", "Eule", "Fahne", "Fass", "Fisch", "Fliege", "Frosch", 
+  "Gitarre", "Grab", "Gurke", "Handschuh", "Harfe", "Hase", "Heft", "Hexe", "Hose", "Hut", 
+  "Igel", "Jaguar", "Kamm", "Kamel", "Keks", "Kissen", "Klavier", "Klee", "Knochen", "Korb", 
+  "Krake", "Kran", "Kuh", "Lampe", "Lasso", "Laub", "Lippe", "Lupe", "Magnet", "Marke", 
+  "Mauer", "Schrank", "Socke", "Tunnel", "Wald", "Wolke", "Zelt", "Zunge", "Zucker", "Zwerg", 
+  "Uhr", "Vampir", "Vogel", "Vulkan", "Waage", "Wagen", "Wand", "Wasser", "Würfel", "Wüste", 
+  "Schatten", "Schlamm", "Schlange", "Schirm", "Schnecke", "Schnee", "Schnur", "Schuh", "Schwamm", "Schwein", 
+  "See", "Seife", "Seil", "Senf", "Sonne", "Spiel", "Spinne", "Spritze", "Stadt", "Stein", 
+  "Stock", "Strand", "Stroh", "Superheld", "Suppe", "Tabak", "Tasche", "Taxi", "Tee", "Telefon"
+];
+
+export const WERWOLF_ROLES = {
+  WERWOLF: { id: 'WERWOLF', name: 'Werwolf', description: 'Du bist ein Werwolf! Wache nachts auf und einige dich mit den anderen Werwölfen auf ein Opfer aus dem Dorf. Verhalte dich tagsüber wie ein unschuldiger Dorfbewohner.', color: 'text-red-500', bg: 'bg-red-500/20' },
+  DORFBEWOHNER: { id: 'DORFBEWOHNER', name: 'Dorfbewohner', description: 'Du bist ein einfacher Dorfbewohner. Du hast nachts keine besonderen Fähigkeiten. Versuche tagsüber durch geschicktes Fragen herauszufinden, wer die Werwölfe sind.', color: 'text-green-400', bg: 'bg-green-500/20' },
+  SEHERIN: { id: 'SEHERIN', name: 'Seherin', description: 'Du bist die Seherin! Du wachst jede Nacht als Erste auf und darfst die wahre Identität eines Mitspielers überprüfen. Nutze dein Wissen tagsüber weise, ohne dich sofort zu verraten.', color: 'text-purple-400', bg: 'bg-purple-500/20' },
+  HEXE: { id: 'HEXE', name: 'Hexe', description: 'Du bist die Hexe! Du hast zwei Tränke: Einen Heiltrank (um das Opfer der Werwölfe zu retten) und einen Gifttrank (um nachts einen Spieler zu töten). Jeder Trank kann nur einmal im gesamten Spiel benutzt werden.', color: 'text-pink-400', bg: 'bg-pink-500/20' },
+  AMOR: { id: 'AMOR', name: 'Amor', description: 'Du bist Amor! In der allerersten Nacht bestimmst du zwei Spieler, die sich unsterblich ineinander verlieben. Stirbt einer der beiden, stirbt der andere aus Liebeskummer sofort mit.', color: 'text-rose-400', bg: 'bg-rose-500/20' },
+  JAEGER: { id: 'JAEGER', name: 'Jäger', description: 'Du bist der Jäger! Wenn du stirbst (egal ob durch Werwölfe, das Dorf oder die Hexe), feuerst du in deinem letzten Atemzug einen Schuss ab und reißt einen Spieler deiner Wahl mit in den Tod.', color: 'text-amber-500', bg: 'bg-amber-500/20' }
+};
+</file>
+
+<file path="src/games/CodenamesEngine.jsx">
+import React, { useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Settings, Search, Plus, Pin, PinOff } from 'lucide-react';
+
+import GameHeader from '../components/GameHeader';
+import { CODENAMES_WORDS } from '../constants/gameData';
+import { shuffleArray } from '../utils/helpers';
+
+export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
+  const { gameState, players, id: lobbyCode } = lobby;
+  
+  const [clueWord, setClueWord] = useState('');
+  const [clueCount, setClueCount] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customWordInput, setCustomWordInput] = useState('');
+  const [pinnedWords, setPinnedWords] = useState([]);
+  const [customWords, setCustomWords] = useState([]);
+
+  const joinTeam = async (teamColor, role) => {
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    let newTeams = { red: [...(gameState.teams?.red || [])], blue: [...(gameState.teams?.blue || [])] };
+    let newSpymasters = { red: gameState.spymasters?.red, blue: gameState.spymasters?.blue };
+
+    newTeams.red = newTeams.red.filter(id => id !== user.uid);
+    newTeams.blue = newTeams.blue.filter(id => id !== user.uid);
+    if (newSpymasters.red === user.uid) newSpymasters.red = null;
+    if (newSpymasters.blue === user.uid) newSpymasters.blue = null;
+
+    newTeams[teamColor].push(user.uid);
+    if (role === 'SPYMASTER') {
+      newSpymasters[teamColor] = user.uid;
+    }
+
+    await updateDoc(lobbyRef, {
+      'gameState.teams': newTeams,
+      'gameState.spymasters': newSpymasters
+    });
+  };
+
+  const proceedToBoardSetup = async () => {
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.phase': 'BOARD_SETUP',
+      'gameState.pinnedWords': [],
+      'gameState.customWords': []
+    });
+  };
+
+  const togglePin = (word) => {
+    if (pinnedWords.includes(word)) {
+      setPinnedWords(pinnedWords.filter(w => w !== word));
+    } else {
+      if (pinnedWords.length >= 25) return;
+      setPinnedWords([...pinnedWords, word]);
+    }
+  };
+
+  const addCustomWord = (e) => {
+    e.preventDefault();
+    const w = customWordInput.trim().toUpperCase();
+    if (w && !customWords.includes(w) && !CODENAMES_WORDS.map(x=>x.toUpperCase()).includes(w)) {
+      setCustomWords([...customWords, w]);
+      if (pinnedWords.length < 25) {
+        setPinnedWords([...pinnedWords, w]);
+      }
+    }
+    setCustomWordInput('');
+  };
+
+  const generateBoard = async () => {
+    const startingTeam = Math.random() < 0.5 ? 'red' : 'blue';
+    const otherTeam = startingTeam === 'red' ? 'blue' : 'red';
+    
+    const colors = [
+      ...Array(9).fill(startingTeam),
+      ...Array(8).fill(otherTeam),
+      ...Array(7).fill('neutral'),
+      'black'
+    ];
+    const shuffledColors = shuffleArray(colors);
+    
+    let allAvailable = [...CODENAMES_WORDS.map(w=>w.toUpperCase()), ...customWords].filter(w => !pinnedWords.includes(w));
+    allAvailable = shuffleArray(allAvailable);
+    
+    let finalWords = [...pinnedWords];
+    const needed = 25 - finalWords.length;
+    finalWords = [...finalWords, ...allAvailable.slice(0, needed)];
+    finalWords = shuffleArray(finalWords);
+    
+    const board = finalWords.map((word, i) => ({
+      id: i,
+      word: word,
+      color: shuffledColors[i],
+      isRevealed: false
+    }));
+
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.phase': 'PLAYING',
+      'gameState.board': board,
+      'gameState.turn': `${startingTeam.toUpperCase()}_SPYMASTER`,
+      'gameState.currentClue': null,
+      'gameState.winner': null,
+      'gameState.startingTeam': startingTeam,
+      'gameState.customWords': customWords
+    });
+  };
+
+  const submitClue = async () => {
+    if (!clueWord.trim()) return;
+    
+    let parsedCount = parseInt(clueCount, 10);
+    if (isNaN(parsedCount) || parsedCount < 1) parsedCount = 1;
+    if (parsedCount > 9) parsedCount = 9;
+
+    const currentTeam = gameState.turn.split('_')[0].toLowerCase();
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.currentClue': { word: clueWord.trim(), count: parsedCount, guessesLeft: parsedCount + 1 },
+      'gameState.turn': `${currentTeam.toUpperCase()}_OPERATIVE`
+    });
+    setClueWord('');
+    setClueCount(1);
+  };
+
+  const endTurn = async () => {
+    const currentTeam = gameState.turn.split('_')[0].toLowerCase();
+    const nextTeam = currentTeam === 'red' ? 'blue' : 'red';
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.turn': `${nextTeam.toUpperCase()}_SPYMASTER`,
+      'gameState.currentClue': null
+    });
+  };
+
+  const guessWord = async (cardIndex) => {
+    const card = gameState.board[cardIndex];
+    if (card.isRevealed) return;
+
+    const currentTeam = gameState.turn.split('_')[0].toLowerCase();
+    const nextTeam = currentTeam === 'red' ? 'blue' : 'red';
+    
+    let newBoard = [...gameState.board];
+    newBoard[cardIndex] = { ...card, isRevealed: true };
+
+    let newTurn = gameState.turn;
+    let newClue = gameState.currentClue ? { ...gameState.currentClue } : null;
+    let winner = null;
+
+    if (card.color === 'black') {
+      winner = nextTeam;
+    } else if (card.color === currentTeam) {
+      if (newClue) {
+        newClue.guessesLeft -= 1;
+        if (newClue.guessesLeft <= 0) {
+          newTurn = `${nextTeam.toUpperCase()}_SPYMASTER`;
+          newClue = null;
+        }
+      }
+    } else {
+      newTurn = `${nextTeam.toUpperCase()}_SPYMASTER`;
+      newClue = null;
+    }
+
+    if (!winner) {
+      const redLeft = newBoard.filter(c => c.color === 'red' && !c.isRevealed).length;
+      const blueLeft = newBoard.filter(c => c.color === 'blue' && !c.isRevealed).length;
+      if (redLeft === 0) winner = 'red';
+      if (blueLeft === 0) winner = 'blue';
+    }
+
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.board': newBoard,
+      'gameState.turn': newTurn,
+      'gameState.currentClue': newClue,
+      ...(winner && { 'gameState.phase': 'REVIEW', 'gameState.winner': winner })
+    });
+  };
+
+  const myTeam = gameState.teams?.red.includes(user.uid) ? 'red' : (gameState.teams?.blue.includes(user.uid) ? 'blue' : null);
+  const myRole = (gameState.spymasters?.red === user.uid || gameState.spymasters?.blue === user.uid) ? 'SPYMASTER' : 'OPERATIVE';
+  const isMyTurn = gameState.turn?.startsWith(myTeam?.toUpperCase()) && gameState.turn?.endsWith(myRole);
+
+  if (gameState.phase === 'TEAM_SETUP') {
+    const redTeamIds = gameState.teams?.red || [];
+    const blueTeamIds = gameState.teams?.blue || [];
+    const redSpy = gameState.spymasters?.red;
+    const blueSpy = gameState.spymasters?.blue;
+    const unassignedPlayers = players.filter(p => !redTeamIds.includes(p.id) && !blueTeamIds.includes(p.id));
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+        <div className="max-w-5xl mx-auto w-full flex-grow flex flex-col">
+          <div className="text-center mb-8 mt-6">
+            <h2 className="text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500 uppercase">Codenames</h2>
+            <p className="text-slate-400 mt-2">Wählt eure Teams und bestimmt die Geheimdienstchefs.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
+            {/* Team Red */}
+            <div className="bg-red-950/30 border border-red-500/30 rounded-3xl p-6 flex flex-col">
+              <h3 className="text-2xl font-bold text-red-500 mb-6 flex items-center justify-between">
+                Team Rot <span className="text-sm bg-red-500/20 px-3 py-1 rounded-full">{redTeamIds.length} Agenten</span>
+              </h3>
+              <div className="mb-6">
+                <h4 className="text-sm uppercase tracking-wider text-red-400/70 mb-3">Geheimdienstchef (max. 1)</h4>
+                <div className="min-h-[60px] bg-slate-900/50 rounded-xl border border-slate-800 flex items-center justify-between p-3">
+                  {redSpy ? (
+                    <span className="font-bold text-red-300 flex items-center gap-2">
+                      <Settings size={18} /> {players.find(p => p.id === redSpy)?.name} {redSpy === user.uid && '(Du)'}
+                    </span>
+                  ) : <span className="text-slate-500 italic text-sm">Vakant</span>}
+                  {redSpy !== user.uid && (
+                    <button onClick={() => joinTeam('red', 'SPYMASTER')} className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded transition-colors">Chef werden</button>
+                  )}
+                </div>
+              </div>
+              <div className="flex-grow">
+                <h4 className="text-sm uppercase tracking-wider text-red-400/70 mb-3">Ermittler</h4>
+                <div className="space-y-2 mb-4">
+                  {redTeamIds.filter(id => id !== redSpy).length === 0 && <p className="text-slate-500 italic text-sm">Keine Ermittler</p>}
+                  {redTeamIds.filter(id => id !== redSpy).map(id => (
+                    <div key={id} className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 text-slate-300 font-medium">
+                      {players.find(p => p.id === id)?.name} {id === user.uid && '(Du)'}
+                    </div>
+                  ))}
+                </div>
+                {!redTeamIds.includes(user.uid) || redSpy === user.uid ? (
+                  <button onClick={() => joinTeam('red', 'OPERATIVE')} className="w-full border-2 border-dashed border-red-500/30 hover:border-red-500/60 text-red-400/70 hover:text-red-400 py-3 rounded-xl transition-all">+ Als Ermittler beitreten</button>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Team Blue */}
+            <div className="bg-blue-950/30 border border-blue-500/30 rounded-3xl p-6 flex flex-col">
+              <h3 className="text-2xl font-bold text-blue-500 mb-6 flex items-center justify-between">
+                Team Blau <span className="text-sm bg-blue-500/20 px-3 py-1 rounded-full">{blueTeamIds.length} Agenten</span>
+              </h3>
+              <div className="mb-6">
+                <h4 className="text-sm uppercase tracking-wider text-blue-400/70 mb-3">Geheimdienstchef (max. 1)</h4>
+                <div className="min-h-[60px] bg-slate-900/50 rounded-xl border border-slate-800 flex items-center justify-between p-3">
+                  {blueSpy ? (
+                    <span className="font-bold text-blue-300 flex items-center gap-2">
+                      <Settings size={18} /> {players.find(p => p.id === blueSpy)?.name} {blueSpy === user.uid && '(Du)'}
+                    </span>
+                  ) : <span className="text-slate-500 italic text-sm">Vakant</span>}
+                  {blueSpy !== user.uid && (
+                    <button onClick={() => joinTeam('blue', 'SPYMASTER')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded transition-colors">Chef werden</button>
+                  )}
+                </div>
+              </div>
+              <div className="flex-grow">
+                <h4 className="text-sm uppercase tracking-wider text-blue-400/70 mb-3">Ermittler</h4>
+                <div className="space-y-2 mb-4">
+                  {blueTeamIds.filter(id => id !== blueSpy).length === 0 && <p className="text-slate-500 italic text-sm">Keine Ermittler</p>}
+                  {blueTeamIds.filter(id => id !== blueSpy).map(id => (
+                    <div key={id} className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 text-slate-300 font-medium">
+                      {players.find(p => p.id === id)?.name} {id === user.uid && '(Du)'}
+                    </div>
+                  ))}
+                </div>
+                {!blueTeamIds.includes(user.uid) || blueSpy === user.uid ? (
+                  <button onClick={() => joinTeam('blue', 'OPERATIVE')} className="w-full border-2 border-dashed border-blue-500/30 hover:border-blue-500/60 text-blue-400/70 hover:text-blue-400 py-3 rounded-xl transition-all">+ Als Ermittler beitreten</button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-slate-800 rounded-3xl p-6 border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h4 className="text-sm uppercase tracking-wider text-slate-400 mb-2">Zuschauer / Nicht zugewiesen</h4>
+              <div className="flex flex-wrap gap-2">
+                {unassignedPlayers.length === 0 && <span className="text-slate-500 text-sm">Alle Spieler sind einem Team zugewiesen.</span>}
+                {unassignedPlayers.map(p => (
+                  <span key={p.id} className="bg-slate-900 px-3 py-1 rounded text-sm text-slate-300 border border-slate-700">
+                    {p.name} {p.id === user.uid && '(Du)'}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {isHost && (
+              <div className="flex gap-4 w-full md:w-auto">
+                <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="flex-1 md:flex-none bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-medium transition-colors">
+                  Zurück
+                </button>
+                <button onClick={proceedToBoardSetup} className="flex-1 md:flex-none bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95">
+                  Spielfeld generieren
+                </button>
+              </div>
+            )}
+            {!isHost && <p className="text-slate-500 text-sm italic">Warte auf Host...</p>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameState.phase === 'BOARD_SETUP') {
+    if (!isHost) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8 relative">
+           <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+           <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
+              <span className="animate-pulse">Der Host konfiguriert das Spielfeld...</span>
+           </div>
+        </div>
+      );
+    }
+
+    const allCombinedWords = [...CODENAMES_WORDS.map(w => w.toUpperCase()), ...customWords];
+    const filteredWords = allCombinedWords.filter(w => w.includes(searchTerm.toUpperCase()) && !pinnedWords.includes(w));
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col items-center relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-5xl" />
+        <h2 className="text-3xl font-bold text-slate-200 mb-6">Spielfeld vorbereiten</h2>
+        
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow mb-8">
+          {/* Left: Word Pool */}
+          <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 flex flex-col h-[60vh]">
+            <h3 className="text-xl font-bold mb-4">Wort-Katalog</h3>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+              <input type="text" placeholder="Wörter suchen..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-red-500"/>
+            </div>
+            <form onSubmit={addCustomWord} className="flex gap-2 mb-4">
+              <input type="text" placeholder="Eigenes Wort..." value={customWordInput} onChange={e => setCustomWordInput(e.target.value)} className="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-red-500 uppercase"/>
+              <button type="submit" className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl transition-colors"><Plus size={20} /></button>
+            </form>
+            <div className="flex-grow overflow-y-auto space-y-2 pr-2">
+              {filteredWords.slice(0, 50).map(word => (
+                <div key={word} className="flex items-center justify-between bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
+                  <span className="font-medium tracking-wider">{word}</span>
+                  <button onClick={() => togglePin(word)} className="text-slate-400 hover:text-white transition-colors"><Pin size={18} /></button>
+                </div>
+              ))}
+              {filteredWords.length === 0 && <p className="text-sm text-slate-500 text-center py-2">Keine Wörter gefunden.</p>}
+            </div>
+          </div>
+
+          {/* Right: Pinned Words */}
+          <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 flex flex-col h-[60vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Angepinnte Wörter</h3>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${pinnedWords.length === 25 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                {pinnedWords.length} / 25
+              </span>
+            </div>
+            <p className="text-sm text-slate-400 mb-4">Diese Wörter erscheinen garantiert im nächsten Spiel.</p>
+            <div className="flex-grow overflow-y-auto space-y-2 pr-2">
+              {pinnedWords.map(word => (
+                <div key={word} className="flex items-center justify-between bg-blue-900/20 p-3 rounded-xl border border-blue-500/30">
+                  <span className="font-medium tracking-wider text-blue-100">{word}</span>
+                  <button onClick={() => togglePin(word)} className="text-red-400 hover:text-red-300 transition-colors"><PinOff size={18} /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-4 w-full max-w-5xl">
+          <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="w-1/3 bg-slate-700 hover:bg-slate-600 text-white px-6 py-4 rounded-2xl font-bold transition-all active:scale-95 text-lg">
+            Abbrechen
+          </button>
+          <button onClick={generateBoard} className="w-2/3 bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-500 hover:to-blue-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg transition-all active:scale-95 text-xl">
+            Spielfeld generieren
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameState.phase === 'PLAYING') {
+    const currentTeam = gameState.turn.split('_')[0].toLowerCase();
+    const currentRole = gameState.turn.split('_')[1];
+    const redLeft = gameState.board?.filter(c => c.color === 'red' && !c.isRevealed).length || 0;
+    const blueLeft = gameState.board?.filter(c => c.color === 'blue' && !c.isRevealed).length || 0;
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-2 sm:p-8 flex flex-col items-center relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-5xl" />
+        
+        <div className="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+          <div className="w-full sm:w-auto flex items-center justify-center">
+            <div className={`w-full sm:w-auto text-center px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-inner ${currentTeam === 'red' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+              ZUG: TEAM {currentTeam === 'red' ? 'ROT' : 'BLAU'} ({currentRole === 'SPYMASTER' ? 'GEHEIMDIENSTCHEF' : 'ERMITTLER'})
+            </div>
+          </div>
+          <div className="w-full sm:w-auto flex justify-center gap-6 font-mono text-lg sm:text-xl font-bold bg-slate-900/60 px-6 py-2.5 rounded-xl border border-slate-700/50">
+            <span className="text-red-500 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span> ROT: {redLeft}
+            </span>
+            <span className="text-blue-500 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></span> BLAU: {blueLeft}
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full max-w-5xl mb-6 bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {gameState.currentClue ? (
+            <div className="flex flex-wrap items-center gap-4 w-full">
+              <span className="text-slate-400 font-medium">Hinweis:</span>
+              <span className="text-xl sm:text-2xl font-black tracking-widest uppercase bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">{gameState.currentClue.word}</span>
+              <span className="text-xl sm:text-2xl font-black bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">{gameState.currentClue.count}</span>
+              <span className="ml-auto text-sm text-slate-400">Verbleibende Tipps: <b className="text-white">{gameState.currentClue.guessesLeft}</b></span>
+              {isMyTurn && myRole === 'OPERATIVE' && (
+                <button onClick={endTurn} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg sm:ml-4 transition-colors font-medium">Zug beenden</button>
+              )}
+            </div>
+          ) : (
+            <div className="w-full flex items-center justify-center text-slate-400">
+              {currentRole === 'SPYMASTER' ? 'Der Geheimdienstchef überlegt...' : 'Warte auf Hinweis...'}
+            </div>
+          )}
+
+          {isMyTurn && myRole === 'SPYMASTER' && !gameState.currentClue && (
+             <div className="flex flex-col gap-3 w-full sm:w-80 mt-4 sm:mt-0">
+               <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-slate-500 w-full"/>
+               <div className="flex items-center gap-3">
+                 <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shrink-0 h-12">
+                   <button onClick={() => setClueCount(Math.max(1, clueCount - 1))} className="w-12 h-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-2xl">-</button>
+                   <div className="w-10 font-bold text-white text-center text-lg">{clueCount}</div>
+                   <button onClick={() => setClueCount(Math.min(9, clueCount + 1))} className="w-12 h-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-2xl">+</button>
+                 </div>
+                 <button onClick={submitClue} className="bg-green-600 hover:bg-green-500 text-white px-4 rounded-lg font-bold transition-colors flex-grow h-12">Senden</button>
+               </div>
+             </div>
+          )}
+        </div>
+
+        <div className="w-full max-w-5xl grid grid-cols-5 gap-2 sm:gap-4 flex-grow">
+          {(gameState.board || []).map((card, idx) => {
+            const isSpymaster = myRole === 'SPYMASTER';
+            const isInteractive = isMyTurn && myRole === 'OPERATIVE' && !card.isRevealed && gameState.currentClue;
+            let cardBg = 'bg-slate-700 hover:bg-slate-600 border-slate-600';
+            let textColor = 'text-white';
+            
+            if (card.isRevealed) {
+              if (card.color === 'red') { cardBg = 'bg-red-500 border-red-600 shadow-inner'; }
+              if (card.color === 'blue') { cardBg = 'bg-blue-500 border-blue-600 shadow-inner'; }
+              if (card.color === 'neutral') { cardBg = 'bg-amber-100 border-amber-200'; textColor = 'text-slate-800'; }
+              if (card.color === 'black') { cardBg = 'bg-slate-950 border-black shadow-inner'; }
+            } else if (isSpymaster) {
+              if (card.color === 'red') { cardBg = 'bg-red-950/80 border-red-900/50'; textColor = 'text-red-200'; }
+              if (card.color === 'blue') { cardBg = 'bg-blue-950/80 border-blue-900/50'; textColor = 'text-blue-200'; }
+              if (card.color === 'neutral') { cardBg = 'bg-amber-900/30 border-amber-900/50'; textColor = 'text-amber-100/70'; }
+              if (card.color === 'black') { cardBg = 'bg-slate-900 border-slate-700'; textColor = 'text-slate-400'; }
+            }
+
+            return (
+              <button key={idx} onClick={() => isInteractive && guessWord(idx)} disabled={!isInteractive}
+                className={`relative flex items-center justify-center p-2 sm:p-4 rounded-xl border-2 font-bold text-[10px] sm:text-lg uppercase tracking-wider transition-all break-words ${cardBg} ${textColor} ${isInteractive ? 'cursor-pointer hover:scale-[1.02] active:scale-95 shadow-lg shadow-white/5 border-white/30' : 'cursor-default'} ${card.isRevealed ? 'opacity-90' : ''}`}
+              >
+                {card.isRevealed && card.color === 'black' && <span className="absolute text-3xl sm:text-4xl opacity-50">☠️</span>}
+                <span className="z-10 text-center break-words w-full overflow-hidden">{card.word}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (gameState.phase === 'REVIEW') {
+    const winnerColor = gameState.winner;
+    const isWin = winnerColor === myTeam;
+
+    const returnToLobby = async () => {
+      if (lobby.settings.globalLeaderboard && winnerColor) {
+        const winningTeamIds = gameState.teams[winnerColor] || [];
+        let newPlayers = [...players].map(p => {
+          if (winningTeamIds.includes(p.id)) {
+            return { ...p, globalScore: p.globalScore + 5 }; // +5 Punkte für Sieg
+          }
+          return p;
+        });
+        await updateLobbyStatus('LOBBY_WAITING', null, { players: newPlayers, gameState: {} });
+      } else {
+        await updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} });
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-8 flex flex-col items-center justify-center relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} hideHostButton={true} />
+        <h2 className="text-4xl sm:text-5xl font-black mb-4 uppercase tracking-widest text-center">
+          {winnerColor === 'red' ? <span className="text-red-500">Team Rot</span> : <span className="text-blue-500">Team Blau</span>} gewinnt!
+        </h2>
+        {myTeam && (
+          <p className={`text-2xl mb-8 text-center ${isWin ? 'text-green-400' : 'text-slate-500'}`}>
+            {isWin ? 'Glückwunsch, Agent!' : 'Mission gescheitert.'}
+          </p>
+        )}
+        <div className="w-full max-w-3xl grid grid-cols-5 gap-2 mb-10 opacity-70">
+          {(gameState.board || []).map((card, idx) => {
+            let cardBg = 'bg-slate-700';
+            if (card.color === 'red') cardBg = 'bg-red-500 text-white';
+            if (card.color === 'blue') cardBg = 'bg-blue-500 text-white';
+            if (card.color === 'neutral') cardBg = 'bg-amber-100 text-slate-800';
+            if (card.color === 'black') cardBg = 'bg-slate-950 text-white';
+
+            return <div key={idx} className={`flex items-center justify-center p-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase text-center break-words ${cardBg}`}>{card.word}</div>;
+          })}
+        </div>
+        {isHost && (
+          <button onClick={returnToLobby} className="bg-slate-700 hover:bg-slate-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-all active:scale-95 text-lg">
+            Zurück zur Lobby
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+</file>
+
+<file path="src/games/StadtLandFlussEngine.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Settings, Dices, List, Trash2, Plus, X, ThumbsDown, Files, Trophy } from 'lucide-react';
+
+import GameHeader from '../components/GameHeader';
+import { ALPHABET } from '../utils/helpers';
+
+export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
+  const { gameState, players, id: lobbyCode } = lobby;
+  const [localAnswers, setLocalAnswers] = useState({});
+
+  // Use strings to allow empty inputs in settings
+  const [setupRounds, setSetupRounds] = useState('3');
+  const [setupTimer, setSetupTimer] = useState('90');
+  
+  const [setupCategories, setSetupCategories] = useState(['Stadt', 'Land', 'Fluss']);
+  const [newCatInput, setNewCatInput] = useState('');
+  const [excludedLetters, setExcludedLetters] = useState([]);
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [modalSelectedCats, setModalSelectedCats] = useState([]);
+  
+  const randomCategories = ['Marke', 'Automarke', 'Beruf', 'Tiere', 'Promi', 'Sänger', 'Fußballer', 'Schauspieler', 'Film', 'Serie', 'Film/Serie', 'Vorname', 'Nachname', 'Lebensmittel', 'Getränke', 'Grund für Verspätung'];
+
+  useEffect(() => {
+    if (gameState.phase === 'STARTING') setLocalAnswers({});
+  }, [gameState.phase]);
+
+  // Synchronized Start Logic
+  const [startingCountdown, setStartingCountdown] = useState(3);
+  useEffect(() => {
+    if (gameState.phase === 'STARTING') {
+      const interval = setInterval(() => {
+        const remaining = Math.ceil((gameState.startTimestamp - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearInterval(interval);
+          if (isHost) {
+            updateDoc(doc(db, 'lobbies', lobbyCode), {
+              'gameState.phase': 'PLAYING',
+              'gameState.playingStartTime': Date.now()
+            });
+          }
+        } else {
+          setStartingCountdown(remaining);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [gameState.phase, gameState.startTimestamp, isHost, lobbyCode, db]);
+
+  // Synchronized Playing Timer
+  const [timeLeft, setTimeLeft] = useState(gameState.timerLimit || 90);
+  useEffect(() => {
+    if (gameState.phase === 'PLAYING' && gameState.playingStartTime) {
+      setTimeLeft(gameState.timerLimit);
+      const interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - gameState.playingStartTime) / 1000);
+        const remaining = Math.max(0, (gameState.timerLimit || 90) - elapsed);
+        setTimeLeft(remaining);
+        
+        // Host automatically ends round when time runs out
+        if (remaining <= 0 && isHost) {
+          triggerRoundEnd();
+        }
+      }, 250);
+      return () => clearInterval(interval);
+    }
+  }, [gameState.phase, gameState.playingStartTime, gameState.timerLimit, isHost]);
+
+  // Submitting Phase: Everyone pushes answers automatically when phase turns to SUBMITTING
+  const localAnswersRef = useRef(localAnswers);
+  useEffect(() => {
+    localAnswersRef.current = localAnswers;
+  }, [localAnswers]);
+
+  useEffect(() => {
+    if (gameState.phase === 'SUBMITTING') {
+      const lobbyRef = doc(db, 'lobbies', lobbyCode);
+      // Auto-submit local data
+      updateDoc(lobbyRef, {
+        [`gameState.answers.${user.uid}`]: localAnswersRef.current
+      });
+      
+      // Host waits 2.5s for everyone to sync, then moves to REVIEW
+      if (isHost) {
+        const timer = setTimeout(() => {
+          endRound();
+        }, 2500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [gameState.phase, isHost, lobbyCode, db, user.uid]);
+
+  const addRandomCategory = () => {
+    const available = randomCategories.filter(c => !setupCategories.includes(c));
+    if (available.length === 0) return;
+    setSetupCategories([...setupCategories, available[Math.floor(Math.random() * available.length)]]);
+  };
+
+  const addCategory = (e) => {
+    e.preventDefault();
+    const cat = newCatInput.trim();
+    if (cat && !setupCategories.includes(cat)) {
+      setSetupCategories([...setupCategories, cat]);
+      setNewCatInput('');
+    }
+  };
+
+  const removeCategory = (cat) => setSetupCategories(setupCategories.filter(c => c !== cat));
+
+  const toggleModalCat = (cat) => {
+    if (modalSelectedCats.includes(cat)) setModalSelectedCats(modalSelectedCats.filter(c => c !== cat));
+    else setModalSelectedCats([...modalSelectedCats, cat]);
+  };
+
+  const confirmModalCats = () => {
+    const newCats = modalSelectedCats.filter(c => !setupCategories.includes(c));
+    setSetupCategories([...setupCategories, ...newCats]);
+    setShowCatModal(false);
+    setModalSelectedCats([]);
+  };
+
+  const toggleLetter = (letter) => {
+    if (excludedLetters.includes(letter)) setExcludedLetters(excludedLetters.filter(l => l !== letter));
+    else setExcludedLetters([...excludedLetters, letter]);
+  };
+
+  const getValidLetter = (excluded) => {
+    const available = ALPHABET.filter(l => !excluded.includes(l));
+    if (available.length === 0) return 'A';
+    return available[Math.floor(Math.random() * available.length)];
+  };
+
+  const startGame = async () => {
+    if (setupCategories.length === 0) return alert('Bitte wähle mindestens eine Kategorie.');
+    
+    let finalRounds = parseInt(setupRounds, 10);
+    if (isNaN(finalRounds) || finalRounds < 1) finalRounds = 3;
+    
+    let finalTimer = parseInt(setupTimer, 10);
+    if (isNaN(finalTimer)) finalTimer = 90;
+    finalTimer = Math.max(30, Math.min(240, finalTimer));
+
+    const letter = getValidLetter(excludedLetters);
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    
+    await updateDoc(lobbyRef, {
+      'gameState.categories': setupCategories,
+      'gameState.maxRounds': finalRounds,
+      'gameState.timerLimit': finalTimer,
+      'gameState.currentRound': 1,
+      'gameState.excludedLetters': excludedLetters,
+      'gameState.letter': letter,
+      'gameState.phase': 'STARTING',
+      'gameState.startTimestamp': Date.now() + 4000,
+      'gameState.answers': {},
+      'gameState.votes': {}
+    });
+  };
+
+  const nextRound = async () => {
+    const letter = getValidLetter(gameState.excludedLetters || []);
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const { roundScores } = calculateDynamicScores();
+    const updatedGameScores = { ...(gameState.gameScores || {}) };
+    players.forEach(p => {
+      updatedGameScores[p.id] = (updatedGameScores[p.id] || 0) + (roundScores[p.id] || 0);
+    });
+
+    await updateDoc(lobbyRef, {
+      'gameState.gameScores': updatedGameScores,
+      'gameState.currentRound': gameState.currentRound + 1,
+      'gameState.letter': letter,
+      'gameState.phase': 'STARTING',
+      'gameState.startTimestamp': Date.now() + 4000,
+      'gameState.answers': {},
+      'gameState.votes': {}
+    });
+  };
+
+  // Triggers end of round for everyone instantly
+  const triggerRoundEnd = async () => {
+    if (gameState.phase !== 'PLAYING') return;
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, {
+      'gameState.phase': 'SUBMITTING'
+    });
+  };
+
+  const endRound = async () => {
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const initialVotes = {};
+    const categories = gameState.categories || [];
+    players.forEach(p => {
+      initialVotes[p.id] = {};
+      categories.forEach(cat => {
+        initialVotes[p.id][cat] = { reject: [], duplicate: [] };
+      });
+    });
+
+    await updateDoc(lobbyRef, {
+      'gameState.phase': 'REVIEW',
+      'gameState.votes': initialVotes
+    });
+  };
+
+  const toggleVote = async (targetPid, cat, type) => {
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const currentVotes = gameState.votes?.[targetPid]?.[cat]?.[type] || [];
+    let newVotes = currentVotes.includes(user.uid) ? currentVotes.filter(uid => uid !== user.uid) : [...currentVotes, user.uid];
+    await updateDoc(lobbyRef, { [`gameState.votes.${targetPid}.${cat}.${type}`]: newVotes });
+  };
+
+  const calculateDynamicScores = () => {
+    const roundScores = {};
+    const detailedScores = {};
+    const threshold = Math.floor(players.length / 2) + 1;
+
+    players.forEach(p => { roundScores[p.id] = 0; detailedScores[p.id] = {}; });
+
+    const categories = gameState.categories || [];
+    const allAnswers = gameState.answers || {};
+
+    categories.forEach(cat => {
+      const validAnswers = {};
+      const explicitDuplicates = {};
+
+      Object.entries(allAnswers).forEach(([pid, ansObj]) => {
+        const word = ansObj[cat]?.trim().toLowerCase();
+        const votes = gameState.votes?.[pid]?.[cat] || { reject: [], duplicate: [] };
+        
+        const isRejected = votes.reject.length >= threshold;
+        const isExplicitDuplicate = votes.duplicate.length >= threshold;
+
+        if (word && word.startsWith((gameState.letter || '').toLowerCase()) && !isRejected) {
+          validAnswers[pid] = word;
+          if (isExplicitDuplicate) explicitDuplicates[pid] = true;
+        }
+      });
+
+      const validCount = Object.keys(validAnswers).length;
+
+      Object.entries(validAnswers).forEach(([pid, word]) => {
+        const sameWordCount = Object.values(validAnswers).filter(w => w === word).length;
+        const isDuplicate = sameWordCount > 1 || explicitDuplicates[pid];
+        let pts = isDuplicate ? 5 : (validCount === 1 ? 20 : 10);
+        roundScores[pid] += pts;
+        detailedScores[pid][cat] = pts;
+      });
+    });
+
+    return { roundScores, detailedScores };
+  };
+
+  if (gameState.phase === 'SETUP') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+        
+        {showCatModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-xl font-bold">Kategorien auswählen</h4>
+                <button onClick={() => setShowCatModal(false)} className="text-slate-400 hover:text-white"><X size={24} /></button>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-8 max-h-[50vh] overflow-y-auto pr-2">
+                {randomCategories.map(c => (
+                  <button key={c} onClick={() => toggleModalCat(c)} className={`px-4 py-2 rounded-xl border text-sm transition-all ${modalSelectedCats.includes(c) ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/30' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}`}>{c}</button>
+                ))}
+              </div>
+              <div className="flex justify-end gap-3">
+                <button onClick={() => setShowCatModal(false)} className="px-5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-700 transition-colors">Abbrechen</button>
+                <button onClick={confirmModalCats} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg">Hinzufügen</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <h2 className="text-4xl font-bold mb-2 text-purple-400 mt-8">Stadt Land Fluss</h2>
+        
+        {isHost ? (
+          <div className="w-full max-w-3xl bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mt-6">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Settings size={20} className="text-indigo-400" /> Spieleinstellungen</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Anzahl der Runden</label>
+                <input type="text" inputMode="numeric" value={setupRounds} onChange={(e) => setSetupRounds(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Timer (Sekunden)</label>
+                <input type="text" inputMode="numeric" value={setupTimer} onChange={(e) => setSetupTimer(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
+                <p className="text-xs text-slate-500 mt-1">Zwischen 30s und 240s</p>
+              </div>
+
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Ausgeschlossen ({excludedLetters.length})</label>
+                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                  {ALPHABET.map(l => (
+                    <button key={l} onClick={() => toggleLetter(l)} className={`w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition-colors ${excludedLetters.includes(l) ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>{l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 gap-2">
+                <label className="block text-sm font-medium text-slate-400">Kategorien ({setupCategories.length})</label>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={addRandomCategory} className="text-xs flex items-center gap-1 bg-purple-600/20 text-purple-400 hover:bg-purple-600/40 px-3 py-1.5 rounded-lg transition-colors"><Dices size={14} /> Zufall</button>
+                  <button onClick={() => setShowCatModal(true)} className="text-xs flex items-center gap-1 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/40 px-3 py-1.5 rounded-lg transition-colors"><List size={14} /> Aus Liste</button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {setupCategories.map(cat => (
+                  <div key={cat} className="flex items-center gap-2 bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-lg text-sm">
+                    <span>{cat}</span>
+                    <button onClick={() => removeCategory(cat)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={addCategory} className="flex gap-2">
+                <input type="text" value={newCatInput} onChange={(e) => setNewCatInput(e.target.value)} placeholder="Neue Kategorie..." className="flex-grow bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+                <button type="submit" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl flex items-center gap-1 transition-colors"><Plus size={18} /> <span className="hidden sm:inline">Hinzufügen</span></button>
+              </form>
+            </div>
+
+            <div className="flex gap-4 w-full">
+              <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="w-1/3 bg-slate-700 hover:bg-slate-600 text-white px-4 py-4 rounded-2xl font-bold transition-all active:scale-95">Zurück</button>
+              <button onClick={startGame} className="w-2/3 bg-purple-600 hover:bg-purple-500 text-white px-4 py-4 rounded-2xl font-bold text-xl shadow-lg transition-all active:scale-95">Spiel starten</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4 mt-8">
+            <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
+              <span className="animate-pulse">Der Host konfiguriert das Spiel...</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Countdown view right before the round officially starts
+  if (gameState.phase === 'STARTING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-slate-400">Runde {gameState.currentRound} startet in...</h2>
+        <div className="text-8xl sm:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-500 animate-pulse drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]">
+          {startingCountdown > 0 ? startingCountdown : 'LOS!'}
+        </div>
+      </div>
+    );
+  }
+
+  // During the game (answering)
+  if (gameState.phase === 'PLAYING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-2xl" />
+        <div className="max-w-2xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <div className="inline-block bg-slate-800 border border-slate-700 px-4 py-1.5 rounded-full text-slate-400 text-sm font-medium">
+              Runde {gameState.currentRound} von {gameState.maxRounds}
+            </div>
+            
+            {/* Countdown Timer Display */}
+            <div className={`text-2xl font-black tabular-nums tracking-wider px-4 py-1.5 rounded-lg border ${timeLeft <= 10 ? 'text-red-400 border-red-500/50 bg-red-500/10 animate-pulse' : 'text-slate-200 border-slate-700 bg-slate-800'}`}>
+               {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+          
+          <div className="text-center mb-6">
+            <p className="text-slate-400 font-medium uppercase tracking-widest text-sm mb-2">Der Buchstabe ist</p>
+            <div className="w-28 h-28 sm:w-32 sm:h-32 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center text-6xl sm:text-7xl font-black shadow-2xl shadow-purple-900/40">
+              {gameState.letter}
+            </div>
+          </div>
+
+          <div className="space-y-4 bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-xl">
+            {(gameState.categories || []).map((category) => (
+              <div key={category}>
+                <label className="block text-sm font-medium text-slate-400 mb-1 pl-1">{category}</label>
+                <input 
+                  type="text" 
+                  value={localAnswers[category] || ''} 
+                  onChange={(e) => setLocalAnswers({...localAnswers, [category]: e.target.value})} 
+                  placeholder={`${gameState.letter}...`} 
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-lg"
+                />
+              </div>
+            ))}
+            
+            <button 
+              onClick={triggerRoundEnd} 
+              className="w-full mt-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-green-900/20"
+            >
+              Fertig! (Beendet Runde für alle)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Grace period to sync all answers to the server
+  if (gameState.phase === 'SUBMITTING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-6"></div>
+        <h2 className="text-3xl font-bold text-slate-200 mb-2">Runde beendet!</h2>
+        <p className="text-slate-400 text-center">Eingaben werden synchronisiert...<br/>Bitte warten.</p>
+      </div>
+    );
+  }
+
+  // Review & Voting Phase
+  if (gameState.phase === 'REVIEW') {
+    const { roundScores, detailedScores } = calculateDynamicScores();
+    const threshold = Math.floor(players.length / 2) + 1;
+    const isLastRound = gameState.currentRound >= gameState.maxRounds;
+
+    const baseScores = gameState.gameScores || {};
+    const displayScores = {};
+    players.forEach(p => { displayScores[p.id] = (baseScores[p.id] || 0) + (roundScores[p.id] || 0); });
+    
+    // Function to calculate exact ranks with ties
+    const getRankedPlayers = (scores) => {
+      const sorted = [...players].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
+      let currentRank = 1;
+      return sorted.map((p, i) => {
+        if (i > 0 && (scores[p.id] || 0) < (scores[sorted[i - 1].id] || 0)) {
+          currentRank = i + 1;
+        }
+        return { ...p, rank: currentRank, roundScore: scores[p.id] || 0 };
+      });
+    };
+    
+    const rankedPlayers = getRankedPlayers(displayScores);
+
+    // Host Action: Go to final results instead of directly to lobby
+    const showFinalResults = async () => {
+      const finalGameScores = { ...(gameState.gameScores || {}) };
+      players.forEach(p => { 
+        finalGameScores[p.id] = (finalGameScores[p.id] || 0) + (roundScores[p.id] || 0); 
+      });
+
+      await updateDoc(doc(db, 'lobbies', lobbyCode), {
+        'gameState.phase': 'FINAL_RESULTS',
+        'gameState.gameScores': finalGameScores
+      });
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
+         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-5xl" />
+         <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2">Runden-Ergebnisse</h2>
+              <p className="text-slate-400">Runde {gameState.currentRound} von {gameState.maxRounds} — <b>Abstimmungs-Phase</b> ({threshold} Votes für Mehrheit benötigt)</p>
+            </div>
+
+            <div className={`grid grid-cols-1 ${!isLastRound ? 'lg:grid-cols-3' : ''} gap-8`}>
+              <div className={`${!isLastRound ? 'lg:col-span-2' : 'w-full'} bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit`}>
+                <h3 className="text-xl font-bold mb-6 border-b border-slate-700 pb-2">Eingereichte Antworten & Voting</h3>
+                
+                <div className="space-y-8">
+                  {(gameState.categories || []).map(cat => (
+                    <div key={cat} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50 shadow-md">
+                      <h4 className="text-xl font-bold text-purple-300 mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2">
+                        <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-lg">{cat}</span>
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {players.map(p => {
+                          const pId = p.id;
+                          const ans = gameState.answers?.[pId] || {};
+                          const word = ans[cat]?.trim();
+                          const detailPts = detailedScores[pId]?.[cat] || 0;
+                          
+                          const votes = gameState.votes?.[pId]?.[cat] || { reject: [], duplicate: [] };
+                          const isRejected = votes.reject.length >= threshold;
+                          const isDuplicate = votes.duplicate.length >= threshold;
+                          const myReject = votes.reject.includes(user.uid);
+                          const myDupe = votes.duplicate.includes(user.uid);
+
+                          return (
+                            <div key={pId} className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2 relative">
+                              <div className="flex justify-between items-center mb-1">
+                                 <span className="text-xs font-medium text-slate-400">{p.name} {pId === user.uid && '(Du)'}</span>
+                                 {word && <span className={`text-[11px] font-bold shrink-0 px-2 py-0.5 rounded ${detailPts > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{detailPts > 0 ? `+${detailPts}` : '0'}</span>}
+                              </div>
+                              
+                              <div className="flex justify-between items-start gap-2 min-h-[1.5rem]">
+                                <span className={`break-words block font-medium text-lg ${isRejected ? 'line-through text-slate-600' : isDuplicate ? 'text-orange-300' : 'text-slate-200'}`} title={word || '-'}>{word || '-'}</span>
+                              </div>
+                              
+                              {word && (
+                                <div className="flex gap-2 mt-2 border-t border-slate-700/50 pt-2">
+                                  <button onClick={() => toggleVote(pId, cat, 'reject')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${myReject ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes nötig`}>
+                                    <ThumbsDown size={14} /> {votes.reject.length > 0 && `${votes.reject.length}/${threshold}`}
+                                  </button>
+                                  <button onClick={() => toggleVote(pId, cat, 'duplicate')} className={`flex-1 flex justify-center items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${myDupe ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-slate-700/50 text-slate-400 hover:bg-slate-600 border border-transparent'}`} title={`${threshold} Votes für Dopplung`}>
+                                    <Files size={14} /> {votes.duplicate.length > 0 && `${votes.duplicate.length}/${threshold}`}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hide Live Ranking on the very last round to keep tension */}
+              {!isLastRound && (
+                <div className="lg:col-span-1 bg-slate-800 rounded-3xl p-6 border border-slate-700 h-fit">
+                  <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Live-Ranking</h3>
+                  <div className="space-y-2">
+                    {rankedPlayers.map((p) => (
+                      <div key={p.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${p.rank === 1 ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' : 'bg-slate-900/50 text-slate-200'}`}>
+                        <div className="flex items-center gap-3"><span className="font-bold opacity-50">#{p.rank}</span><span className="font-medium">{p.name} {p.id === user.uid && '(Du)'}</span></div>
+                        <span className="font-mono font-bold text-lg">{p.roundScore} Pkt</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {isHost && (
+              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-medium transition-colors">Spiel abbrechen</button>
+                {isLastRound ? (
+                  <button onClick={showFinalResults} className="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95 text-lg">Zu den Endergebnissen</button>
+                ) : (
+                  <button onClick={nextRound} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95">Nächste Runde ({gameState.currentRound + 1}/{gameState.maxRounds})</button>
+                )}
+              </div>
+            )}
+            {!isHost && <p className="mt-10 text-center text-slate-500">Warte auf Host für die nächste Aktion...</p>}
+         </div>
+      </div>
+    );
+  }
+
+  // FINAL RESULTS (Podium) Phase
+  if (gameState.phase === 'FINAL_RESULTS') {
+    const finalScores = gameState.gameScores || {};
+    
+    // Compute exact rankings with ties
+    const getFinalRankings = (scores) => {
+      const sorted = [...players].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
+      let currentRank = 1;
+      return sorted.map((p, i) => {
+        if (i > 0 && (scores[p.id] || 0) < (scores[sorted[i - 1].id] || 0)) {
+          currentRank = i + 1;
+        }
+        return { ...p, rank: currentRank, finalScore: scores[p.id] || 0 };
+      });
+    };
+    
+    const finalRankedPlayers = getFinalRankings(finalScores);
+
+    const distributePointsAndReturnToLobby = async () => {
+      if (lobby.settings.globalLeaderboard) {
+        let newPlayers = [...players].map(p => {
+          const r = finalRankedPlayers.find(rp => rp.id === p.id);
+          let addedPoints = 0;
+          if (r) {
+            if (r.rank === 1) addedPoints = 5;
+            else if (r.rank === 2) addedPoints = 3;
+            else if (r.rank === 3) addedPoints = 1;
+          }
+          return { ...p, globalScore: p.globalScore + addedPoints };
+        });
+        await updateLobbyStatus('LOBBY_WAITING', null, { players: newPlayers, gameState: {} });
+      } else {
+        await updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} });
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 relative">
+         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-3xl" hideHostButton={true} />
+         <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <div className="text-center mb-10 mt-6">
+              <h2 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4 tracking-wider uppercase drop-shadow-md">Endergebnisse</h2>
+              <p className="text-slate-400 text-lg">Das Spiel ist vorbei! Hier ist die finale Platzierung.</p>
+            </div>
+
+            <div className="w-full bg-slate-800 rounded-3xl p-6 sm:p-10 border border-slate-700 shadow-2xl mb-10 space-y-4">
+              {finalRankedPlayers.map((p) => {
+                let rowBg = 'bg-slate-900/50 text-slate-400 border-slate-700/50';
+                if (p.rank === 1) rowBg = 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.2)]';
+                else if (p.rank === 2) rowBg = 'bg-slate-300/20 border-slate-300/50 text-slate-200';
+                else if (p.rank === 3) rowBg = 'bg-orange-600/20 border-orange-600/50 text-orange-300';
+
+                return (
+                  <div key={p.id} className={`flex justify-between items-center p-5 rounded-2xl border transition-all ${rowBg}`}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl font-black opacity-80 w-10">#{p.rank}</span>
+                      <span className="text-xl font-bold">{p.name} {p.id === user.uid && '(Du)'}</span>
+                    </div>
+                    <span className="text-2xl font-mono font-black">{p.finalScore} <span className="text-sm font-medium opacity-70">Pkt</span></span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {isHost ? (
+              <button onClick={distributePointsAndReturnToLobby} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-xl transition-all active:scale-95">
+                Punkte verteilen & Zurück zur Lobby
+              </button>
+            ) : (
+              <p className="text-slate-500 italic text-lg">Warte auf Host für die Rückkehr zur Lobby...</p>
+            )}
+         </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+</file>
+
+<file path="src/games/WerwolfEngine.jsx">
+import React, { useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Sun, Moon, RefreshCw, Skull, List, Heart, HeartHandshake } from 'lucide-react';
+
+import GameHeader from '../components/GameHeader';
+import { WERWOLF_ROLES } from '../constants/gameData';
+import { shuffleArray } from '../utils/helpers';
+
+export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
+  const { gameState, players, id: lobbyCode } = lobby;
+  
+  // Phase: SETUP
+  if (gameState.phase === 'SETUP') {
+    const [narratorId, setNarratorId] = useState(user.uid);
+    const [roleCounts, setRoleCounts] = useState({ WERWOLF: 1, DORFBEWOHNER: 1, SEHERIN: 1, HEXE: 0, AMOR: 0, JAEGER: 0 });
+
+    const totalSelected = Object.values(roleCounts).reduce((a,b)=>a+b,0);
+    const requiredRoles = Math.max(1, players.length - 1); // Brauchen mind 1 Rolle für Tests, normal players.length - 1
+    const isReady = totalSelected === requiredRoles;
+
+    const updateRoleCount = (roleId, delta) => {
+        setRoleCounts(prev => {
+            const val = Math.max(0, (prev[roleId] || 0) + delta);
+            return { ...prev, [roleId]: val };
+        });
+    };
+
+    const startGame = async () => {
+        if (!isReady) return;
+
+        const activePlayers = players.filter(p => p.id !== narratorId);
+        
+        const rolesPool = [];
+        Object.entries(roleCounts).forEach(([roleId, count]) => {
+            for(let i=0; i<count; i++) rolesPool.push(roleId);
+        });
+        
+        const shuffledRoles = shuffleArray(rolesPool);
+        const playerState = {};
+        
+        activePlayers.forEach((p, idx) => {
+            playerState[p.id] = {
+                role: shuffledRoles[idx],
+                alive: true,
+                inLove: false,
+                deathReason: null
+            };
+        });
+
+        await updateDoc(doc(db, 'lobbies', lobbyCode), {
+            'gameState.phase': 'PLAYING',
+            'gameState.narrator': narratorId,
+            'gameState.dayNumber': 1,
+            'gameState.isDay': false, // Beginnt mit der Nacht
+            'gameState.playerState': playerState,
+            'gameState.recentDeaths': [],
+            'gameState.witchState': { healUsed: false, poisonUsed: false }
+        });
+    };
+
+    if (!isHost) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8 relative">
+           <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+           <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
+              <span className="animate-pulse">Der Host konfiguriert die Rollen für das Dorf...</span>
+           </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col relative">
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
+        
+        <div className="max-w-4xl mx-auto w-full mt-6">
+          <div className="text-center mb-8">
+            <h2 className="text-4xl font-black tracking-widest text-indigo-400 uppercase">Werwolf</h2>
+            <p className="text-slate-400 mt-2">Wähle einen Erzähler und konfiguriere die Rollen.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+              <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-2">1. Erzähler bestimmen</h3>
+              <p className="text-sm text-slate-400 mb-4">Der Erzähler leitet das Spiel durch die App und bekommt keine eigene Rolle.</p>
+              <select 
+                value={narratorId} 
+                onChange={(e) => setNarratorId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {players.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} {p.id === user.uid && '(Du)'}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+              <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                 <h3 className="text-xl font-bold">2. Rollen verteilen</h3>
+                 <span className={`px-3 py-1 rounded-full text-sm font-bold ${isReady ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {totalSelected} / {requiredRoles}
+                 </span>
+              </div>
+              
+              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                {Object.values(WERWOLF_ROLES).map(role => (
+                  <div key={role.id} className={`flex items-center justify-between p-3 rounded-xl border border-slate-700 bg-slate-900/50`}>
+                    <div>
+                      <span className={`font-bold ${role.color}`}>{role.name}</span>
+                    </div>
+                    <div className="flex items-center bg-slate-800 border border-slate-600 rounded-lg overflow-hidden shrink-0 h-10">
+                      <button onClick={() => updateRoleCount(role.id, -1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">-</button>
+                      <div className="w-8 font-bold text-white text-center text-sm">{roleCounts[role.id] || 0}</div>
+                      <button onClick={() => updateRoleCount(role.id, 1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex gap-4">
+            <button onClick={() => updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })} className="w-1/3 bg-slate-700 hover:bg-slate-600 text-white px-6 py-4 rounded-2xl font-bold transition-all active:scale-95 text-lg">
+              Abbrechen
+            </button>
+            <button 
+              onClick={startGame} 
+              disabled={!isReady}
+              className={`w-2/3 px-8 py-4 rounded-2xl font-bold shadow-lg transition-all text-xl ${isReady ? 'bg-indigo-600 hover:bg-indigo-500 text-white active:scale-95' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            >
+              {isReady ? 'Spiel starten' : 'Rollenanzahl anpassen!'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Phase: PLAYING (Narrator View vs Player View)
+  if (gameState.phase === 'PLAYING') {
+    const isNarrator = user.uid === gameState.narrator;
+    const isDay = gameState.isDay;
+
+    // --- Narrator Dashboard ---
+    if (isNarrator) {
+      const activePlayers = players.filter(p => p.id !== gameState.narrator);
+      
+      const toggleDayNight = async () => {
+        await updateDoc(doc(db, 'lobbies', lobbyCode), {
+            'gameState.isDay': !gameState.isDay,
+            ...(gameState.isDay ? {} : { 'gameState.dayNumber': gameState.dayNumber + 1 }),
+            ...(gameState.isDay ? { 'gameState.recentDeaths': [] } : {})
+        });
+      };
+
+      const setPlayerStatus = async (targetId, action, reason = null) => {
+        const newPlayerState = { ...gameState.playerState };
+        if (action === 'KILL') {
+            newPlayerState[targetId].alive = false;
+            newPlayerState[targetId].deathReason = reason;
+            const newRecentDeaths = [...(gameState.recentDeaths||[]), {id: targetId, reason}];
+            await updateDoc(doc(db, 'lobbies', lobbyCode), {
+                'gameState.playerState': newPlayerState,
+                'gameState.recentDeaths': newRecentDeaths
+            });
+        } else if (action === 'REVIVE') {
+            newPlayerState[targetId].alive = true;
+            newPlayerState[targetId].deathReason = null;
+            await updateDoc(doc(db, 'lobbies', lobbyCode), {
+                'gameState.playerState': newPlayerState
+            });
+        } else if (action === 'LOVE') {
+            newPlayerState[targetId].inLove = !newPlayerState[targetId].inLove;
+            await updateDoc(doc(db, 'lobbies', lobbyCode), {
+                'gameState.playerState': newPlayerState
+            });
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-8 flex flex-col relative">
+          <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} hideHostButton={true} />
+          
+          <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            {/* Sidebar: Phase Tracker & Summary */}
+            <div className="lg:col-span-1 flex flex-col gap-6">
+              <div className={`p-6 rounded-3xl border shadow-xl flex flex-col items-center text-center ${isDay ? 'bg-orange-950/30 border-orange-500/30' : 'bg-indigo-950/30 border-indigo-500/30'}`}>
+                {isDay ? <Sun size={48} className="text-yellow-500 mb-2" /> : <Moon size={48} className="text-indigo-400 mb-2" />}
+                <h2 className="text-2xl font-bold mb-1">{isDay ? 'Tag' : 'Nacht'} {gameState.dayNumber}</h2>
+                <p className="text-sm text-slate-400 mb-6">Du bist der Erzähler.</p>
+                <button 
+                  onClick={toggleDayNight}
+                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isDay ? 'bg-indigo-900 hover:bg-indigo-800 text-indigo-200' : 'bg-orange-600 hover:bg-orange-500 text-white'}`}
+                >
+                  <RefreshCw size={18} /> {isDay ? 'Nacht einleiten' : 'Tag einleiten'}
+                </button>
+              </div>
+
+              {isDay && (
+                <div className="bg-slate-900 p-5 rounded-3xl border border-slate-700 shadow-xl">
+                  <h3 className="font-bold text-slate-300 mb-3 flex items-center gap-2"><Skull size={18} className="text-red-400" /> Letzte Nacht starben:</h3>
+                  {(!gameState.recentDeaths || gameState.recentDeaths.length === 0) ? (
+                    <p className="text-sm text-slate-500 italic">Niemand ist gestorben.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {gameState.recentDeaths.map((d, i) => {
+                        const pName = activePlayers.find(p=>p.id===d.id)?.name || 'Unbekannt';
+                        return (
+                          <li key={i} className="text-sm bg-slate-800 p-2 rounded-lg border border-slate-700">
+                            <span className="font-bold text-red-400">{pName}</span> <br/>
+                            <span className="text-xs text-slate-500">Grund: {d.reason}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {!isDay && (
+                <div className="bg-slate-900 p-5 rounded-3xl border border-slate-700 shadow-xl">
+                  <h3 className="font-bold text-slate-300 mb-4">Ablauf der Nacht:</h3>
+                  <div className="space-y-2 text-sm">
+                    {gameState.dayNumber === 1 && <div className="p-2 bg-slate-800 rounded border-l-2 border-rose-500">1. Amor (Liebespaar wählen)</div>}
+                    {gameState.dayNumber === 1 && <div className="p-2 bg-slate-800 rounded border-l-2 border-pink-300">2. Liebespaar (sich erkennen)</div>}
+                    <div className="p-2 bg-slate-800 rounded border-l-2 border-purple-500">3. Seherin (erwacht)</div>
+                    <div className="p-2 bg-slate-800 rounded border-l-2 border-red-500">4. Werwölfe (Opfer wählen)</div>
+                    <div className="p-2 bg-slate-800 rounded border-l-2 border-pink-500">5. Hexe (Heilen / Vergiften)</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Main Area: Master-List */}
+            <div className="lg:col-span-3 bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+              <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                <h3 className="text-2xl font-bold flex items-center gap-2"><List className="text-indigo-400" /> Master-Liste</h3>
+                {isHost && (
+                    <button onClick={() => { if(window.confirm('Spiel wirklich für alle abbrechen?')) updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} }); }} className="text-xs bg-red-900/50 hover:bg-red-900 text-red-300 px-3 py-1.5 rounded transition-colors">
+                        Spiel abbrechen
+                    </button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {activePlayers.map(p => {
+                  const state = gameState.playerState[p.id];
+                  if (!state) return null;
+                  const roleObj = WERWOLF_ROLES[state.role];
+                  
+                  return (
+                    <div key={p.id} className={`p-4 rounded-2xl border transition-all ${state.alive ? 'bg-slate-900/80 border-slate-700' : 'bg-slate-950 border-red-900/30 opacity-75'}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <span className={`font-bold text-lg ${state.alive ? 'text-white' : 'text-slate-500 line-through'}`}>{p.name}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${roleObj?.bg} ${roleObj?.color}`}>{roleObj?.name}</span>
+                            {state.inLove && <Heart size={14} className="text-rose-500 fill-rose-500" title="Verliebt" />}
+                          </div>
+                        </div>
+                        {!state.alive && <Skull className="text-red-900" size={24} />}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap gap-2">
+                        {state.alive ? (
+                          <div className="w-full flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <button onClick={() => setPlayerStatus(p.id, 'KILL', 'Wolf')} className="flex-1 text-[10px] sm:text-xs bg-red-950 hover:bg-red-900 text-red-300 py-1.5 rounded transition-colors">💀 Wolf</button>
+                                <button onClick={() => setPlayerStatus(p.id, 'KILL', 'Hexe')} className="flex-1 text-[10px] sm:text-xs bg-pink-950 hover:bg-pink-900 text-pink-300 py-1.5 rounded transition-colors">💀 Hexe</button>
+                                <button onClick={() => setPlayerStatus(p.id, 'KILL', 'Voting')} className="flex-1 text-[10px] sm:text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 py-1.5 rounded transition-colors">💀 Dorf</button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setPlayerStatus(p.id, 'KILL', 'Liebeskummer')} className="flex-1 text-[10px] sm:text-xs bg-rose-950 hover:bg-rose-900 text-rose-300 py-1.5 rounded transition-colors">💀 Kummer</button>
+                                <button onClick={() => setPlayerStatus(p.id, 'KILL', 'Jäger')} className="flex-1 text-[10px] sm:text-xs bg-amber-950 hover:bg-amber-900 text-amber-300 py-1.5 rounded transition-colors">💀 Jäger</button>
+                                <button onClick={() => setPlayerStatus(p.id, 'LOVE')} className={`flex-1 text-[10px] sm:text-xs py-1.5 rounded transition-colors flex justify-center items-center gap-1 ${state.inLove ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+                                  <HeartHandshake size={12} /> Amor
+                                </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => setPlayerStatus(p.id, 'REVIVE')} className="w-full text-xs bg-green-900/30 hover:bg-green-900 text-green-400 py-2 rounded-lg transition-colors border border-green-500/20">
+                            Wiederbeleben (Fehler korrigieren)
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // --- Normal Player View ---
+    const myState = gameState.playerState[user.uid];
+    if (!myState) {
+        return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Lade Rolle...</div>;
+    }
+
+    const myRoleObj = WERWOLF_ROLES[myState.role];
+
+    return (
+      <div className={`min-h-screen text-white p-4 sm:p-8 flex flex-col items-center transition-colors duration-1000 ${gameState.isDay ? 'bg-orange-950/20' : 'bg-slate-950'}`}>
+        <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} hideHostButton={true} />
+        
+        <div className="max-w-2xl mx-auto w-full mt-10">
+          
+          <div className="text-center mb-10">
+            {gameState.isDay ? (
+               <Sun size={64} className="mx-auto text-yellow-500 mb-4 animate-[spin_10s_linear_infinite]" />
+            ) : (
+               <Moon size={64} className="mx-auto text-indigo-400 mb-4" />
+            )}
+            <h2 className="text-5xl font-black uppercase tracking-widest">{gameState.isDay ? 'Es ist Tag' : 'Es ist Nacht'}</h2>
+            <p className="text-slate-400 mt-2 text-lg">Höre auf den Erzähler.</p>
+          </div>
+
+          {!myState.alive ? (
+            <div className="bg-red-950/40 border border-red-900/50 rounded-3xl p-8 text-center shadow-2xl mb-8 relative overflow-hidden">
+              <Skull size={100} className="mx-auto text-red-900/20 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+              <h3 className="text-3xl font-bold text-red-500 relative z-10 mb-2">Du bist tot.</h3>
+              <p className="text-slate-300 relative z-10">Grund: {myState.deathReason}</p>
+              <p className="text-slate-500 text-sm mt-4 relative z-10">Du darfst nicht mehr sprechen oder abstimmen. Schließe nachts weiterhin die Augen.</p>
+            </div>
+          ) : (
+            <div className={`rounded-3xl p-8 text-center shadow-2xl mb-8 border border-slate-700 bg-slate-800`}>
+              <p className="text-slate-400 uppercase tracking-widest text-sm mb-2 font-bold">Deine geheime Rolle</p>
+              <h3 className={`text-4xl font-black mb-4 ${myRoleObj?.color}`}>{myRoleObj?.name}</h3>
+              <div className="w-16 h-1 bg-slate-700 mx-auto mb-4 rounded"></div>
+              <p className="text-slate-300 text-lg leading-relaxed">{myRoleObj?.description}</p>
+            </div>
+          )}
+
+          <div className="bg-slate-900/80 rounded-2xl p-6 border border-slate-800">
+            <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Das Dorf</h4>
+            <div className="flex flex-wrap gap-2">
+              {players.filter(p => p.id !== gameState.narrator).map(p => {
+                const s = gameState.playerState[p.id];
+                if (!s) return null;
+                return (
+                  <span key={p.id} className={`px-3 py-1.5 rounded-lg text-sm border ${s.alive ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-950 border-red-900/30 text-slate-600 line-through'}`}>
+                    {p.name} {p.id === user.uid && '(Du)'}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+</file>
+
+<file path="src/main.jsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+</file>
+
+<file path="src/utils/firebase.js">
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const getFirebaseConfig = () => {
+  if (typeof __firebase_config !== 'undefined') {
+    return JSON.parse(__firebase_config);
+  }
+  // Trage hier deine lokalen Firebase-Daten direkt ein
+  return {
+    apiKey: "AIzaSyCwRv6ZYW_EioY36FAfiqveGlB4u6TUIe8",
+    authDomain: "party-box-45d2b.firebaseapp.com",
+    projectId: "party-box-45d2b",
+    storageBucket: "party-box-45d2b.firebasestorage.app",
+    messagingSenderId: "694553735373",
+    appId: "1:694553735373:web:eb4d50f4fc244bd0de7984"
+  };
+};
+
+export const app = initializeApp(getFirebaseConfig());
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+</file>
+
+<file path="src/utils/helpers.js">
+export const generateLobbyCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+export const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+
+export const getRandomLetter = () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+
+export const shuffleArray = (array) => {
+  let newArr = [...array];
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+};
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+})
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>party-game</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="src/index.css">
+@import "tailwindcss";
+
+html, body {
+  background-color: #0f172a;
+}
+</file>
+
+<file path="src/App.jsx">
+import React, { useState, useEffect } from 'react';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { Users, Play, Trophy, Copy, Check, LogOut, Settings, AlertCircle, ArrowRight } from 'lucide-react';
+
+import { auth, db } from './utils/firebase';
+import { generateLobbyCode } from './utils/helpers';
+
+import GameHeader from './components/GameHeader';
+import CodenamesEngine from './games/CodenamesEngine';
+import StadtLandFlussEngine from './games/StadtLandFlussEngine';
+import WerwolfEngine from './games/WerwolfEngine';
+
+
+// --- Main App Component ---
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [lobbyCode, setLobbyCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
+  const [currentLobby, setCurrentLobby] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Initialize Auth & Check Active Session
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (err) {
+        console.error("Auth Error:", err);
+        setIsInitializing(false);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        try {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.currentLobby) {
+              const lobbyRef = doc(db, 'lobbies', userData.currentLobby);
+              const lobbySnap = await getDoc(lobbyRef);
+              
+              if (lobbySnap.exists()) {
+                const lobbyData = lobbySnap.data();
+                const isInLobby = lobbyData.players.some(p => p.id === currentUser.uid);
+                if (isInLobby) {
+                  setPlayerName(userData.name || '');
+                  setLobbyCode(userData.currentLobby);
+                } else {
+                  await updateDoc(userRef, { currentLobby: null });
+                }
+              } else {
+                await updateDoc(userRef, { currentLobby: null });
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Session restore error:", err);
+        }
+      }
+      setIsInitializing(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to Lobby Changes
+  useEffect(() => {
+    if (!user || !lobbyCode) return;
+
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const unsubscribe = onSnapshot(lobbyRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCurrentLobby(docSnap.data());
+      } else {
+        setCurrentLobby(null);
+        setLobbyCode('');
+        setErrorMsg('Lobby wurde geschlossen oder existiert nicht.');
+        updateDoc(doc(db, 'users', user.uid), { currentLobby: null }).catch(() => {});
+      }
+    }, (error) => {
+      console.error("Snapshot error:", error);
+      setErrorMsg('Verbindungsfehler zur Lobby.');
+    });
+
+    return () => unsubscribe();
+  }, [user, lobbyCode]);
+
+  // --- Actions ---
+  const handleCreateLobby = async (e) => {
+    e.preventDefault();
+    if (!user || !playerName.trim()) return setErrorMsg('Bitte gib einen Namen ein.');
+    
+    const newCode = generateLobbyCode();
+    const lobbyRef = doc(db, 'lobbies', newCode);
+    
+    const initialLobbyData = {
+      id: newCode,
+      hostId: user.uid,
+      status: 'LOBBY_WAITING',
+      currentGame: null,
+      settings: { globalLeaderboard: true },
+      players: [{ id: user.uid, name: playerName.trim(), isHost: true, globalScore: 0 }],
+      gameState: {}
+    };
+
+    try {
+      await setDoc(lobbyRef, initialLobbyData);
+      await setDoc(doc(db, 'users', user.uid), {
+        currentLobby: newCode,
+        name: playerName.trim()
+      }, { merge: true });
+      
+      setLobbyCode(newCode);
+      setErrorMsg('');
+    } catch (err) {
+      console.error("Fehler beim Erstellen:", err);
+      setErrorMsg('Fehler beim Erstellen der Lobby. Checke die Firebase Rules!');
+    }
+  };
+
+  const handleJoinLobby = async (e, joinCode) => {
+    e.preventDefault();
+    if (!user || !playerName.trim() || !joinCode.trim()) return setErrorMsg('Bitte fülle alle Felder aus.');
+    
+    const code = joinCode.toUpperCase().trim();
+    const lobbyRef = doc(db, 'lobbies', code);
+    
+    try {
+      const snap = await getDoc(lobbyRef);
+      if (!snap.exists()) {
+        return setErrorMsg('Lobby nicht gefunden.');
+      }
+      
+      const data = snap.data();
+      if (data.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) {
+        return setErrorMsg('Dieser Name ist bereits in der Lobby vergeben.');
+      }
+      
+      if (data.status !== 'LOBBY_WAITING') {
+        return setErrorMsg('Spiel läuft bereits. Beitritt nicht möglich.');
+      }
+
+      const updatedPlayers = [...data.players, { id: user.uid, name: playerName.trim(), isHost: false, globalScore: 0 }];
+      await updateDoc(lobbyRef, { players: updatedPlayers });
+      
+      await setDoc(doc(db, 'users', user.uid), {
+        currentLobby: code,
+        name: playerName.trim()
+      }, { merge: true });
+      
+      setLobbyCode(code);
+      setErrorMsg('');
+    } catch (err) {
+      console.error("Fehler beim Beitreten:", err);
+      setErrorMsg('Fehler beim Beitreten.');
+    }
+  };
+
+  const leaveLobby = async () => {
+    if (!currentLobby || !user) {
+      setLobbyCode('');
+      setCurrentLobby(null);
+      return;
+    }
+
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    const userRef = doc(db, 'users', user.uid);
+    
+    try {
+      const remainingPlayers = currentLobby.players.filter(p => p.id !== user.uid);
+
+      if (currentLobby.hostId === user.uid) {
+        if (remainingPlayers.length > 0) {
+          const randomIndex = Math.floor(Math.random() * remainingPlayers.length);
+          const newHostId = remainingPlayers[randomIndex].id;
+          
+          const updatedPlayers = remainingPlayers.map(p => 
+            p.id === newHostId ? { ...p, isHost: true } : p
+          );
+
+          await updateDoc(lobbyRef, {
+            hostId: newHostId,
+            players: updatedPlayers
+          });
+        }
+      } else {
+        await updateDoc(lobbyRef, { players: remainingPlayers });
+      }
+      
+      await updateDoc(userRef, { currentLobby: null });
+      setLobbyCode('');
+      setCurrentLobby(null);
+    } catch (err) {
+      console.error("Fehler beim Verlassen:", err);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard?.writeText(lobbyCode).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const updateLobbyStatus = async (status, game = null, additionalData = {}) => {
+    if (currentLobby?.hostId !== user?.uid) return;
+    const lobbyRef = doc(db, 'lobbies', lobbyCode);
+    await updateDoc(lobbyRef, { 
+      status, 
+      ...(game && { currentGame: game }),
+      ...additionalData
+    });
+  };
+
+  // --- Renderers ---
+  if (isInitializing) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 animate-pulse">Lade Sitzung...</div>;
+  }
+
+  if (!user) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Lade Authentifizierung...</div>;
+  }
+
+  // View: Welcome
+  if (!currentLobby) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-6 flex flex-col items-center justify-center">
+        <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-2">
+              Party Box
+            </h1>
+            <p className="text-slate-400">Multiplayer Minigames für Freunde</p>
+          </div>
+
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-200 text-sm">
+              <AlertCircle size={16} /> {errorMsg}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Dein Nickname</label>
+              <input 
+                type="text" 
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="z.B. PlayerOne"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              />
+            </div>
+
+            <div className="pt-4 border-t border-slate-700 space-y-4">
+              <button 
+                onClick={handleCreateLobby}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-purple-900/20"
+              >
+                <Play size={20} /> Neue Lobby erstellen
+              </button>
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-slate-700"></div>
+                <span className="flex-shrink-0 mx-4 text-slate-500 text-sm">ODER</span>
+                <div className="flex-grow border-t border-slate-700"></div>
+              </div>
+
+              <form onSubmit={(e) => {
+                const code = e.target.elements.code.value;
+                handleJoinLobby(e, code);
+              }} className="flex gap-2">
+                <input 
+                  name="code"
+                  type="text" 
+                  placeholder="Lobby Code (z.B. AB12)"
+                  maxLength={4}
+                  className="w-2/3 uppercase bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
+                />
+                <button 
+                  type="submit"
+                  className="w-1/3 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                >
+                  Beitreten
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isHost = currentLobby.hostId === user.uid;
+  const me = currentLobby.players.find(p => p.id === user.uid);
+
+  // View: Lobby Waiting
+  if (currentLobby.status === 'LOBBY_WAITING') {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8 bg-slate-800 p-4 rounded-2xl border border-slate-700">
+            <div>
+              <p className="text-slate-400 text-sm font-medium">Lobby Code</p>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-mono font-bold tracking-widest text-purple-400">{currentLobby.id}</h2>
+                <button 
+                  onClick={copyToClipboard}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300"
+                  title="Code kopieren"
+                >
+                  {copied ? <Check size={20} className="text-green-400" /> : <Copy size={20} />}
+                </button>
+              </div>
+            </div>
+            <button onClick={() => { if(window.confirm('Willst du die Lobby wirklich verlassen?')) leaveLobby(); }} className="text-red-400 hover:text-red-300 flex items-center gap-2 text-sm font-medium bg-red-400/10 px-4 py-2 rounded-lg transition-colors">
+              <LogOut size={16} /> Verlassen
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Players List */}
+            <div className="lg:col-span-1 bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2"><Users className="text-indigo-400" /> Spieler ({currentLobby.players.length})</h3>
+              </div>
+              <div className="space-y-3">
+                {currentLobby.players.map((p, idx) => (
+                  <div key={p.id} className={`p-4 rounded-xl flex items-center justify-between ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-slate-200">{p.name} {p.id === user.uid && '(Du)'}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {currentLobby.settings.globalLeaderboard && (
+                        <span className="text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded" title="Globale Punkte">{p.globalScore} Pkt</span>
+                      )}
+                      {p.isHost && <Trophy size={16} className="text-yellow-500" title="Host" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Game Selection */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <h3 className="text-xl font-bold flex items-center gap-2"><Play className="text-pink-400" /> Spielekatalog</h3>
+                  {isHost ? (
+                    <button 
+                      onClick={() => updateLobbyStatus(currentLobby.status, null, { settings: { ...currentLobby.settings, globalLeaderboard: !currentLobby.settings.globalLeaderboard } })}
+                      className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border transition-colors ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
+                    >
+                      <Settings size={14} />
+                      <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
+                    </button>
+                  ) : (
+                    <div className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-900'}`}>
+                      <Trophy size={14} />
+                      <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Game 1: MVP */}
+                  <div className={`p-5 rounded-2xl border-2 transition-all ${isHost ? 'cursor-pointer hover:border-purple-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900' : 'border-slate-700 bg-slate-900/30 opacity-70'}`}
+                       onClick={() => isHost && updateLobbyStatus('GAME_IN_PROGRESS', 'STADT_LAND_FLUSS', {
+                         gameState: { phase: 'SETUP', letter: '', answers: {}, readyPlayers: [], gameScores: {} }
+                       })}>
+                    <h4 className="font-bold text-lg text-purple-300 mb-1">Stadt Land Fluss</h4>
+                    <p className="text-sm text-slate-400 mb-4">Der Klassiker. Teste dein Wissen unter Zeitdruck!</p>
+                    {isHost ? (
+                      <span className="text-xs font-bold text-purple-400 uppercase flex items-center gap-1">Starten <ArrowRight size={14} /></span>
+                    ) : (
+                      <span className="text-xs text-slate-500">Warten auf Host...</span>
+                    )}
+                  </div>
+
+                  {/* Game 2: Codenames */}
+                  <div className={`p-5 rounded-2xl border-2 transition-all ${isHost ? 'cursor-pointer hover:border-red-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900' : 'border-slate-700 bg-slate-900/30 opacity-70'}`}
+                       onClick={() => isHost && updateLobbyStatus('GAME_IN_PROGRESS', 'CODENAMES', {
+                         gameState: { phase: 'TEAM_SETUP', teams: { red: [], blue: [] }, spymasters: { red: null, blue: null } }
+                       })}>
+                    <h4 className="font-bold text-lg text-red-400 mb-1">Codenames</h4>
+                    <p className="text-sm text-slate-400 mb-4">Top-Secret! Finde alle deine Agenten.</p>
+                    {isHost ? (
+                      <span className="text-xs font-bold text-red-400 uppercase flex items-center gap-1">Starten <ArrowRight size={14} /></span>
+                    ) : (
+                      <span className="text-xs text-slate-500">Warten auf Host...</span>
+                    )}
+                  </div>
+
+                  {/* Game 3: Werwolf */}
+                  <div className={`p-5 rounded-2xl border-2 transition-all ${isHost ? 'cursor-pointer hover:border-indigo-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900' : 'border-slate-700 bg-slate-900/30 opacity-70'}`}
+                       onClick={() => isHost && updateLobbyStatus('GAME_IN_PROGRESS', 'WERWOLF', {
+                         gameState: { phase: 'SETUP' }
+                       })}>
+                    <h4 className="font-bold text-lg text-indigo-400 mb-1">Werwolf</h4>
+                    <p className="text-sm text-slate-400 mb-4">Das Dorf schläft ein... Finde die Verräter!</p>
+                    {isHost ? (
+                      <span className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-1">Starten <ArrowRight size={14} /></span>
+                    ) : (
+                      <span className="text-xs text-slate-500">Warten auf Host...</span>
+                    )}
+                  </div>
+
+                  {/* Future Games */}
+                  {['Wer bin ich?'].map(game => (
+                    <div key={game} className="p-5 rounded-2xl border-2 border-slate-800 bg-slate-900/20 opacity-50 relative overflow-hidden">
+                      <div className="absolute top-2 right-2 bg-slate-800 text-xs px-2 py-1 rounded text-slate-400 font-medium">Coming Soon</div>
+                      <h4 className="font-bold text-lg text-slate-500 mb-1">{game}</h4>
+                      <p className="text-sm text-slate-600">In Entwicklung</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // View: Dynamic Game
+  if (currentLobby.status === 'GAME_IN_PROGRESS' && currentLobby.currentGame === 'STADT_LAND_FLUSS') {
+    return <StadtLandFlussEngine 
+             lobby={currentLobby} 
+             user={user} 
+             isHost={isHost} 
+             db={db} 
+             updateLobbyStatus={updateLobbyStatus} 
+             leaveLobby={leaveLobby}
+           />;
+  }
+
+  if (currentLobby.status === 'GAME_IN_PROGRESS' && currentLobby.currentGame === 'CODENAMES') {
+    return <CodenamesEngine 
+             lobby={currentLobby} 
+             user={user} 
+             isHost={isHost} 
+             db={db} 
+             updateLobbyStatus={updateLobbyStatus} 
+             leaveLobby={leaveLobby}
+           />;
+  }
+
+  if (currentLobby.status === 'GAME_IN_PROGRESS' && currentLobby.currentGame === 'WERWOLF') {
+    return <WerwolfEngine 
+             lobby={currentLobby} 
+             user={user} 
+             isHost={isHost} 
+             db={db} 
+             updateLobbyStatus={updateLobbyStatus} 
+             leaveLobby={leaveLobby}
+           />;
+  }
+
+  return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Ansicht...</div>;
+}
+</file>
+
+</files>
