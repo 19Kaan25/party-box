@@ -585,12 +585,12 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                     <div className="bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-2xl mb-10 text-left">
                         <div className="space-y-4">
                             {rankedPlayers.map((p, index) => {
-                                let rankDisplay = `#${p.rank}`;
+                                // Wenn nicht erraten, nimm einfach die Position in der Liste (index + 1)
+                                let rankDisplay = p.guessed ? `#${p.rank}` : `#${index + 1}`;
                                 let rowBg = 'bg-slate-900 border-slate-700 text-slate-300';
                                 let pts = 0;
 
                                 if (!p.guessed) {
-                                    rankDisplay = "Letzter";
                                     rowBg = 'bg-slate-950 border-red-900/30 text-slate-500 opacity-80';
                                 } else if (p.rank === 1) {
                                     rowBg = 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.2)]';

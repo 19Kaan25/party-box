@@ -8,7 +8,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { Users, Play, Trophy, Copy, Check, LogOut, Settings, AlertCircle, ArrowRight, Shield, Loader2, UserCircle, UserPlus, LogIn, Camera, X } from 'lucide-react';
+import { Users, Play, Trophy, Copy, Check, LogOut, Settings, AlertCircle, ArrowRight, Shield, Loader2, UserCircle, UserPlus, LogIn, Camera, X, Crown, UserMinus } from 'lucide-react';
 
 import { auth, db } from './utils/firebase';
 import { generateLobbyCode } from './utils/helpers';
@@ -22,7 +22,7 @@ import WerBinIchEngine from './games/WerBinIchEngine';
 // ==========================================
 // VERSIONSNUMMER - ÄNDERE DIESE ZAHL BEI JEDEM UPDATE!
 // ==========================================
-const APP_VERSION = "v1.0.4";
+const APP_VERSION = "v1.0.5";
 
 // ==========================================
 // 1. CUSTOM HOOK: useAuth (Backend/Auth Logik)
@@ -337,12 +337,35 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
+  const isHost = currentLobby?.hostId === user?.uid;
+
+  // AUTO-SYNC: Host sichert im Hintergrund die Punkte aller Spieler ab!
+  useEffect(() => {
+    if (isHost && currentLobby?.players && lobbyCode) {
+      const currentHistory = currentLobby.scoreHistory || {};
+      let changed = false;
+      const newHistory = { ...currentHistory };
+
+      currentLobby.players.forEach(p => {
+        if (p.globalScore > (newHistory[p.id] || 0)) {
+          newHistory[p.id] = p.globalScore;
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        updateDoc(doc(db, 'lobbies', lobbyCode), { scoreHistory: newHistory }).catch(()=>{});
+      }
+    }
+  }, [currentLobby?.players, isHost, lobbyCode]);
+
   useEffect(() => {
     if (userData?.name) {
       setPlayerName(userData.name);
     }
   }, [userData?.name]);
 
+  // Wenn man die Seite neu lädt, prüft die App, ob man noch Teil der aktuellen Lobby ist
   useEffect(() => {
     if (user && userData?.currentLobby) {
       const lobbyRef = doc(db, 'lobbies', userData.currentLobby);
@@ -351,18 +374,29 @@ export default function App() {
           setPlayerName(userData.name || '');
           setLobbyCode(userData.currentLobby);
         } else {
+          // Falls wir rausgeworfen wurden, setzen wir die Lobby zurück
           updateDoc(doc(db, 'users', user.uid), { currentLobby: null }).catch(()=>{});
         }
       });
     }
   }, [user, userData?.currentLobby]);
 
+  // Real-Time Listener für die Lobby
   useEffect(() => {
     if (!user || !lobbyCode) return;
     const lobbyRef = doc(db, 'lobbies', lobbyCode);
     const unsubscribe = onSnapshot(lobbyRef, (docSnap) => {
       if (docSnap.exists()) {
-        setCurrentLobby(docSnap.data());
+        const data = docSnap.data();
+        // Check, ob wir vom Host rausgeworfen wurden
+        if (!data.players.some(p => p.id === user.uid)) {
+          setCurrentLobby(null);
+          setLobbyCode('');
+          setErrorMsg('Du wurdest aus der Lobby entfernt.');
+          updateDoc(doc(db, 'users', user.uid), { currentLobby: null }).catch(() => {});
+        } else {
+          setCurrentLobby(data);
+        }
       } else {
         setCurrentLobby(null);
         setLobbyCode('');
@@ -393,6 +427,7 @@ export default function App() {
       status: 'LOBBY_WAITING',
       currentGame: null,
       settings: { globalLeaderboard: true },
+      scoreHistory: { [user.uid]: 0 }, // Punkte-Backup
       players: [{
         id: user.uid,
         name: playerName.trim(),
@@ -430,22 +465,36 @@ export default function App() {
       if (!snap.exists()) return setErrorMsg('Lobby nicht gefunden.');
 
       const data = snap.data();
-      if (data.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) {
-        return setErrorMsg('Dieser Name ist bereits in der Lobby vergeben.');
+      const existingPlayerIndex = data.players.findIndex(p => p.id === user.uid);
+
+      // RE-JOIN LOGIK: Wenn der Spieler schon drin ist (z.B. Tab geschlossen)
+      if (existingPlayerIndex !== -1) {
+        const updatedPlayers = [...data.players];
+        updatedPlayers[existingPlayerIndex].name = playerName.trim();
+        updatedPlayers[existingPlayerIndex].photoURL = userData?.photoURL || '/default-avatar.png';
+        await updateDoc(lobbyRef, { players: updatedPlayers });
+      } else {
+        // GANZ NEUER SPIELER:
+        if (data.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) {
+          return setErrorMsg('Dieser Name ist bereits in der Lobby vergeben.');
+        }
+        if (data.status !== 'LOBBY_WAITING') return setErrorMsg('Spiel läuft bereits.');
+
+        // Hole Punkte aus dem Backup, falls er vorher schon mal in dieser Lobby war!
+        const pastScore = data.scoreHistory?.[user.uid] || 0;
+
+        const updatedPlayers = [...data.players, {
+          id: user.uid,
+          name: playerName.trim(),
+          isHost: false,
+          globalScore: pastScore, // Alter Score wird wiederhergestellt
+          photoURL: userData?.photoURL || '/default-avatar.png'
+        }];
+
+        await updateDoc(lobbyRef, { players: updatedPlayers });
       }
-      if (data.status !== 'LOBBY_WAITING') return setErrorMsg('Spiel läuft bereits.');
 
-      const updatedPlayers = [...data.players, {
-        id: user.uid,
-        name: playerName.trim(),
-        isHost: false,
-        globalScore: 0,
-        photoURL: userData?.photoURL || '/default-avatar.png'
-      }];
-
-      await updateDoc(lobbyRef, { players: updatedPlayers });
       await setDoc(doc(db, 'users', user.uid), { currentLobby: code, name: playerName.trim() }, { merge: true });
-
       setLobbyCode(code);
       setErrorMsg('');
     } catch (err) {
@@ -486,6 +535,30 @@ export default function App() {
     }
   };
 
+  // HOST FUNKTION: Spieler Rauswerfen
+  const kickPlayer = async (targetId) => {
+    if (!isHost) return;
+    if (window.confirm('Möchtest du diesen Spieler wirklich rauswerfen?')) {
+      const remainingPlayers = currentLobby.players.filter(p => p.id !== targetId);
+      await updateDoc(doc(db, 'lobbies', lobbyCode), { players: remainingPlayers });
+    }
+  };
+
+  // HOST FUNKTION: Partyleiter übergeben
+  const promotePlayer = async (targetId) => {
+    if (!isHost) return;
+    if (window.confirm('Möchtest du diesen Spieler zum neuen Partyleiter ernennen?')) {
+      const updatedPlayers = currentLobby.players.map(p => ({
+        ...p,
+        isHost: p.id === targetId
+      }));
+      await updateDoc(doc(db, 'lobbies', lobbyCode), {
+        hostId: targetId,
+        players: updatedPlayers
+      });
+    }
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard?.writeText(lobbyCode).catch(() => {});
     setCopied(true);
@@ -500,8 +573,6 @@ export default function App() {
 
   if (authLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 animate-pulse">Lade Sitzung...</div>;
   if (!user) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Lade Authentifizierung...</div>;
-
-  const isHost = currentLobby?.hostId === user?.uid;
 
   const renderContent = () => {
     // View 1: Welcome (Hauptmenü)
@@ -587,23 +658,45 @@ export default function App() {
                     {currentLobby.players.map((p) => {
                       const safeName = p.name || 'Player';
                       return (
-                          <div key={p.id} className={`p-4 rounded-xl flex items-center justify-between ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
-                            <div className="flex items-center gap-3">
+                          <div key={p.id} className={`p-3 sm:p-4 rounded-xl flex items-center justify-between gap-2 sm:gap-4 ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
+
+                            {/* LINKE SEITE: Avatar & Name (Darf schrumpfen, schneidet lange Namen ab) */}
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
                               {p.photoURL && p.photoURL !== '/default-avatar.png' ? (
-                                  <img src={p.photoURL} alt={safeName} className="w-8 h-8 rounded-full object-cover border border-slate-600 shrink-0" />
+                                  <img src={p.photoURL} alt={safeName} className="w-9 h-9 rounded-full object-cover border border-slate-600 shrink-0 shadow-sm" />
                               ) : (
-                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm shrink-0">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm text-white">
                                     {safeName.charAt(0).toUpperCase()}
                                   </div>
                               )}
-                              <span className="font-medium text-slate-200">{safeName} {p.id === user.uid && '(Du)'}</span>
+                              <div className="truncate flex items-baseline gap-1.5">
+                                <span className="font-bold text-slate-200 truncate">{safeName}</span>
+                                {p.id === user.uid && <span className="text-xs font-medium text-slate-400 whitespace-nowrap">(Du)</span>}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3">
+
+                            {/* RECHTE SEITE: Punkte, Host & Controls (Darf NIEMALS schrumpfen oder umbrechen) */}
+                            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                               {currentLobby.settings.globalLeaderboard && (
-                                  <span className="text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded">{p.globalScore} Pkt</span>
+                                  <span className="text-xs sm:text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2.5 py-1 rounded-lg whitespace-nowrap border border-yellow-500/20">
+                              {p.globalScore} Pkt
+                            </span>
                               )}
-                              {p.isHost && <Trophy size={16} className="text-yellow-500" title="Host" />}
+                              {p.isHost && <Trophy size={18} className="text-yellow-500 shrink-0 drop-shadow-md" title="Host" />}
+
+                              {/* Host Controls: Kicken & Leiter abgeben */}
+                              {isHost && p.id !== user.uid && (
+                                  <div className="flex items-center gap-0.5 ml-1 sm:ml-2 border-l border-slate-700 pl-1.5 sm:pl-2 shrink-0">
+                                    <button onClick={() => promotePlayer(p.id)} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-yellow-400 transition-colors" title="Zum Partyleiter ernennen">
+                                      <Crown size={18} />
+                                    </button>
+                                    <button onClick={() => kickPlayer(p.id)} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-red-400 transition-colors" title="Spieler rauswerfen">
+                                      <UserMinus size={18} />
+                                    </button>
+                                  </div>
+                              )}
                             </div>
+
                           </div>
                       )
                     })}
@@ -650,7 +743,6 @@ export default function App() {
                         {isHost ? <span className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-1">Starten <ArrowRight size={14} /></span> : <span className="text-xs text-slate-500">Warten auf Host...</span>}
                       </div>
 
-                      {/* Neues Spiel: Wer bin ich? */}
                       <div className={`p-5 rounded-2xl border-2 transition-all ${isHost ? 'cursor-pointer hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900' : 'border-slate-700 bg-slate-900/30 opacity-70'}`}
                            onClick={() => isHost && updateLobbyStatus('GAME_IN_PROGRESS', 'WER_BIN_ICH', { gameState: { phase: 'SETUP' } })}>
                         <h4 className="font-bold text-lg text-yellow-400 mb-1">Wer bin ich?</h4>
