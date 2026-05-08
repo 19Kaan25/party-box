@@ -11,14 +11,12 @@ export default function useLobby(user, userData, updateUserProfile) {
 
     const isHost = currentLobby?.hostId === user?.uid;
 
-    // Nickname aus Profil laden
     useEffect(() => {
         if (userData?.name) {
             setPlayerName(userData.name);
         }
     }, [userData?.name]);
 
-    // Reconnect: Bei Reload prüfen, ob man noch Teil der aktuellen Lobby ist
     useEffect(() => {
         if (user && userData?.currentLobby) {
             const lobbyRef = doc(db, 'lobbies', userData.currentLobby);
@@ -33,7 +31,6 @@ export default function useLobby(user, userData, updateUserProfile) {
         }
     }, [user, userData?.currentLobby]);
 
-    // Real-Time Listener für die Lobby
     useEffect(() => {
         if (!user || !lobbyCode) return;
         const lobbyRef = doc(db, 'lobbies', lobbyCode);
@@ -63,7 +60,6 @@ export default function useLobby(user, userData, updateUserProfile) {
         return () => unsubscribe();
     }, [user, lobbyCode]);
 
-    // AUTO-SYNC: Host sichert im Hintergrund die Punkte aller Spieler ab
     useEffect(() => {
         if (isHost && currentLobby?.players && lobbyCode) {
             const currentHistory = currentLobby.scoreHistory || {};
@@ -83,7 +79,6 @@ export default function useLobby(user, userData, updateUserProfile) {
         }
     }, [currentLobby?.players, isHost, lobbyCode]);
 
-    // Lobby erstellen
     const handleCreateLobby = async (e) => {
         e.preventDefault();
         if (!user || !playerName.trim()) return setErrorMsg('Bitte gib einen Nickname ein.');
@@ -102,6 +97,8 @@ export default function useLobby(user, userData, updateUserProfile) {
             currentGame: null,
             settings: { globalLeaderboard: true },
             scoreHistory: { [user.uid]: 0 },
+            usedImposterWords: [],
+            customImposterWords: [],
             players: [{
                 id: user.uid,
                 name: playerName.trim(),
@@ -123,7 +120,6 @@ export default function useLobby(user, userData, updateUserProfile) {
         }
     };
 
-    // Lobby beitreten
     const handleJoinLobby = async (e, joinCode) => {
         e.preventDefault();
         const code = joinCode.toUpperCase().trim();
@@ -143,13 +139,11 @@ export default function useLobby(user, userData, updateUserProfile) {
             const existingPlayerIndex = data.players.findIndex(p => p.id === user.uid);
 
             if (existingPlayerIndex !== -1) {
-                // Re-Join
                 const updatedPlayers = [...data.players];
                 updatedPlayers[existingPlayerIndex].name = playerName.trim();
                 updatedPlayers[existingPlayerIndex].photoURL = userData?.photoURL || '/default-avatar.png';
                 await updateDoc(lobbyRef, { players: updatedPlayers });
             } else {
-                // Neu beitreten
                 if (data.players.find(p => p.name.toLowerCase() === playerName.trim().toLowerCase())) {
                     return setErrorMsg('Dieser Name ist bereits in der Lobby vergeben.');
                 }
@@ -177,7 +171,6 @@ export default function useLobby(user, userData, updateUserProfile) {
         }
     };
 
-    // Lobby verlassen
     const leaveLobby = async () => {
         if (!currentLobby || !user) return;
 
@@ -205,14 +198,12 @@ export default function useLobby(user, userData, updateUserProfile) {
         }
     };
 
-    // Spiele / Status verwalten
     const updateLobbyStatus = async (status, game = null, additionalData = {}) => {
         if (!isHost) return;
         const lobbyRef = doc(db, 'lobbies', lobbyCode);
         await updateDoc(lobbyRef, { status, ...(game && { currentGame: game }), ...additionalData });
     };
 
-    // Host Tools
     const kickPlayer = async (targetId) => {
         if (!isHost) return;
         if (window.confirm('Möchtest du diesen Spieler wirklich rauswerfen?')) {

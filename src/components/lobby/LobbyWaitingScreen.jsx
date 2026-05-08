@@ -66,7 +66,7 @@ export default function LobbyWaitingScreen({
                                         </div>
 
                                         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                                            {currentLobby.settings.globalLeaderboard && (
+                                            {currentLobby.settings?.globalLeaderboard && (
                                                 <span className="text-xs sm:text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2.5 py-1 rounded-lg whitespace-nowrap border border-yellow-500/20">
                           {p.globalScore} Pkt
                         </span>
@@ -98,13 +98,13 @@ export default function LobbyWaitingScreen({
                                 {isHost ? (
                                     <button
                                         onClick={() => updateLobbyStatus(currentLobby.status, null, { settings: { ...currentLobby.settings, globalLeaderboard: !currentLobby.settings.globalLeaderboard } })}
-                                        className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border transition-colors ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
+                                        className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border transition-colors ${currentLobby.settings?.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
                                     >
-                                        <Settings size={14} /> <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
+                                        <Settings size={14} /> <span>Globales Scoring {currentLobby.settings?.globalLeaderboard ? 'an' : 'aus'}</span>
                                     </button>
                                 ) : (
-                                    <div className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border ${currentLobby.settings.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-900'}`}>
-                                        <Trophy size={14} /> <span>Globales Scoring {currentLobby.settings.globalLeaderboard ? 'an' : 'aus'}</span>
+                                    <div className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border ${currentLobby.settings?.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-slate-400 border-slate-700 bg-slate-900'}`}>
+                                        <Trophy size={14} /> <span>Globales Scoring {currentLobby.settings?.globalLeaderboard ? 'an' : 'aus'}</span>
                                     </div>
                                 )}
                             </div>
@@ -138,6 +138,22 @@ export default function LobbyWaitingScreen({
                                     isHost={isHost}
                                     onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WER_BIN_ICH', { gameState: { phase: 'SETUP' } })}
                                 />
+                                <GameCard
+                                    title="Imposter"
+                                    desc="Entlarve den Verräter, bevor er dein Geheimnis erfährt!"
+                                    color="emerald"
+                                    isHost={isHost}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'IMPOSTER', {
+                                        gameState: {
+                                            phase: 'SETUP',
+                                            settings: {
+                                                imposterCount: 1,
+                                                timerDuration: 180,
+                                                selectedCategories: ['orte']
+                                            }
+                                        }
+                                    })}
+                                />
                             </div>
                         </div>
                     </div>
@@ -153,7 +169,8 @@ function GameCard({ title, desc, color, isHost, onClick }) {
         purple: 'text-purple-300 hover:border-purple-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         red: 'text-red-400 hover:border-red-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         indigo: 'text-indigo-400 hover:border-indigo-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
-        yellow: 'text-yellow-400 hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
+        yellow: 'text-yellow-400 hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
+        emerald: 'text-emerald-400 hover:border-emerald-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
     };
 
     return (

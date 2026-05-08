@@ -8,6 +8,7 @@ import CodenamesEngine from '../games/CodenamesEngine';
 import StadtLandFlussEngine from '../games/StadtLandFlussEngine';
 import WerwolfEngine from '../games/WerwolfEngine';
 import WerBinIchEngine from '../games/WerBinIchEngine';
+import ImposterEngine from '../games/ImposterEngine';
 
 export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
     const { user } = authLogic;
@@ -73,6 +74,7 @@ export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
         case 'CODENAMES': return <CodenamesEngine {...engineProps} />;
         case 'WERWOLF': return <WerwolfEngine {...engineProps} />;
         case 'WER_BIN_ICH': return <WerBinIchEngine {...engineProps} />;
+        case 'IMPOSTER': return <ImposterEngine {...engineProps} />;
         default: return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Spiel...</div>;
     }
 }

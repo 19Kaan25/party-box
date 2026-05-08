@@ -34,3 +34,119 @@ export const WERWOLF_ROLES = {
   AMOR: { id: 'AMOR', name: 'Amor', description: 'Du bist Amor! In der allerersten Nacht bestimmst du zwei Spieler, die sich unsterblich ineinander verlieben. Stirbt einer der beiden, stirbt der andere aus Liebeskummer sofort mit.', color: 'text-rose-400', bg: 'bg-rose-500/20' },
   JAEGER: { id: 'JAEGER', name: 'Jäger', description: 'Du bist der Jäger! Wenn du stirbst (egal ob durch Werwölfe, das Dorf oder die Hexe), feuerst du in deinem letzten Atemzug einen Schuss ab und reißt einen Spieler deiner Wahl mit in den Tod.', color: 'text-amber-500', bg: 'bg-amber-500/20' }
 };
+
+export const IMPOSTER_CATEGORIES = {
+  orte: {
+    id: 'orte',
+    name: 'Orte & Gebäude',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/20',
+    words: [
+      "Krankenhaus", "Supermarkt", "Leuchtturm", "Flughafen", "Bahnhof", "Polizeiwache",
+      "Feuerwehrwache", "Schule", "Universität", "Bibliothek", "Museum", "Kino", "Theater",
+      "Schwimmbad", "Fitnessstudio", "Restaurant", "Bäckerei", "Metzgerei", "Bank",
+      "Postamt", "Apotheke", "Tankstelle", "Kirche", "Moschee", "Friedhof", "Zoo",
+      "Freizeitpark", "Zirkus", "Strand", "Wald", "Berghütte", "Campingplatz", "Bauernhof",
+      "Gefängnis", "Gerichtsgebäude", "Rathaus", "Burg", "Schloss", "Bürogebäude", "Fabrik",
+      "U-Boot", "Raumstation", "Hotel", "Casino", "Stadion", "Konzerthalle", "Labor"
+    ]
+  },
+  berufe: {
+    id: 'berufe',
+    name: 'Berufe',
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/20',
+    words: [
+      "Arzt", "Zahnarzt", "Tierarzt", "Krankenpfleger", "Polizist", "Feuerwehrmann",
+      "Richter", "Anwalt", "Lehrer", "Professor", "Architekt", "Ingenieur", "Mechaniker",
+      "Klempner", "Elektriker", "Tischler", "Koch", "Bäcker", "Kellner", "Pilot",
+      "Flugbegleiter", "Busfahrer", "Lokführer", "Kapitän", "Astronaut", "Soldat",
+      "Bauer", "Gärtner", "Friseur", "Kosmetiker", "Journalist", "Fotograf", "Schauspieler",
+      "Musiker", "Sänger", "Maler", "Autor", "Programmierer", "Bänker", "Verkäufer",
+      "Detektiv", "Spion", "Zauberer", "Clown", "Präsident"
+    ]
+  },
+  essen: {
+    id: 'essen',
+    name: 'Essen & Trinken',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/20',
+    words: [
+      "Pizza", "Burger", "Döner", "Sushi", "Spaghetti", "Lasagne", "Pommes", "Currywurst",
+      "Steak", "Schnitzel", "Bratwurst", "Salat", "Suppe", "Brot", "Brötchen", "Croissant",
+      "Pfannkuchen", "Waffel", "Schwarzwälder Kirschtorte", "Apfelkuchen", "Eiscreme",
+      "Schokolade", "Gummibärchen", "Chips", "Popcorn", "Apfel", "Banane", "Erdbeere",
+      "Wassermelone", "Trauben", "Kartoffel", "Tomate", "Gurke", "Kaffee", "Tee", "Milch",
+      "Wasser", "Cola", "Limonade", "Bier", "Wein", "Cocktail", "Käse", "Ei", "Joghurt"
+    ]
+  },
+  tiere: {
+    id: 'tiere',
+    name: 'Tiere',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/20',
+    words: [
+      "Hund", "Katze", "Maus", "Pferd", "Kuh", "Schwein", "Schaf", "Ziege", "Huhn",
+      "Ente", "Gans", "Kaninchen", "Hamster", "Meerschweinchen", "Papagei", "Taube",
+      "Adler", "Eule", "Schwan", "Frosch", "Schlange", "Krokodil", "Schildkröte",
+      "Hai", "Delfin", "Wal", "Oktopus", "Qualle", "Löwe", "Tiger", "Elefant",
+      "Giraffe", "Zebra", "Nashorn", "Nilpferd", "Affe", "Gorilla", "Känguru",
+      "Koala", "Pinguin", "Eisbär", "Braunbär", "Wolf", "Fuchs", "Hirsch", "Eichhörnchen"
+    ]
+  },
+  alltag: {
+    id: 'alltag',
+    name: 'Alltagsgegenstände',
+    color: 'text-slate-400',
+    bg: 'bg-slate-500/20',
+    words: [
+      "Smartphone", "Laptop", "Fernseher", "Kopfhörer", "Kaffeemaschine", "Toaster",
+      "Mikrowelle", "Kühlschrank", "Waschmaschine", "Staubsauger", "Bügeleisen",
+      "Föhn", "Zahnbürste", "Seife", "Handtuch", "Toilettenpapier", "Schlüssel",
+      "Portemonnaie", "Uhr", "Brille", "Regenschirm", "Rucksack", "Koffer",
+      "Tasse", "Teller", "Gabel", "Messer", "Löffel", "Pfanne", "Topf", "Stift",
+      "Block", "Buch", "Schere", "Klebeband", "Lampe", "Spiegel", "Kamm", "Besen"
+    ]
+  },
+  freizeit: {
+    id: 'freizeit',
+    name: 'Freizeit & Hobbys',
+    color: 'text-pink-400',
+    bg: 'bg-pink-500/20',
+    words: [
+      "Fußball", "Basketball", "Tennis", "Volleyball", "Schwimmen", "Joggen",
+      "Fahrradfahren", "Wandern", "Klettern", "Skifahren", "Snowboarden", "Surfen",
+      "Tauchen", "Angeln", "Reiten", "Yoga", "Tanzen", "Singen", "Gitarre spielen",
+      "Klavier spielen", "Malen", "Zeichnen", "Fotografieren", "Lesen", "Schreiben",
+      "Kochen", "Backen", "Gärtnern", "Stricken", "Nähen", "Schach", "Kartenspiele",
+      "Videospiele", "Zaubern", "Campen", "Bungee-Jumping", "Fallschirmspringen"
+    ]
+  },
+  fahrzeuge: {
+    id: 'fahrzeuge',
+    name: 'Transport & Fahrzeuge',
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/20',
+    words: [
+      "Auto", "Fahrrad", "Motorrad", "Roller", "Bus", "Straßenbahn", "U-Bahn",
+      "Zug", "Flugzeug", "Hubschrauber", "Heißluftballon", "Schiff", "Boot",
+      "Segelboot", "U-Boot", "Fähre", "Kreuzfahrtschiff", "Traktor", "Bagger",
+      "Kran", "Gabelstapler", "LKW", "Feuerwehrauto", "Krankenwagen", "Polizeiauto",
+      "Taxi", "Rakete", "Spaceshuttle", "Skateboard", "Inlineskates", "Schlitten", "Kutsche"
+    ]
+  },
+  popkultur: {
+    id: 'popkultur',
+    name: 'Filme & Popkultur',
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/20',
+    words: [
+      "Harry Potter", "Star Wars", "Der Herr der Ringe", "Marvel", "Batman", "Spider-Man",
+      "Superman", "James Bond", "Indiana Jones", "Jurassic Park", "Matrix", "Titanic",
+      "Avatar", "Der König der Löwen", "Spongebob", "Die Simpsons", "Game of Thrones",
+      "Stranger Things", "Mickey Mouse", "Super Mario", "Pokémon", "Pikachu", "Barbie",
+      "Lego", "Minecraft", "Disney", "Netflix", "YouTube", "TikTok", "Instagram",
+      "Oscar", "Grammy", "Super Bowl", "Olympische Spiele", "Halloween", "Weihnachten"
+    ]
+  }
+};
