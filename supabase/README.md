@@ -4,7 +4,7 @@ Migrationen, RPCs und Wartungsjobs für das Fundament der Supabase-Migration.
 Design und Begründungen: [../docs/supabase-migration-plan.md](../docs/supabase-migration-plan.md).
 
 **Status: deployt und vollständig verifiziert.** Projekt `PartyBox`
-(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), vier Migrationen angewendet.
+(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), fünf Migrationen angewendet.
 Datenbank nach jeder Verifikation wieder im Ausgangszustand — kein
 Testrückstand außer den bewusst permanenten Fixtures (Sentinel-Account,
 s. u.).
@@ -14,6 +14,7 @@ s. u.).
 | `scripts/verify-phase0a.sql` (SQL, 16 Prüfungen) | ✅ alle bestanden |
 | `scripts/verify-phase0a.mjs` (echter HTTP/RPC-Pfad, 21 Prüfungen inkl. echtem Parallel-Race) | ✅ alle bestanden |
 | `scripts/verify-purge-anonymous-users.sql` (echter DELETE-Pfad, 6 Fälle + 2 Regressionschecks) | ✅ alle bestanden, inkl. Sentinel-Fix |
+| `scripts/verify-sentinel-profile-visibility.sql` (RLS auf `profiles`, 4 Prüfungen) | ✅ alle bestanden |
 
 Ausführung siehe „Verifizieren" unten.
 
@@ -25,6 +26,7 @@ Ausführung siehe „Verifizieren" unten.
 | `20260730120100_functions_and_rls.sql` | Trigger, RLS-Hilfspredikate, 7 RPCs, Grants, Policies |
 | `20260730120200_realtime_storage_cron.sql` | Realtime-Publication, Storage-Bucket, 3 pg_cron-Jobs |
 | `20260730213000_sentinel_host_reassignment.sql` | Sentinel-Account „Ehemaliger Host" + Fix für `purge_stale_anonymous_users()`, s. u. |
+| `20260730214500_profiles_sentinel_visible.sql` | Zusätzliche SELECT-Policy: Sentinel-Profil für alle authentifizierten Nutzer lesbar, s. u. |
 
 ## RPCs
 
@@ -105,6 +107,12 @@ Läuft komplett in einer Transaktion mit `ROLLBACK` am Ende — anders als der
 Node-E2E-Test bleibt hier nichts zum manuellen Aufräumen übrig, auch wenn
 die Funktion echte `DELETE`s ausführt (siehe Ergebnistabelle im Skript).
 
+```bash
+npx supabase db query --linked -f scripts/verify-sentinel-profile-visibility.sql
+```
+
+Ebenfalls in einer Transaktion mit `ROLLBACK`, kein manuelles Aufräumen.
+
 ### `purge-stale-anonymous-users`: Sentinel-Mechanismus
 
 Der Job löscht `auth.users`-Zeilen. `lobbies.host_id` ist `on delete
@@ -142,12 +150,42 @@ Transaktion mit `ROLLBACK`, nicht nur der Trockenlauf):
 | Regression | Lobbys von nicht gelöschten Hosts (Fall 2/4) | `host_id` bleibt unverändert, nicht fälschlich auf den Sentinel umgehängt |
 | Regression | Sentinel-Account selbst | vom Lauf unberührt |
 
-Ein offener Punkt bleibt: geschlossene Lobbys mit Sentinel-Host sind für
-Spieler über die aktuelle RLS-Policy auf `profiles` nicht auflösbar
-(`profiles_select_visible` erlaubt nur die eigene Zeile oder Mitglieder
-derselben aktiven Lobby — der Sentinel ist nie Mitglied). Für Phase 0a ohne
-Belang (keine UI); relevant erst, falls Phase 0b jemals eine geschlossene
-Lobby mit ihrem (Sentinel-)Host anzeigen will.
+### Sentinel-Profil lesbar für alle authentifizierten Nutzer
+
+Ursprünglich war das ein offener Punkt: `profiles_select_visible` erlaubt
+nur die eigene Zeile oder Mitglieder derselben aktiven Lobby — der Sentinel
+ist nie Mitglied einer Lobby, `shares_lobby_with()` greift für ihn also
+nie. Eine geschlossene Lobby mit Sentinel-Host wäre für Spieler nicht
+auflösbar gewesen (Lobby sichtbar, aber `host_id` zeigt auf ein Profil, das
+niemand lesen darf).
+
+**Fix** (`20260730214500_profiles_sentinel_visible.sql`): eine zweite,
+permissive SELECT-Policy `profiles_select_sentinel` ausschließlich für
+`id = sentinel_host_profile_id()`, unabhängig von `shares_lobby_with`.
+Mehrere permissive Policies für denselben Befehl werden von Postgres-RLS
+per OR verknüpft — `profiles_select_visible` bleibt unverändert, diese
+Policy erweitert die sichtbare Menge um genau eine Zeile. Kein
+Datenschutzproblem: der Sentinel enthält keine echten Personendaten (kein
+Avatar, kein Username, `display_name` ist das statische Label „Ehemaliger
+Host").
+
+Ein Nebeneffekt beim Umsetzen: `sentinel_host_profile_id()` wurde bislang
+nur innerhalb von `SECURITY DEFINER`-Funktionen aufgerufen (wo Privilegien
+über den Funktionsbesitzer laufen); jetzt wird sie auch direkt im
+RLS-Kontext gewöhnlicher `authenticated`-Queries ausgewertet. Die vorherige
+Migration hatte `EXECUTE` dafür bewusst von `authenticated` entzogen — ohne
+ein gezieltes erneutes `GRANT` hätte jede `SELECT`-Abfrage auf `profiles`
+mit „permission denied for function" fehlgeschlagen, sobald diese Policy
+ausgewertet wird.
+
+Mit `scripts/verify-sentinel-profile-visibility.sql` getestet: ein frischer
+Testnutzer, der nie mit dem Sentinel in einer Lobby war, liest
+`select * from profiles where id = sentinel_host_profile_id()` erfolgreich
+(genau die im Auftrag vorgegebene Abfrage). Zwei Gegenproben bestanden
+zusätzlich: derselbe Nutzer sieht weiterhin seine eigene Zeile
+(`profiles_select_visible` unverändert), und er sieht **nicht** das Profil
+eines unbeteiligten dritten Testnutzers — die neue Policy öffnet also
+nicht versehentlich alle Profile, nur die eine Sentinel-Zeile.
 
 ## Vercel Keep-Alive
 
