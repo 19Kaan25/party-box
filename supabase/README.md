@@ -12,9 +12,21 @@ kein Testrückstand.
 |---|---|
 | `scripts/verify-phase0a.sql` (SQL, 16 Prüfungen) | ✅ alle bestanden |
 | `scripts/verify-phase0a.mjs` (echter HTTP/RPC-Pfad, 21 Prüfungen inkl. echtem Parallel-Race) | ✅ alle bestanden |
+| `scripts/verify-purge-anonymous-users.sql` (echter DELETE-Pfad, 6 synthetische Fälle) | ✅ alle wie erwartet — **mit einem Befund**, siehe unten |
 
-Ausführung siehe „Verifizieren" unten. `purge-stale-anonymous-users` bleibt
-trotzdem als offener Punkt markiert (destruktiv, siehe eigener Abschnitt).
+Ausführung siehe „Verifizieren" unten.
+
+**Befund `purge-stale-anonymous-users`:** Der DELETE-Pfad wurde mit echten,
+zurückdatierten Testdaten gefahren (nicht nur der Trockenlauf). Löschen des
+Hosts kaskadiert über `lobbies.host_id ... on delete cascade` **auf die
+Lobby selbst** — keine `FK-Verletzung`, kein `SET NULL` (das Feld ist
+`NOT NULL`, ein `SET NULL` wäre dort ohnehin nie möglich gewesen). Eine
+bereits geschlossene Lobby verschwindet also stillschweigend mit, wenn ihr
+letzter Host 30+ Tage inaktiv war. Für abgeschlossene Lobbys folgenlos
+(sie sind ohnehin nur noch Datenleiche), aber es ist die stille Variante,
+vor der im ursprünglichen Auftrag ausdrücklich gewarnt wurde. Nicht
+behoben, nur protokolliert — Details im Testskript-Kopf und im
+Git-Log dieses Commits.
 
 ## Migrationen
 
@@ -48,7 +60,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 |---|---|---|
 | `close-stale-lobbies` | alle 15 min | `closed_at` für Lobbys ohne Aktivität seit **24 h** |
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
-| `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — **destruktiv und unverifiziert**, siehe unten |
+| `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — **destruktiv, DELETE-Pfad verifiziert, kaskadiert auf Host-Lobbys**, siehe unten |
 
 ## Deployen (bei künftigen Migrationen)
 
@@ -95,13 +107,40 @@ nicht automatisch gelöscht — entweder manuell aufräumen oder den
 
 Vorher im Dashboard: **Authentication → Sign In / Providers → Anonymous** aktivieren.
 
-### Vor dem Scharfschalten von `purge-stale-anonymous-users`
+```bash
+npx supabase db query --linked -f scripts/verify-purge-anonymous-users.sql
+```
+
+Läuft komplett in einer Transaktion mit `ROLLBACK` am Ende — anders als der
+Node-E2E-Test bleibt hier nichts zum manuellen Aufräumen übrig, auch wenn
+die Funktion echte `DELETE`s ausführt (siehe Ergebnistabelle im Skript).
+
+### `purge-stale-anonymous-users`: verifiziertes Verhalten
 
 Der Job löscht `auth.users`-Zeilen; das kaskadiert über `profiles` auf
-`lobbies.host_id` und damit auf `games`/`game_events`. Für einen 30 Tage alten
-Gast ohne aktive Mitgliedschaft ist das gewollt — geprüft ist es aber nicht.
-Test 10 in `scripts/verify-phase0a.sql` zeigt als Trockenlauf, wie viele Nutzer
-betroffen wären. Bis dahin bei Bedarf pausieren:
+`lobbies.host_id` und damit auf `games`/`game_events`. Mit
+`scripts/verify-purge-anonymous-users.sql` gegen sechs synthetische Fälle
+getestet (echte `DELETE`s, nicht nur der Trockenlauf):
+
+| Fall | Zustand | Ergebnis |
+|---|---|---|
+| 1 | nie in einer Lobby, 35 Tage | gelöscht |
+| 2 | alte verlassene Mitgliedschaft, 35 Tage | gelöscht, inkl. der verwaisten `lobby_members`-Zeile |
+| 3 | Host einer geschlossenen Lobby, selbst verlassen, 35 Tage | Nutzer gelöscht **und die Lobby kaskadiert mit** — kein `SET NULL`, keine FK-Verletzung |
+| 4 | aktives Mitglied einer offenen Lobby, 35 Tage | unberührt (kritischster Fall) |
+| 5 | 10 Tage alt | unberührt (zu jung) |
+| 6 | registriert, 400 Tage, inaktiv | unberührt (nie anonym) |
+
+Fall 3 ist der Punkt, den man vor dem produktiven Scharfschalten bewusst
+entscheiden sollte: aktuell verschwindet eine geschlossene Lobby
+stillschweigend, wenn ihr letzter Host 30+ Tage inaktiv war. Das betrifft
+nur bereits geschlossene Lobbys (offene sind durch Fall 4 geschützt), ist
+aber die stille Variante. Optionen, keine davon umgesetzt: `host_id` vor
+dem Löschen auf einen Sentinel-„Deleted User"-Account umhängen, oder die
+Lobby-Historie vor dem Löschen des Users separat aggregieren (deckt sich
+mit der ohnehin zurückgestellten Cross-Lobby-Bestenliste, Plan §2).
+
+Bis das entschieden ist, bei Bedarf pausieren:
 
 ```sql
 select cron.unschedule('purge-stale-anonymous-users');
