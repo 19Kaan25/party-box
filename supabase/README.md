@@ -3,8 +3,18 @@
 Migrationen, RPCs und Wartungsjobs für das Fundament der Supabase-Migration.
 Design und Begründungen: [../docs/supabase-migration-plan.md](../docs/supabase-migration-plan.md).
 
-**Status: geschrieben, aber noch nicht deployt und noch nicht verifiziert.**
-Siehe „Offene Schritte" unten.
+**Status: deployt und vollständig verifiziert.** Projekt `PartyBox`
+(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), alle drei Migrationen angewendet.
+Datenbank nach der Verifikation wieder leer (0 Zeilen in allen Tabellen) —
+kein Testrückstand.
+
+| Verifikation | Ergebnis |
+|---|---|
+| `scripts/verify-phase0a.sql` (SQL, 16 Prüfungen) | ✅ alle bestanden |
+| `scripts/verify-phase0a.mjs` (echter HTTP/RPC-Pfad, 21 Prüfungen inkl. echtem Parallel-Race) | ✅ alle bestanden |
+
+Ausführung siehe „Verifizieren" unten. `purge-stale-anonymous-users` bleibt
+trotzdem als offener Punkt markiert (destruktiv, siehe eigener Abschnitt).
 
 ## Migrationen
 
@@ -40,33 +50,48 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
 | `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — **destruktiv und unverifiziert**, siehe unten |
 
-## Offene Schritte
+## Deployen (bei künftigen Migrationen)
 
-Diese Session konnte weder deployen noch verifizieren: der CLI-Login braucht ein
-TTY (im Agent nicht verfügbar), Docker fehlt für den lokalen Stack, und die
-Projektreferenz `wlgvwpkqtiymlpctgufb` ist über den MCP-Zugang nicht erreichbar.
+Der CLI-Login braucht ein TTY und muss deshalb aus einem echten Terminal laufen,
+nicht aus dem Agent heraus — genauso wie beim ersten Mal:
 
 ```bash
 npx supabase login
 ```
 
 ```bash
-npx supabase link --project-ref <deine-projekt-ref>
+npx supabase link --project-ref <projekt-ref>
 ```
 
 ```bash
 npx supabase db push
 ```
 
-Danach verifizieren:
+## Verifizieren
+
+Kein Docker und kein `psql` nötig — beide Skripte laufen über den
+Supabase-eigenen Weg. **Wichtig:** `supabase db query -f` (Management-API)
+gibt nur das *letzte* Statement mit Zeilenergebnis zurück und unterdrückt
+`RAISE NOTICE` komplett — ein einfaches „lief durch, sah kurz vor Schluss
+ok aus" reicht nicht als Nachweis. Deshalb sammelt `verify-phase0a.sql`
+jede bestandene Prüfung in einer temporären Tabelle und gibt sie als
+allerletztes Statement aus; erwartet werden 16 lückenlose Zeilen `01`–`13`
+(`10a`–`10d` als Teilschritte).
 
 ```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/verify-phase0a.sql
+npx supabase db query --linked -f scripts/verify-phase0a.sql
 ```
 
 ```bash
-SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<anon> node scripts/verify-phase0a.mjs
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<anon-key> \
+  node scripts/verify-phase0a.mjs
 ```
+
+Der zweite Test fährt den kompletten Lobby-Lebenszyklus über den echten
+HTTP/RPC-Pfad (inkl. eines echten parallelen `join_lobby`-Race, nicht nur
+simuliert) und legt dafür drei anonyme Test-Nutzer an. Diese werden am Ende
+nicht automatisch gelöscht — entweder manuell aufräumen oder den
+30-Tage-Cron `purge-stale-anonymous-users` übernehmen lassen.
 
 Vorher im Dashboard: **Authentication → Sign In / Providers → Anonymous** aktivieren.
 
