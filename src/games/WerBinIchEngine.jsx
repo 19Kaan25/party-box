@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
 import { Settings, Dices, Users, Play, CheckCircle, Skull, Trophy, Home, Search, Edit3, BookOpen, User, Crown, PartyPopper, ArrowRight } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';

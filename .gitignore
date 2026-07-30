@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Environment
+# .env war bis Phase 0b versehentlich committed (nur oeffentliche Firebase-Config,
+# kein echtes Secret -- die Historie wurde daher bewusst nicht umgeschrieben).
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from '../lib/firestoreBridge';
 import { Settings, Search, Plus, Pin, PinOff } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';

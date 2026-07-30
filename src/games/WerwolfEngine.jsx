@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from '../lib/firestoreBridge';
 import { Sun, Moon, RefreshCw, Skull, List, Heart, HeartHandshake, Syringe, FlaskConical, Flag, Trophy, Users, Home, Target, Loader2 } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';

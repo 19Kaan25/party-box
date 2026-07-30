@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
 import {
     Settings, Shield, Ghost, Timer,
     CheckCircle, VenetianMask, Plus, Trash2

@@ -1,5 +1,5 @@
 import React from 'react';
-import { db } from '../utils/firebase';
+import { db } from '../lib/firestoreBridge';
 
 import WelcomeScreen from './lobby/WelcomeScreen';
 import LobbyWaitingScreen from './lobby/LobbyWaitingScreen';
