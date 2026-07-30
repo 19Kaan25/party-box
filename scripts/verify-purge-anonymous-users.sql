@@ -14,11 +14,14 @@
 -- Deshalb sammelt dieses Skript jede Beobachtung in t_results und gibt sie
 -- als letztes Statement vor dem rollback aus.
 --
--- Bewusster Unterschied zu Fall 1/2/4/5/6 (harte Asserts) vs. Fall 3
--- (rein beobachtend geloggt, kein Assert): genau das Verhalten von
--- lobbies.host_id beim Loeschen des Hosts ist die offene Frage, die dieses
--- Skript beantworten soll — nicht ein erwartetes Ergebnis pruefen, das wir
--- vorher schon kennen wuerden.
+-- v2 (nach 20260730213000_sentinel_host_reassignment.sql): Fall 3 wurde von
+-- rein beobachtenden Checks auf harte Asserts umgestellt, weil es jetzt ein
+-- definiertes Soll gibt (Sentinel statt stiller Kaskade). Faelle 1, 2, 4, 5,
+-- 6 sind unveraenderte Regressionschecks gegen den vorherigen Lauf. Zwei
+-- neue Regressionschecks stellen sicher, dass das Reassignment-UPDATE nicht
+-- ueber die tatsaechlichen Kandidaten hinausgreift (Fall 2s und Fall 4s
+-- Lobbys duerfen NICHT auf den Sentinel umgehaengt werden, da deren Hosts
+-- nicht geloescht werden).
 -- =====================================================================
 
 begin;
@@ -180,38 +183,70 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
--- Fall 3: der Kernfall. Nutzer MUSS geloescht sein (unstrittig, da
--- eligible). Was mit der Lobby (host_id) passiert, wird nur BEOBACHTET
--- und protokolliert, nicht als Erwartung geassert.
+-- Fall 3: der Kernfall, jetzt mit definiertem Soll (Sentinel-Fix).
+-- Nutzer MUSS geloescht sein, die Lobby MUSS bestehen bleiben, host_id
+-- MUSS auf den Sentinel zeigen, sonst darf sich an der Lobby nichts
+-- geaendert haben.
 -- ---------------------------------------------------------------------
 do $$
 declare
-  v_user_gone   boolean;
-  v_lobby_gone  boolean;
-  v_lobby_host  uuid;
-  v_lobby_closed timestamptz;
+  v_lobby_host uuid;
 begin
-  v_user_gone := not exists (select 1 from auth.users where id = 'aaaaaaa3-0000-4000-8000-000000000003');
-
-  assert v_user_gone,
+  assert not exists (select 1 from auth.users where id = 'aaaaaaa3-0000-4000-8000-000000000003'),
     'Fall 3 (Host einer geschlossenen Lobby, selbst verlassen, 35 Tage) haette geloescht werden muessen';
   insert into t_results (check_name) values ('05 Fall 3: Nutzer GELOESCHT, wie erwartet (unstrittig eligible)');
 
-  select not exists (select 1 from public.lobbies where id = 'bbbbbbb3-0000-4000-8000-000000000003')
-    into v_lobby_gone;
+  assert exists (select 1 from public.lobbies where id = 'bbbbbbb3-0000-4000-8000-000000000003'),
+    'Fall 3: die Lobby haette NICHT mitgeloescht werden duerfen (Sentinel-Fix)';
+  insert into t_results (check_name)
+  values ('06 Fall 3: Lobby BLEIBT BESTEHEN, wie erwartet (kein Kaskaden-Loeschen mehr)');
 
-  if v_lobby_gone then
-    insert into t_results (check_name) values (
-      '06 Fall 3 BEFUND: lobbies-Zeile ist EBENFALLS geloescht (stille Kaskade ueber host_id ON DELETE CASCADE) — die Lobby verschwindet mit, kein SET NULL, keine FK-Verletzung'
-    );
-  else
-    select host_id, closed_at into v_lobby_host, v_lobby_closed
-      from public.lobbies where id = 'bbbbbbb3-0000-4000-8000-000000000003';
-    insert into t_results (check_name) values (
-      format('06 Fall 3 BEFUND: lobbies-Zeile existiert NOCH. host_id=%s, closed_at=%s',
-             coalesce(v_lobby_host::text, 'NULL'), coalesce(v_lobby_closed::text, 'NULL'))
-    );
-  end if;
+  select host_id into v_lobby_host
+    from public.lobbies where id = 'bbbbbbb3-0000-4000-8000-000000000003';
+
+  assert v_lobby_host = public.sentinel_host_profile_id(),
+    format('Fall 3: host_id haette auf den Sentinel zeigen muessen, zeigt aber auf %s', v_lobby_host);
+  insert into t_results (check_name) values (
+    format('07 Fall 3: host_id = %s (Sentinel "Ehemaliger Host"), wie erwartet', v_lobby_host)
+  );
+end $$;
+
+-- closed_at/status/created_at/host_claimed_at duerfen sich NICHT geaendert
+-- haben -- das UPDATE aendert laut Migration ausschliesslich host_id.
+-- Eigener Block, damit ein exakter now()-Snapshot fuer den Soll-Vergleich
+-- genutzt werden kann statt einer fragilen Intervall-Arithmetik.
+do $$
+declare
+  v_row public.lobbies%rowtype;
+begin
+  select * into v_row from public.lobbies where id = 'bbbbbbb3-0000-4000-8000-000000000003';
+
+  assert v_row.closed_at is not null,
+    'Fall 3: closed_at haette gesetzt bleiben muessen';
+  assert v_row.status = 'waiting',
+    'Fall 3: status haette unveraendert bleiben muessen';
+  assert v_row.code = 'LOBBYC',
+    'Fall 3: code haette unveraendert bleiben muessen';
+  assert v_row.global_leaderboard is true,
+    'Fall 3: global_leaderboard haette unveraendert bleiben muessen';
+  insert into t_results (check_name) values (
+    '08 Fall 3: closed_at/status/code/global_leaderboard unveraendert -- das UPDATE traf ausschliesslich host_id'
+  );
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Regression: das Reassignment-UPDATE darf NICHT ueber die tatsaechlichen
+-- Kandidaten hinausgreifen. Fall 2s Lobby wird von Helfer gehostet (nicht
+-- geloescht) und Fall 4s Lobby vom Fall-4-Nutzer selbst (nicht geloescht,
+-- s. Fall 4 unten) -- beide host_id-Werte muessen unangetastet bleiben.
+-- ---------------------------------------------------------------------
+do $$
+begin
+  assert (select host_id from public.lobbies where id = 'bbbbbbb2-0000-4000-8000-000000000002')
+         = 'aaaaaaa7-0000-4000-8000-000000000007',
+    'Regression: Fall 2s Lobby (gehostet von Helfer) haette NICHT auf den Sentinel umgehaengt werden duerfen';
+  insert into t_results (check_name)
+  values ('09 Regression: Fall 2s Lobby (Helfer als Host) NICHT auf Sentinel umgehaengt');
 end $$;
 
 -- ---------------------------------------------------------------------
@@ -229,11 +264,15 @@ begin
      where lobby_id = 'bbbbbbb4-0000-4000-8000-000000000004'
        and user_id  = 'aaaaaaa4-0000-4000-8000-000000000004'
   ), 'Fall 4: die aktive Mitgliedschaft haette left_at=NULL behalten muessen';
+  assert (
+    select host_id from public.lobbies where id = 'bbbbbbb4-0000-4000-8000-000000000004'
+  ) = 'aaaaaaa4-0000-4000-8000-000000000004',
+    'Regression: Fall 4s Lobby haette NICHT auf den Sentinel umgehaengt werden duerfen (Fall-4-Nutzer wurde nicht geloescht)';
   assert exists (select 1 from public.lobbies where id = 'bbbbbbb4-0000-4000-8000-000000000004'
                    and closed_at is null),
     'Fall 4: die Lobby haette offen bleiben muessen';
   insert into t_results (check_name)
-  values ('07 Fall 4 (aktives Mitglied, offene Lobby): UNBERUEHRT, wie erwartet — kritischster Fall bestanden');
+  values ('10 Fall 4 (aktives Mitglied, offene Lobby): UNBERUEHRT, host_id unveraendert — kritischster Fall bestanden');
 end $$;
 
 -- ---------------------------------------------------------------------
@@ -243,7 +282,7 @@ do $$
 begin
   assert exists (select 1 from auth.users where id = 'aaaaaaa5-0000-4000-8000-000000000005'),
     'Fall 5 (10 Tage alt) haette NICHT geloescht werden duerfen';
-  insert into t_results (check_name) values ('08 Fall 5 (10 Tage alt): UNBERUEHRT, wie erwartet');
+  insert into t_results (check_name) values ('11 Fall 5 (10 Tage alt): UNBERUEHRT, wie erwartet');
 end $$;
 
 -- ---------------------------------------------------------------------
@@ -254,16 +293,34 @@ do $$
 begin
   assert exists (select 1 from auth.users where id = 'aaaaaaa6-0000-4000-8000-000000000006'),
     'Fall 6 (registriert, 400 Tage, inaktiv) haette NIEMALS geloescht werden duerfen';
-  insert into t_results (check_name) values ('09 Fall 6 (registriert, uralt, inaktiv): UNBERUEHRT, wie erwartet');
+  insert into t_results (check_name) values ('12 Fall 6 (registriert, uralt, inaktiv): UNBERUEHRT, wie erwartet');
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Sanity: der Sentinel selbst bleibt vom Lauf unangetastet -- er ist
+-- is_anonymous=false und faellt strukturell nie in die Kandidatenmenge.
+-- ---------------------------------------------------------------------
+do $$
+begin
+  assert exists (
+    select 1 from auth.users u
+     where u.id = public.sentinel_host_profile_id() and u.is_anonymous = false
+  ), 'Sentinel-Account fehlt oder waere faelschlich als anonym markiert';
+  assert (select display_name from public.profiles where id = public.sentinel_host_profile_id())
+         = 'Ehemaliger Host',
+    'Sentinel-Profil: display_name unerwartet veraendert';
+  insert into t_results (check_name)
+  values ('13 Sentinel-Account selbst vom Lauf unberuehrt (is_anonymous=false schuetzt ihn strukturell)');
 end $$;
 
 -- Letztes Statement mit Zeilenergebnis: das zeigt `supabase db query`
--- tatsaechlich an. Erwartet: 10 Zeilen (00 .. 09), Fall 3 doppelt
--- (05 = Nutzer geloescht, 06 = Befund zur Lobby).
+-- tatsaechlich an. Erwartet: 14 Zeilen (00 .. 13), Fall 3 vierfach
+-- (05 = Nutzer geloescht, 06 = Lobby bleibt, 07 = host_id = Sentinel,
+-- 08 = sonst nichts veraendert).
 select seq, check_name from t_results order by seq;
 
 rollback;
 
--- Alles ok, wenn oben alle 10 Zeilen erscheinen und keine Assertion
+-- Alles ok, wenn oben alle 14 Zeilen erscheinen und keine Assertion
 -- gefeuert hat. Die Datenbank ist danach unveraendert (ROLLBACK) — keine
 -- manuelle Aufraeumung noetig, wie bei verify-phase0a.sql.

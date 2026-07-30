@@ -4,29 +4,18 @@ Migrationen, RPCs und Wartungsjobs für das Fundament der Supabase-Migration.
 Design und Begründungen: [../docs/supabase-migration-plan.md](../docs/supabase-migration-plan.md).
 
 **Status: deployt und vollständig verifiziert.** Projekt `PartyBox`
-(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), alle drei Migrationen angewendet.
-Datenbank nach der Verifikation wieder leer (0 Zeilen in allen Tabellen) —
-kein Testrückstand.
+(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), vier Migrationen angewendet.
+Datenbank nach jeder Verifikation wieder im Ausgangszustand — kein
+Testrückstand außer den bewusst permanenten Fixtures (Sentinel-Account,
+s. u.).
 
 | Verifikation | Ergebnis |
 |---|---|
 | `scripts/verify-phase0a.sql` (SQL, 16 Prüfungen) | ✅ alle bestanden |
 | `scripts/verify-phase0a.mjs` (echter HTTP/RPC-Pfad, 21 Prüfungen inkl. echtem Parallel-Race) | ✅ alle bestanden |
-| `scripts/verify-purge-anonymous-users.sql` (echter DELETE-Pfad, 6 synthetische Fälle) | ✅ alle wie erwartet — **mit einem Befund**, siehe unten |
+| `scripts/verify-purge-anonymous-users.sql` (echter DELETE-Pfad, 6 Fälle + 2 Regressionschecks) | ✅ alle bestanden, inkl. Sentinel-Fix |
 
 Ausführung siehe „Verifizieren" unten.
-
-**Befund `purge-stale-anonymous-users`:** Der DELETE-Pfad wurde mit echten,
-zurückdatierten Testdaten gefahren (nicht nur der Trockenlauf). Löschen des
-Hosts kaskadiert über `lobbies.host_id ... on delete cascade` **auf die
-Lobby selbst** — keine `FK-Verletzung`, kein `SET NULL` (das Feld ist
-`NOT NULL`, ein `SET NULL` wäre dort ohnehin nie möglich gewesen). Eine
-bereits geschlossene Lobby verschwindet also stillschweigend mit, wenn ihr
-letzter Host 30+ Tage inaktiv war. Für abgeschlossene Lobbys folgenlos
-(sie sind ohnehin nur noch Datenleiche), aber es ist die stille Variante,
-vor der im ursprünglichen Auftrag ausdrücklich gewarnt wurde. Nicht
-behoben, nur protokolliert — Details im Testskript-Kopf und im
-Git-Log dieses Commits.
 
 ## Migrationen
 
@@ -35,6 +24,7 @@ Git-Log dieses Commits.
 | `20260730120000_init_schema.sql` | Extensions, Enums, 8 Tabellen, Indizes, RLS-Aktivierung |
 | `20260730120100_functions_and_rls.sql` | Trigger, RLS-Hilfspredikate, 7 RPCs, Grants, Policies |
 | `20260730120200_realtime_storage_cron.sql` | Realtime-Publication, Storage-Bucket, 3 pg_cron-Jobs |
+| `20260730213000_sentinel_host_reassignment.sql` | Sentinel-Account „Ehemaliger Host" + Fix für `purge_stale_anonymous_users()`, s. u. |
 
 ## RPCs
 
@@ -60,7 +50,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 |---|---|---|
 | `close-stale-lobbies` | alle 15 min | `closed_at` für Lobbys ohne Aktivität seit **24 h** |
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
-| `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — **destruktiv, DELETE-Pfad verifiziert, kaskadiert auf Host-Lobbys**, siehe unten |
+| `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — verwaiste Host-Lobbys werden vorher auf den Sentinel umgehängt, siehe unten |
 
 ## Deployen (bei künftigen Migrationen)
 
@@ -115,36 +105,49 @@ Läuft komplett in einer Transaktion mit `ROLLBACK` am Ende — anders als der
 Node-E2E-Test bleibt hier nichts zum manuellen Aufräumen übrig, auch wenn
 die Funktion echte `DELETE`s ausführt (siehe Ergebnistabelle im Skript).
 
-### `purge-stale-anonymous-users`: verifiziertes Verhalten
+### `purge-stale-anonymous-users`: Sentinel-Mechanismus
 
-Der Job löscht `auth.users`-Zeilen; das kaskadiert über `profiles` auf
-`lobbies.host_id` und damit auf `games`/`game_events`. Mit
-`scripts/verify-purge-anonymous-users.sql` gegen sechs synthetische Fälle
-getestet (echte `DELETE`s, nicht nur der Trockenlauf):
+Der Job löscht `auth.users`-Zeilen. `lobbies.host_id` ist `on delete
+cascade` — ohne Gegenmaßnahme würde eine geschlossene Lobby beim Löschen
+ihres letzten (anonymen) Hosts stillschweigend mitverschwinden (kein
+`SET NULL`, da die Spalte `NOT NULL` ist; keine FK-Verletzung — genau die
+stille Variante, die man am wenigsten will).
+
+**Fix:** ein permanenter, nicht-anonymer Sentinel-Account. Der UUID-Wert
+ist an genau einer Stelle definiert —
+[`sentinel_host_profile_id()`](migrations/20260730213000_sentinel_host_reassignment.sql)
+in `20260730213000_sentinel_host_reassignment.sql`, aktuell
+`deaddead-0000-4000-8000-000000000001` mit Profil-`display_name`
+„Ehemaliger Host". `purge_stale_anonymous_users()` hängt vor jedem `DELETE`
+alle betroffenen `lobbies.host_id` in einem einzigen `UPDATE` auf diesen
+Sentinel um; sonst ändert sich an der Lobby nichts. Weil der Sentinel
+`is_anonymous = false` ist, greift der bestehende „nur anonyme User"-Filter
+des Jobs automatisch — der Sentinel kann sich selbst nie in die
+Kandidatenmenge verirren, ohne dass es dafür eine eigene Ausschlussklausel
+braucht. Niemand kann sich als dieser Account anmelden (kein Passwort,
+keine E-Mail-Anmeldung, kein Client-Flow erzeugt oder verwendet ihn).
+
+Mit `scripts/verify-purge-anonymous-users.sql` gegen sechs synthetische
+Fälle plus zwei Regressionschecks getestet (echte `DELETE`s in einer
+Transaktion mit `ROLLBACK`, nicht nur der Trockenlauf):
 
 | Fall | Zustand | Ergebnis |
 |---|---|---|
 | 1 | nie in einer Lobby, 35 Tage | gelöscht |
 | 2 | alte verlassene Mitgliedschaft, 35 Tage | gelöscht, inkl. der verwaisten `lobby_members`-Zeile |
-| 3 | Host einer geschlossenen Lobby, selbst verlassen, 35 Tage | Nutzer gelöscht **und die Lobby kaskadiert mit** — kein `SET NULL`, keine FK-Verletzung |
-| 4 | aktives Mitglied einer offenen Lobby, 35 Tage | unberührt (kritischster Fall) |
+| 3 | Host einer geschlossenen Lobby, selbst verlassen, 35 Tage | Nutzer gelöscht, **Lobby bleibt bestehen**, `host_id` zeigt auf den Sentinel, sonst nichts verändert |
+| 4 | aktives Mitglied einer offenen Lobby, 35 Tage | unberührt (kritischster Fall), `host_id` unverändert |
 | 5 | 10 Tage alt | unberührt (zu jung) |
 | 6 | registriert, 400 Tage, inaktiv | unberührt (nie anonym) |
+| Regression | Lobbys von nicht gelöschten Hosts (Fall 2/4) | `host_id` bleibt unverändert, nicht fälschlich auf den Sentinel umgehängt |
+| Regression | Sentinel-Account selbst | vom Lauf unberührt |
 
-Fall 3 ist der Punkt, den man vor dem produktiven Scharfschalten bewusst
-entscheiden sollte: aktuell verschwindet eine geschlossene Lobby
-stillschweigend, wenn ihr letzter Host 30+ Tage inaktiv war. Das betrifft
-nur bereits geschlossene Lobbys (offene sind durch Fall 4 geschützt), ist
-aber die stille Variante. Optionen, keine davon umgesetzt: `host_id` vor
-dem Löschen auf einen Sentinel-„Deleted User"-Account umhängen, oder die
-Lobby-Historie vor dem Löschen des Users separat aggregieren (deckt sich
-mit der ohnehin zurückgestellten Cross-Lobby-Bestenliste, Plan §2).
-
-Bis das entschieden ist, bei Bedarf pausieren:
-
-```sql
-select cron.unschedule('purge-stale-anonymous-users');
-```
+Ein offener Punkt bleibt: geschlossene Lobbys mit Sentinel-Host sind für
+Spieler über die aktuelle RLS-Policy auf `profiles` nicht auflösbar
+(`profiles_select_visible` erlaubt nur die eigene Zeile oder Mitglieder
+derselben aktiven Lobby — der Sentinel ist nie Mitglied). Für Phase 0a ohne
+Belang (keine UI); relevant erst, falls Phase 0b jemals eine geschlossene
+Lobby mit ihrem (Sentinel-)Host anzeigen will.
 
 ## Vercel Keep-Alive
 
