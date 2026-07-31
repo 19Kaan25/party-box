@@ -17,6 +17,25 @@ React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 > und `legacy_apply_patch()` / `lobbies.legacy_state` (beide mit `TRANSITIONAL`-Header).
 > Die fünf Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
 > das ist Absicht und Aufgabe der Phasen 1–5.
+>
+> Vermessene, bewusst offen gelassene Punkte: [docs/known-issues.md](docs/known-issues.md).
+
+## Supabase-Projektkonfiguration
+
+`supabase/config.toml` ist die Quelle der Wahrheit und wird per
+`npx supabase config push` angewendet — **nicht** über das Dashboard, sonst
+divergieren die Stände.
+
+Zwei Einstellungen sind nicht optional:
+
+- `enable_anonymous_sign_ins = true` — die App meldet jeden Besucher zuerst
+  anonym an. Auf `false` legt ein `config push` die App komplett lahm.
+- `enable_confirmations = false` — einstufige Registrierung. Auf `true`
+  verschickt `updateUser({email})` eine Bestätigungsmail, läuft in
+  `email_sent = 2`/Stunde und der Account wird **nicht** angelegt.
+
+`additional_redirect_urls` muss die Origin enthalten, von der aus der
+Passwort-Reset angefordert wird (aktuell nur localhost — Vercel-URL fehlt noch).
 
 ## Tech-Stack
 
