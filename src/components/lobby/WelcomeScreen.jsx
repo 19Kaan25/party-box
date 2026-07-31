@@ -5,6 +5,7 @@ import AuthMenu from '../auth/AuthMenu';
 export default function WelcomeScreen({
                                           authLogic,
                                           onOpenProfile,
+                                          badgeCount,
                                           errorMsg,
                                           playerName,
                                           setPlayerName,
@@ -13,7 +14,7 @@ export default function WelcomeScreen({
                                       }) {
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-6 flex flex-col items-center justify-center relative">
-            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} />
+            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} badgeCount={badgeCount} />
 
             <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 mt-20 sm:mt-16">
                 <div className="text-center mb-8">
@@ -37,8 +38,12 @@ export default function WelcomeScreen({
                             value={playerName}
                             onChange={(e) => setPlayerName(e.target.value)}
                             placeholder="z.B. PlayerOne"
+                            maxLength={20}
                             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                         />
+                        <p className="text-xs text-slate-500 mt-1">
+                            So heißt du in dieser Lobby. Max. 20 Zeichen.
+                        </p>
                     </div>
 
                     <div className="pt-4 border-t border-slate-700 space-y-4">
@@ -62,11 +67,15 @@ export default function WelcomeScreen({
                             }}
                             className="flex gap-2"
                         >
+                            {/* maxLength 6 passend zu `code ~ '^[A-Z2-9]{6}$'` im
+                                Schema. Stand bis hierher auf 4 (Firestore-Erbe) --
+                                damit war ein Beitritt ueber die Oberflaeche
+                                schlicht unmoeglich. */}
                             <input
                                 name="code"
                                 type="text"
-                                placeholder="Lobby Code"
-                                maxLength={4}
+                                placeholder="z. B. K7RM2P"
+                                maxLength={6}
                                 className="w-2/3 uppercase bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
                             />
                             <button

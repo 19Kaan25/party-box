@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus, Loader2, KeyRound } from 'lucide-react';
 
-export default function AuthMenu({ authLogic, onOpenProfile }) {
+export default function AuthMenu({ authLogic, onOpenProfile, badgeCount = 0 }) {
     const {
         user, userData, authActionLoading, error, recoveryMode,
         registerWithEmail, loginWithEmail, requestPasswordReset, setNewPassword, setError,
@@ -10,6 +10,7 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
     const [view, setView] = useState(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [notice, setNotice] = useState('');
 
     // Direkt im Handler zuruecksetzen statt per Effect auf [view] -- spart
@@ -19,6 +20,7 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
         setError(null);
         setEmail('');
         setPassword('');
+        setUsername('');
         setNotice('');
     };
 
@@ -27,17 +29,21 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
     const submit = async () => {
         setNotice('');
         if (view === 'login') return loginWithEmail(email, password);
-        if (view === 'register') return registerWithEmail(email, password);
+        if (view === 'register') return registerWithEmail(email, password, username);
         if (view === 'reset') {
             const ok = await requestPasswordReset(email);
             if (ok) setNotice('E-Mail ist unterwegs. Schau in dein Postfach.');
         }
     };
 
-    const initial = (userData?.name || 'S').charAt(0).toUpperCase();
+    const initial = (userData?.username || userData?.name || 'S').charAt(0).toUpperCase();
+    // Der Knopf zeigt den dauerhaften Benutzernamen, nicht den frei
+    // getippten Anzeigenamen -- daran erkennt man den eigenen Account und
+    // damit auch, was man Freunden zum Hinzufuegen nennt.
+    const label = userData?.handle ?? 'Benutzername festlegen';
 
     return (
-        <div className="absolute top-4 right-4 z-50 flex flex-col items-end gap-2">
+        <div className="absolute top-4 left-4 z-50 flex flex-col items-start gap-2">
             <div className="flex items-center gap-2 bg-slate-800/80 backdrop-blur-md px-2 py-1.5 rounded-2xl border border-slate-700 shadow-xl">
                 {user.isAnonymous ? (
                     <>
@@ -57,17 +63,28 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
                     </>
                 ) : (
                     <button
-                        onClick={onOpenProfile}
-                        className="flex items-center gap-3 hover:bg-slate-700/50 pr-4 pl-1 py-1 rounded-xl transition-colors"
+                        // Bei offenen Anfragen direkt in den Freunde-Reiter --
+                        // sonst ist der rote Punkt ein Hinweis ohne Ziel.
+                        onClick={() => onOpenProfile(badgeCount > 0 ? 'freunde' : 'profil')}
+                        className="flex items-center gap-3 hover:bg-slate-700/50 pr-4 pl-1 py-1 rounded-xl transition-colors relative"
                     >
-                        {userData?.photoURL ? (
-                            <img src={userData.photoURL} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-slate-600" />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm text-white">
-                                {initial}
-                            </div>
-                        )}
-                        <span className="text-sm font-bold text-white">{userData?.name || 'Lade...'}</span>
+                        <div className="relative shrink-0">
+                            {userData?.photoURL ? (
+                                <img src={userData.photoURL} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-slate-600" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm text-white">
+                                    {initial}
+                                </div>
+                            )}
+                            {badgeCount > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-slate-800">
+                                    {badgeCount}
+                                </span>
+                            )}
+                        </div>
+                        <span className={`text-sm font-bold font-mono ${userData?.handle ? 'text-white' : 'text-amber-400'}`}>
+                            {userData ? label : 'Lade...'}
+                        </span>
                     </button>
                 )}
             </div>
@@ -99,6 +116,22 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
                     <h3 className="text-sm font-bold text-slate-300 mb-1 border-b border-slate-700 pb-2">
                         {view === 'login' ? 'Willkommen zurück!' : view === 'register' ? 'Account erstellen' : 'Passwort zurücksetzen'}
                     </h3>
+
+                    {view === 'register' && (
+                        <div>
+                            <input
+                                type="text" placeholder="Benutzername" value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                maxLength={20}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                            />
+                            <p className="text-[11px] text-slate-500 mt-1">
+                                Dauerhaft. Ein vierstelliger Code wird angehängt, damit dich
+                                Freunde eindeutig finden.
+                            </p>
+                        </div>
+                    )}
+
                     <input
                         type="email" placeholder="E-Mail" value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -114,7 +147,11 @@ export default function AuthMenu({ authLogic, onOpenProfile }) {
 
                     <button
                         onClick={submit}
-                        disabled={authActionLoading || !email || (view !== 'reset' && password.length < 6)}
+                        disabled={
+                            authActionLoading || !email
+                            || (view !== 'reset' && password.length < 6)
+                            || (view === 'register' && username.trim().length < 3)
+                        }
                         className={`w-full font-bold py-2 rounded-lg text-sm transition-colors flex justify-center mt-1 disabled:bg-slate-700 ${view === 'login' ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : view === 'register' ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}
                     >
                         {authActionLoading ? <Loader2 size={16} className="animate-spin" />

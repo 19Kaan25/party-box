@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, measureClockOffset } from '../lib/supabase';
 import { setActiveLobby } from '../lib/firestoreBridge';
 import { avatarUrl, isStaleSession } from './useAuth';
-import usePresence from './usePresence';
+import usePresence, { usePresenceHeartbeat } from './usePresence';
 
 // Neues Schema <-> alte Firestore-Form. Die Engines und LobbyWaitingScreen
 // sprechen weiterhin die alten Bezeichner, deshalb wird hin- und
@@ -37,7 +37,7 @@ function mapRpcError(err) {
         return 'Gerade wurde schon gewechselt — bitte kurz warten.';
     }
     if (msg.includes('DISPLAY_NAME_REQUIRED')) return 'Bitte gib einen Nickname ein.';
-    if (msg.includes('DISPLAY_NAME_TOO_LONG')) return 'Der Nickname ist zu lang (max. 24 Zeichen).';
+    if (msg.includes('DISPLAY_NAME_TOO_LONG')) return 'Der Nickname ist zu lang (max. 20 Zeichen).';
     if (msg.includes('NOT_AUTHENTICATED')) return 'Sitzung abgelaufen. Bitte lade die Seite neu.';
     return 'Da ist etwas schiefgelaufen. Bitte versuche es erneut.';
 }
@@ -60,6 +60,10 @@ export default function useLobby(user, userData, updateUserProfile) {
     const isHost = !!user && lobbyRow?.host_id === user.id;
 
     const onlineIds = usePresence(lobbyCode, user, playerName || userData?.name);
+    // Fuer die Freundesliste: schlaegt auch ausserhalb jeder Lobby. lobbyId
+    // steht in den Abhaengigkeiten, damit "in einer Lobby" beim Betreten und
+    // Verlassen sofort umspringt statt erst beim naechsten Schlag.
+    usePresenceHeartbeat(user, lobbyId);
     const leavingRef = useRef(false);
 
     // Der Shim braucht die Lobby-UUID, kennt aber nur den Code.
@@ -286,6 +290,7 @@ export default function useLobby(user, userData, updateUserProfile) {
 
     return {
         lobbyCode,
+        lobbyId,          // fuer invite_friend_to_lobby, das die UUID braucht
         playerName,
         setPlayerName,
         currentLobby,

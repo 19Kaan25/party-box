@@ -5,7 +5,9 @@ import AuthMenu from '../auth/AuthMenu';
 export default function LobbyWaitingScreen({
                                                authLogic,
                                                onOpenProfile,
+                                               badgeCount,
                                                currentLobby,
+                                               onlineIds,
                                                copyToClipboard,
                                                copied,
                                                leaveLobby,
@@ -17,7 +19,7 @@ export default function LobbyWaitingScreen({
                                            }) {
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-8 relative">
-            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} />
+            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} badgeCount={badgeCount} />
 
             <div className="max-w-4xl mx-auto mt-20 sm:mt-16">
                 <div className="flex justify-between items-center mb-8 bg-slate-800 p-4 rounded-2xl border border-slate-700">
@@ -47,25 +49,48 @@ export default function LobbyWaitingScreen({
                             </h3>
                         </div>
                         <div className="space-y-3">
+                            {/* Zweizeilig per flex-wrap + basis-full auf dem linken
+                                Block. Einzeilig geht bei 227 px Zeilenbreite
+                                rechnerisch nicht auf: Punkte-Badge (58 px,
+                                nowrap) und Host-Buttons (71 px) belegen allein
+                                129 px, es blieben 50 px fuer einen 36-px-Avatar
+                                plus Gap. Der Name kam so auf 0-10 px.
+                                Messung und verworfene Alternativen:
+                                docs/known-issues.md */}
                             {currentLobby.players.map((p) => {
                                 const safeName = p.name || 'Player';
+                                const isOnline = !onlineIds || onlineIds.has(p.id);
                                 return (
-                                    <div key={p.id} className={`p-3 sm:p-4 rounded-xl flex items-center justify-between gap-2 sm:gap-4 ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
-                                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                                            {p.photoURL && p.photoURL !== '/default-avatar.png' ? (
-                                                <img src={p.photoURL} alt={safeName} className="w-9 h-9 rounded-full object-cover border border-slate-600 shrink-0 shadow-sm" />
-                                            ) : (
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm text-white">
-                                                    {safeName.charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div className="truncate flex items-baseline gap-1.5">
-                                                <span className="font-bold text-slate-200 truncate">{safeName}</span>
+                                    <div key={p.id} className={`p-3 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-y-2 gap-x-2 sm:gap-x-4 ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
+                                        <div className="flex items-center gap-3 min-w-0 basis-full">
+                                            <div className="relative shrink-0">
+                                                {p.photoURL ? (
+                                                    <img src={p.photoURL} alt={safeName} className="w-9 h-9 rounded-full object-cover border border-slate-600 shadow-sm" />
+                                                ) : (
+                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm shadow-sm text-white">
+                                                        {safeName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                {/* Presence: ohne Disconnect-Handling blieb ein
+                                                    Spieler nach dem Schliessen des Tabs bisher
+                                                    unbemerkt in der Liste stehen. */}
+                                                <span
+                                                    className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-800 ${isOnline ? 'bg-green-400' : 'bg-slate-500'}`}
+                                                    title={isOnline ? 'online' : 'nicht verbunden'}
+                                                />
+                                            </div>
+                                            {/* Umbrechen statt abschneiden: 20 Zeichen passen
+                                                auch ueber die volle Zeilenbreite (179 px netto)
+                                                nicht in eine Zeile. overflow-wrap:anywhere
+                                                nutzt zuerst normale Trennstellen und bricht
+                                                erst dann mitten im Wort. */}
+                                            <div className="min-w-0 flex items-baseline gap-1.5 flex-wrap">
+                                                <span className="font-bold text-slate-200 [overflow-wrap:anywhere]">{safeName}</span>
                                                 {p.id === user.uid && <span className="text-xs font-medium text-slate-400 whitespace-nowrap">(Du)</span>}
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
                                             {currentLobby.settings?.globalLeaderboard && (
                                                 <span className="text-xs sm:text-sm font-bold text-yellow-400 bg-yellow-500/10 px-2.5 py-1 rounded-lg whitespace-nowrap border border-yellow-500/20">
                           {p.globalScore} Pkt

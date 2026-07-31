@@ -15,6 +15,49 @@ import { supabase } from '../lib/supabase';
  * Deshalb kann Postgres sie auch nicht sehen -- die Host-Uebernahme laeuft
  * darum ueber die claim_host-RPC mit Bestaetigungsdialog statt automatisch.
  */
+/** Abstand zweier Herzschlaege. list_friends() zieht die Grenze bei 90
+ *  Sekunden, verkraftet also zwei verpasste Schlaege. */
+const HEARTBEAT_MS = 45_000;
+
+/**
+ * Globaler Online-Status fuer die Freundesliste. Bewusst getrennt vom
+ * Lobby-Kanal oben: Presence lebt nur im Realtime-Server, Postgres sieht
+ * sie nicht. "Zuletzt online vor 3 Stunden" liesse sich daraus gar nicht
+ * beantworten -- dafuer braucht es einen persistenten Zeitstempel.
+ *
+ * Schlaegt auch im Hintergrund-Tab weiter. "Online" soll heissen "die App
+ * ist offen und die Person kann auf eine Einladung reagieren" -- wer kurz
+ * die Tabs wechselt, ist nicht weg. Browser drosseln Timer im Hintergrund
+ * auf etwa einen Lauf pro Minute; das bleibt unter den 90 Sekunden, ab
+ * denen list_friends() jemanden als offline zaehlt. Geschlossen wird der
+ * Tab, hoert der Schlag ganz auf -- genau das ist das Signal.
+ */
+export function usePresenceHeartbeat(user, lobbyId) {
+    useEffect(() => {
+        if (!user?.id) return undefined;
+
+        let stopped = false;
+        const beat = () => {
+            if (stopped) return;
+            supabase.rpc('touch_presence', { p_lobby: lobbyId ?? null }).then(({ error }) => {
+                if (error) console.warn('Heartbeat fehlgeschlagen:', error.message);
+            });
+        };
+
+        beat();
+        const timer = setInterval(beat, HEARTBEAT_MS);
+        // Beim Zurueckkommen sofort melden, statt auf den naechsten
+        // (im Hintergrund gedrosselten) Lauf zu warten.
+        document.addEventListener('visibilitychange', beat);
+
+        return () => {
+            stopped = true;
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', beat);
+        };
+    }, [user?.id, lobbyId]);
+}
+
 export default function usePresence(lobbyCode, user, displayName) {
     const [onlineIds, setOnlineIds] = useState(() => new Set());
     const channelRef = useRef(null);

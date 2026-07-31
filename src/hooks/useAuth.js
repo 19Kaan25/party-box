@@ -3,6 +3,10 @@ import { supabase } from '../lib/supabase';
 
 const AVATAR_BUCKET = 'avatars';
 
+/** Muss mit der Pruefung in public.set_username() uebereinstimmen. */
+export const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
+export const MAX_DISPLAY_NAME = 20;
+
 /**
  * Supabase-Auth-Fehler -> deutsche Meldung.
  *
@@ -44,6 +48,34 @@ function mapAuthError(err, kontext) {
         default:
             return `Fehler bei der ${kontext}: ${msg}`;
     }
+}
+
+/**
+ * RPC-Fehler -> deutsche Meldung. Bewusst getrennt von mapAuthError:
+ * GoTrue liefert stabile err.code-Kennungen, PostgREST dagegen legt das
+ * UPPER_SNAKE-Token der `raise exception` in err.message und setzt code
+ * pauschal auf P0001. Ein gemeinsamer switch(code) wuerde die Tokens
+ * deshalb nie treffen.
+ */
+function mapRpcError(err, fallback) {
+    const msg = err?.message || '';
+    if (isStaleSession(err)) return 'Deine Sitzung war ungültig. Bitte lade die Seite neu.';
+    if (msg.includes('USERNAME_INVALID')) {
+        return 'Benutzername: 3–20 Zeichen, erlaubt sind Buchstaben, Ziffern und _.';
+    }
+    if (msg.includes('USERNAME_TAKEN')) {
+        return 'Für diesen Namen ist kein Code mehr frei. Bitte wähle einen anderen.';
+    }
+    if (msg.includes('PROFILE_NOT_FOUND')) {
+        return 'Dein Profil wurde nicht gefunden. Bitte lade die Seite neu.';
+    }
+    return fallback;
+}
+
+/** Handle in der Form Kaan#1234, oder null solange kein Account besteht. */
+export function formatHandle(profile) {
+    if (!profile?.username || !profile?.discriminator) return null;
+    return `${profile.username}#${profile.discriminator}`;
 }
 
 /** Erkennt die verwaiste Sitzung an beiden Symptomen: der Auth-Fehler
@@ -97,7 +129,7 @@ export default function useAuth() {
     const loadProfile = useCallback(async (uid) => {
         const { data, error: err } = await supabase
             .from('profiles')
-            .select('id, display_name, username, avatar_path, updated_at')
+            .select('id, display_name, username, discriminator, avatar_path, updated_at')
             .eq('id', uid)
             .maybeSingle();
 
@@ -113,6 +145,8 @@ export default function useAuth() {
             id: data.id,
             name: data.display_name,
             username: data.username,
+            discriminator: data.discriminator,
+            handle: formatHandle(data),
             avatarPath: data.avatar_path,
             photoURL: avatarUrl(data.avatar_path, data.updated_at),
         };
@@ -197,12 +231,33 @@ export default function useAuth() {
     // erhalten. Der Fake-E-Mail-Hack (<name>@partybox.local) entfaellt
     // ersatzlos, damit gibt es echtes Passwort-Reset.
     // -----------------------------------------------------------------
-    const registerWithEmail = async (email, password) => {
+    const registerWithEmail = async (email, password, username) => {
         setAuthActionLoading(true);
         setError(null);
         try {
+            // Format zuerst pruefen, noch bevor der Account entsteht. Sonst
+            // gaebe es bei einem Tippfehler im Namen einen fertigen Account
+            // ohne Benutzernamen -- ein Zustand, den man nur noch ueber das
+            // Profil auflöst.
+            if (!USERNAME_RE.test((username || '').trim())) {
+                setError('Benutzername: 3–20 Zeichen, erlaubt sind Buchstaben, Ziffern und _.');
+                return;
+            }
+
             const { error: err } = await supabase.auth.updateUser({ email, password });
             if (err) throw err;
+
+            const { error: nameErr } = await supabase.rpc('set_username', {
+                p_username: username.trim(),
+            });
+            if (nameErr) {
+                // Der Account steht bereits — das darf die Meldung nicht
+                // verschweigen, sonst versucht man die Registrierung erneut
+                // und laeuft in "E-Mail bereits vergeben".
+                setError('Dein Konto wurde angelegt, der Benutzername aber nicht gesetzt: '
+                    + mapRpcError(nameErr, nameErr.message)
+                    + ' Du kannst ihn im Profil nachtragen.');
+            }
             await loadProfile(user.id);
         } catch (err) {
             setError(mapAuthError(err, 'Registrierung'));
@@ -265,7 +320,7 @@ export default function useAuth() {
     const updateUserProfile = async (newNickname, newAvatarPath) => {
         if (!user) return;
         const updates = {};
-        if (newNickname) updates.display_name = newNickname.trim().slice(0, 24);
+        if (newNickname) updates.display_name = newNickname.trim().slice(0, 20);
         if (newAvatarPath) updates.avatar_path = newAvatarPath;
         if (Object.keys(updates).length === 0) return;
 
@@ -279,6 +334,58 @@ export default function useAuth() {
             return;
         }
         await loadProfile(user.id);
+    };
+
+    /**
+     * Profilbild entfernen. Eigene Funktion statt eines Sentinel-Werts in
+     * updateUserProfile: dort filtert `if (newAvatarPath)` jedes Loeschen weg,
+     * weil null und '' beide falsy sind -- genau deshalb liess sich das Bild
+     * bisher aendern, aber nicht entfernen.
+     */
+    const removeAvatar = async () => {
+        if (!user) return false;
+        setAuthActionLoading(true);
+        try {
+            const path = userData?.avatarPath;
+            if (path) {
+                // Fehlschlag hier ist nicht fatal: entscheidend ist, dass das
+                // Profil nicht mehr darauf zeigt. Eine verwaiste Datei im
+                // eigenen Ordner wird beim naechsten Upload ueberschrieben.
+                const { error: rmErr } = await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+                if (rmErr) console.warn('Datei im Storage blieb liegen:', rmErr.message);
+            }
+            const { error: err } = await supabase
+                .from('profiles').update({ avatar_path: null }).eq('id', user.id);
+            if (err) throw err;
+            await loadProfile(user.id);
+            return true;
+        } catch (err) {
+            setError(mapRpcError(err, 'Bild konnte nicht entfernt werden.'));
+            return false;
+        } finally {
+            setAuthActionLoading(false);
+        }
+    };
+
+    /** Benutzername setzen oder aendern. Der #Code wird serverseitig neu
+     *  gewuerfelt -- er ist nicht waehlbar (sonst koennte man sich gezielt an
+     *  eine fremde Wunschkombination heranarbeiten). */
+    const setUsername = async (name) => {
+        if (!user) return false;
+        setAuthActionLoading(true);
+        setError(null);
+        try {
+            const { error: err } = await supabase.rpc('set_username', { p_username: name });
+            if (err) throw err;
+            await loadProfile(user.id);
+            return true;
+        } catch (err) {
+            setError(mapRpcError(err, 'Benutzername konnte nicht gesetzt werden.'));
+            if (isStaleSession(err)) await ensureAnonymous();
+            return false;
+        } finally {
+            setAuthActionLoading(false);
+        }
     };
 
     const logOutUser = async () => {
@@ -300,6 +407,8 @@ export default function useAuth() {
         setNewPassword,
         logOutUser,
         updateUserProfile,
+        removeAvatar,
+        setUsername,
         setError,
     };
 }
