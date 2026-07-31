@@ -1,12 +1,22 @@
 # PartyBox — CLAUDE.md
 
 Multiplayer-Partyspiel-App (5 Minispiele) für Freundesgruppen im selben Raum.
-React SPA + Firebase, deutschsprachige UI. Ausführliche Analyse:
+React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 [docs/codebase-overview.md](docs/codebase-overview.md).
 
-> **Migration zu Supabase ist geplant** (Postgres + Auth + Realtime + Storage).
-> Vollständiges Schema, RLS-Design und Phasenplan: [docs/supabase-migration-plan.md](docs/supabase-migration-plan.md).
-> Stand: Planung abgeschlossen, **Phase 0 steht noch aus** — alles unten Beschriebene gilt weiterhin.
+> **Migration zu Supabase: Phase 0 (a+b) abgeschlossen, Phase 1 (Imposter) als nächstes.**
+> Schema, RLS-Design und Phasenplan: [docs/supabase-migration-plan.md](docs/supabase-migration-plan.md),
+> Betriebsdetails: [supabase/README.md](supabase/README.md).
+>
+> Phase 0a lieferte Schema, RLS, RPCs, Storage und Cron; Phase 0b stellte den
+> React-Client um (Auth, Lobby, Presence, Reconnect, Avatare) und entfernte Firebase.
+> **Die Firestore-Abschnitte weiter unten sind damit historisch** — sie beschreiben
+> den Stand vor der Migration und werden mit den Phasen 1–5 schrittweise ersetzt.
+>
+> Übergangscode, der in Phase 1 wieder verschwindet: `src/lib/firestoreBridge.js`
+> und `legacy_apply_patch()` / `lobbies.legacy_state` (beide mit `TRANSITIONAL`-Header).
+> Die fünf Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
+> das ist Absicht und Aufgabe der Phasen 1–5.
 
 ## Tech-Stack
 
