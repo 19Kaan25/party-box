@@ -1,5 +1,5 @@
 import React from 'react';
-import { db } from '../utils/firebase';
+import { db } from '../lib/firestoreBridge';
 
 import WelcomeScreen from './lobby/WelcomeScreen';
 import LobbyWaitingScreen from './lobby/LobbyWaitingScreen';
@@ -26,13 +26,14 @@ export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
         promotePlayer
     } = lobbyLogic;
 
-    const { setShowProfileModal, copied, handleCopy } = uiProps;
+    const { openProfile, badgeCount, copied, handleCopy } = uiProps;
 
     if (!currentLobby) {
         return (
             <WelcomeScreen
                 authLogic={authLogic}
-                onOpenProfile={() => setShowProfileModal(true)}
+                onOpenProfile={openProfile}
+                badgeCount={badgeCount}
                 errorMsg={errorMsg}
                 playerName={playerName}
                 setPlayerName={setPlayerName}
@@ -46,8 +47,10 @@ export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
         return (
             <LobbyWaitingScreen
                 authLogic={authLogic}
-                onOpenProfile={() => setShowProfileModal(true)}
+                onOpenProfile={openProfile}
+                badgeCount={badgeCount}
                 currentLobby={currentLobby}
+                onlineIds={lobbyLogic.onlineIds}
                 copied={copied}
                 copyToClipboard={handleCopy}
                 leaveLobby={leaveLobby}

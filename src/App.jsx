@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 
 import useAuth from './hooks/useAuth';
 import useLobby from './hooks/useLobby';
+import useFriends from './hooks/useFriends';
 
 import ProfileModal from './components/auth/ProfileModal';
+import InviteToasts from './components/friends/InviteToasts';
 import GameRouter from './components/GameRouter';
 
 const APP_VERSION = "v1.1.0";
@@ -17,7 +19,10 @@ export default function App() {
 
   // Globale UI-States
   const [copied, setCopied] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileTab, setProfileTab] = useState(null);   // null = Dialog zu
+
+  // Der Freunde-Reiter pollt den Online-Status nur, solange er offen ist.
+  const friendsLogic = useFriends(user, lobbyLogic.lobbyId, profileTab === 'freunde');
 
   // Globale Ladezustände
   if (authLoading) {
@@ -45,19 +50,31 @@ export default function App() {
     }
   };
 
+  // Einladung annehmen: bewusst ueber handleJoinLobby statt join_lobby
+  // direkt -- dort haengen Nickname-Pruefung, Fehlermeldungen und das
+  // Nachladen des Lobby-Zustands dran.
+  const acceptInvite = async (invite) => {
+    await lobbyLogic.handleJoinLobby(null, invite.lobby_code);
+    await friendsLogic.refresh();
+  };
+
   const uiProps = {
     copied,
     handleCopy,
-    setShowProfileModal
+    openProfile: setProfileTab,
+    badgeCount: friendsLogic.badgeCount,
   };
 
   return (
       <>
         {/* Globales Profil-Overlay */}
-        {showProfileModal && (
+        {profileTab && (
             <ProfileModal
                 authLogic={authLogic}
-                onClose={() => setShowProfileModal(false)}
+                friendsLogic={friendsLogic}
+                inLobby={!!lobbyLogic.lobbyId}
+                initialTab={profileTab}
+                onClose={() => setProfileTab(null)}
             />
         )}
 
@@ -66,6 +83,12 @@ export default function App() {
             authLogic={authLogic}
             lobbyLogic={lobbyLogic}
             uiProps={uiProps}
+        />
+
+        <InviteToasts
+            invites={friendsLogic.invites}
+            onAccept={acceptInvite}
+            onDecline={friendsLogic.declineInvite}
         />
 
         {/* Globale App-Version */}

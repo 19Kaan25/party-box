@@ -26,4 +26,12 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Serverseitiger Code: Vercel-Functions und Node-Skripte laufen nicht
+    // im Browser und brauchen die Node-Globals (process, ...).
+    files: ['api/**/*.js', 'scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

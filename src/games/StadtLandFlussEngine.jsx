@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from '../lib/firestoreBridge';
 import { Settings, Dices, List, Trash2, Plus, X, ThumbsDown, Files, Trophy } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';
