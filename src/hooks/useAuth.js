@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AVATAR_BUCKET = 'avatars';
@@ -35,9 +35,24 @@ function mapAuthError(err, kontext) {
             return 'Das ist bereits dein aktuelles Passwort.';
         case 'invalid_credentials':
             return 'E-Mail oder Passwort falsch.';
+        case 'user_not_found':
+            // Der lokal gespeicherte JWT zeigt auf einen Nutzer, den es
+            // serverseitig nicht mehr gibt (z. B. nach einem Aufraeumen der
+            // Datenbank). Die App holt sich automatisch eine neue anonyme
+            // Sitzung -- ein Neuladen ist nicht noetig.
+            return 'Deine Sitzung war abgelaufen. Es wurde eine neue angelegt — bitte versuche es noch einmal.';
         default:
             return `Fehler bei der ${kontext}: ${msg}`;
     }
+}
+
+/** Erkennt die verwaiste Sitzung an beiden Symptomen: der Auth-Fehler
+ *  user_not_found und die Fremdschluessel-Verletzung 23503, die entsteht,
+ *  wenn RPCs auf die fehlende profiles-Zeile stossen. */
+export function isStaleSession(err) {
+    return err?.code === 'user_not_found'
+        || err?.code === '23503'
+        || /sub claim in JWT does not exist/i.test(err?.message || '');
 }
 
 /** Storage-Pfad -> oeffentliche URL. Ohne Pfad null, damit die Komponenten
@@ -60,6 +75,24 @@ export default function useAuth() {
     const [error, setError] = useState(null);
     // Wird true, wenn der Nutzer ueber einen Passwort-Reset-Link kommt.
     const [recoveryMode, setRecoveryMode] = useState(false);
+    // Verhindert, dass sich Neuanmeldung und SIGNED_OUT-Handler gegenseitig
+    // ausloesen und dabei zwei anonyme Nutzer anlegen.
+    const reauthing = useRef(false);
+
+    /** Verwaiste Sitzung verwerfen und frisch anonym anmelden. */
+    const ensureAnonymous = useCallback(async () => {
+        if (reauthing.current) return;
+        reauthing.current = true;
+        try {
+            // scope 'local': der Server kann die Sitzung nicht mehr beenden,
+            // weil der Nutzer dort gar nicht mehr existiert.
+            await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+            const { error: err } = await supabase.auth.signInAnonymously();
+            if (err) console.error('Neue anonyme Sitzung fehlgeschlagen:', err);
+        } finally {
+            reauthing.current = false;
+        }
+    }, []);
 
     const loadProfile = useCallback(async (uid) => {
         const { data, error: err } = await supabase
@@ -117,6 +150,18 @@ export default function useAuth() {
         supabase.auth.getSession().then(async ({ data }) => {
             if (!active) return;
             if (data.session) {
+                // getSession() liest nur den lokalen Speicher und prueft nicht,
+                // ob es den Nutzer serverseitig noch gibt. Erst getUser() fragt
+                // den Server. Ohne diese Pruefung landet eine verwaiste Sitzung
+                // in einer Sackgasse: die UI sieht angemeldet aus, aber jede
+                // Aktion scheitert mit user_not_found bzw. 23503.
+                const { error: userErr } = await supabase.auth.getUser();
+                if (!active) return;
+                if (userErr) {
+                    console.warn('Gespeicherte Sitzung ist ungueltig, neue anonyme Anmeldung:', userErr.message);
+                    await ensureAnonymous();
+                    return;   // onAuthStateChange liefert die neue Session nach
+                }
                 await applySession(data.session);
             } else {
                 const { error: err } = await supabase.auth.signInAnonymously();
@@ -132,8 +177,9 @@ export default function useAuth() {
             if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
             if (event === 'SIGNED_OUT') {
                 // Nach dem Abmelden sofort wieder anonym, damit die App nie
-                // ohne Identitaet dasteht.
-                supabase.auth.signInAnonymously().catch(() => {});
+                // ohne Identitaet dasteht. Waehrend ensureAnonymous() laeuft
+                // nicht, sonst entstuenden zwei anonyme Nutzer.
+                if (!reauthing.current) supabase.auth.signInAnonymously().catch(() => {});
                 return;
             }
             applySession(session);
@@ -143,7 +189,7 @@ export default function useAuth() {
             active = false;
             sub.subscription.unsubscribe();
         };
-    }, [loadProfile]);
+    }, [loadProfile, ensureAnonymous]);
 
     // -----------------------------------------------------------------
     // Anonym -> echter Account. updateUser() haengt die E-Mail-Identitaet
@@ -160,6 +206,9 @@ export default function useAuth() {
             await loadProfile(user.id);
         } catch (err) {
             setError(mapAuthError(err, 'Registrierung'));
+            // Verwaiste Sitzung: sofort eine frische anonyme holen, damit der
+            // naechste Versuch durchgeht statt erneut zu scheitern.
+            if (isStaleSession(err)) await ensureAnonymous();
         } finally {
             setAuthActionLoading(false);
         }
@@ -173,6 +222,7 @@ export default function useAuth() {
             if (err) throw err;
         } catch (err) {
             setError(mapAuthError(err, 'Anmeldung'));
+            if (isStaleSession(err)) await ensureAnonymous();
         } finally {
             setAuthActionLoading(false);
         }

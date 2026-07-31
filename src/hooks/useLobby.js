@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, measureClockOffset } from '../lib/supabase';
 import { setActiveLobby } from '../lib/firestoreBridge';
-import { avatarUrl } from './useAuth';
+import { avatarUrl, isStaleSession } from './useAuth';
 import usePresence from './usePresence';
 
 // Neues Schema <-> alte Firestore-Form. Die Engines und LobbyWaitingScreen
@@ -18,6 +18,12 @@ const GAME_KEY_TO_OLD = {
 /** RPC-Fehler-Tokens -> die bestehenden deutschen Meldungen. */
 function mapRpcError(err) {
     const msg = err?.message || '';
+    // Verwaiste Sitzung: der JWT zeigt auf einen Nutzer, dessen profiles-Zeile
+    // es nicht mehr gibt -- die RPC scheitert dann am Fremdschluessel (23503).
+    // Ohne diesen Zweig kaeme nur ein nichtssagendes "etwas schiefgelaufen".
+    if (isStaleSession(err)) {
+        return 'Deine Sitzung war ungültig. Bitte lade die Seite neu.';
+    }
     if (err?.code === '23505' || /duplicate key|lobby_members_name_unique/.test(msg)) {
         return 'Dieser Name ist bereits in der Lobby vergeben.';
     }
