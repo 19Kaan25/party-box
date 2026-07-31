@@ -43,7 +43,7 @@ export default function AuthMenu({ authLogic, onOpenProfile, badgeCount = 0 }) {
     const label = userData?.handle ?? 'Benutzername festlegen';
 
     return (
-        <div className="absolute top-4 left-4 z-50 flex flex-col items-start gap-2">
+        <div className="absolute top-4 right-4 z-50 flex flex-col items-end gap-2">
             <div className="flex items-center gap-2 bg-slate-800/80 backdrop-blur-md px-2 py-1.5 rounded-2xl border border-slate-700 shadow-xl">
                 {user.isAnonymous ? (
                     <>
