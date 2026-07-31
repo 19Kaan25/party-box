@@ -3,6 +3,43 @@ import { supabase } from '../lib/supabase';
 
 const AVATAR_BUCKET = 'avatars';
 
+/**
+ * Supabase-Auth-Fehler -> deutsche Meldung.
+ *
+ * Es wird primaer auf err.code gematcht (stabile Kennungen), nicht auf den
+ * Meldungstext. Die frueher benutzte Textsuche /password/i machte aus JEDER
+ * Meldung mit "password" ein "min. 6 Zeichen" -- also auch aus
+ * Zeichenklassen-Anforderungen oder Rate-Limits, was in die Irre fuehrt.
+ * Unbekanntes wird im Klartext durchgereicht statt umgedeutet.
+ */
+function mapAuthError(err, kontext) {
+    const code = err?.code || '';
+    const msg = err?.message || '';
+
+    switch (code) {
+        case 'email_exists':
+        case 'user_already_exists':
+            return 'Diese E-Mail-Adresse wird bereits verwendet.';
+        case 'weak_password':
+            // Die konkrete Anforderung steckt in der Originalmeldung und ist
+            // wertvoller als eine pauschale Zahl.
+            return `Passwort zu schwach: ${msg}`;
+        case 'email_address_invalid':
+        case 'validation_failed':
+            return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        case 'over_email_send_rate_limit':
+            return 'Zu viele E-Mails in kurzer Zeit. Bitte warte eine Stunde und versuche es erneut.';
+        case 'over_request_rate_limit':
+            return 'Zu viele Versuche. Bitte warte einen Moment.';
+        case 'same_password':
+            return 'Das ist bereits dein aktuelles Passwort.';
+        case 'invalid_credentials':
+            return 'E-Mail oder Passwort falsch.';
+        default:
+            return `Fehler bei der ${kontext}: ${msg}`;
+    }
+}
+
 /** Storage-Pfad -> oeffentliche URL. Ohne Pfad null, damit die Komponenten
  *  ihren Initialen-Fallback zeigen (statt des nie existierenden
  *  /default-avatar.png, das bisher einen 404 pro Nutzer erzeugt hat). */
@@ -122,13 +159,7 @@ export default function useAuth() {
             if (err) throw err;
             await loadProfile(user.id);
         } catch (err) {
-            if (/already|registered|exists/i.test(err.message || '')) {
-                setError('Diese E-Mail-Adresse wird bereits verwendet.');
-            } else if (/password/i.test(err.message || '')) {
-                setError('Passwort ist zu schwach (min. 6 Zeichen).');
-            } else {
-                setError('Fehler bei der Registrierung: ' + err.message);
-            }
+            setError(mapAuthError(err, 'Registrierung'));
         } finally {
             setAuthActionLoading(false);
         }
@@ -140,8 +171,8 @@ export default function useAuth() {
         try {
             const { error: err } = await supabase.auth.signInWithPassword({ email, password });
             if (err) throw err;
-        } catch {
-            setError('E-Mail oder Passwort falsch.');
+        } catch (err) {
+            setError(mapAuthError(err, 'Anmeldung'));
         } finally {
             setAuthActionLoading(false);
         }
@@ -157,7 +188,7 @@ export default function useAuth() {
             if (err) throw err;
             return true;
         } catch (err) {
-            setError('Reset-Mail konnte nicht gesendet werden: ' + err.message);
+            setError(mapAuthError(err, 'Reset-Anforderung'));
             return false;
         } finally {
             setAuthActionLoading(false);
@@ -173,7 +204,7 @@ export default function useAuth() {
             setRecoveryMode(false);
             return true;
         } catch (err) {
-            setError('Passwort konnte nicht gesetzt werden: ' + err.message);
+            setError(mapAuthError(err, 'Passwort-Änderung'));
             return false;
         } finally {
             setAuthActionLoading(false);
