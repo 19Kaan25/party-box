@@ -4,21 +4,46 @@ Multiplayer-Partyspiel-App (5 Minispiele) für Freundesgruppen im selben Raum.
 React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 [docs/codebase-overview.md](docs/codebase-overview.md).
 
-> **Migration zu Supabase: Phase 0 (a+b) abgeschlossen, Phase 1 (Imposter) als nächstes.**
+> **Migration zu Supabase: Phase 0 (a+b+c) abgeschlossen. Welches Spiel als
+> nächstes serverseitig wird, ist offen** — der ursprünglich geplante
+> Imposter-Pilot bringt vor allem Schummelschutz, spürbaren Nutzen hätte
+> Stadt Land Fluss (Rundenende zur selben Serverzeit statt 2,5-Sekunden-Hack).
 > Schema, RLS-Design und Phasenplan: [docs/supabase-migration-plan.md](docs/supabase-migration-plan.md),
 > Betriebsdetails: [supabase/README.md](supabase/README.md).
 >
 > Phase 0a lieferte Schema, RLS, RPCs, Storage und Cron; Phase 0b stellte den
-> React-Client um (Auth, Lobby, Presence, Reconnect, Avatare) und entfernte Firebase.
+> React-Client um (Auth, Lobby, Presence, Reconnect, Avatare) und entfernte Firebase;
+> Phase 0c brachte Benutzernamen mit Code, Freundesliste, Online-Status und
+> Lobby-Einladungen.
 > **Die Firestore-Abschnitte weiter unten sind damit historisch** — sie beschreiben
 > den Stand vor der Migration und werden mit den Phasen 1–5 schrittweise ersetzt.
 >
-> Übergangscode, der in Phase 1 wieder verschwindet: `src/lib/firestoreBridge.js`
+> Übergangscode, der mit der ersten Spiele-Phase verschwindet: `src/lib/firestoreBridge.js`
 > und `legacy_apply_patch()` / `lobbies.legacy_state` (beide mit `TRANSITIONAL`-Header).
 > Die fünf Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
-> das ist Absicht und Aufgabe der Phasen 1–5.
+> das ist Absicht und Aufgabe der Phasen 1–5. Geheimnisse im Klartext sind im
+> Freundes-/Familienkreis bewusst akzeptiert und kein Blocker.
 >
 > Vermessene, bewusst offen gelassene Punkte: [docs/known-issues.md](docs/known-issues.md).
+
+## Identität: es gibt genau zwei Namen
+
+Häufigste Verwechslung beim Arbeiten an diesem Code.
+
+| Begriff | Spalte | Wo sichtbar | Verhalten |
+|---|---|---|---|
+| **Benutzername** `Kaan#1234` | `profiles.username` + `profiles.discriminator` | oben links, Profil, Freundesliste | dauerhaft, nur mit Account, damit fügt man sich hinzu |
+| **Anzeigename / Nickname** | `lobby_members.display_name` | Spielerliste, alle fünf Spiele | frei getippt vor dem Erstellen/Beitreten |
+
+`profiles.display_name` ist **kein dritter Name**, sondern nur der zuletzt
+benutzte Nickname als Vorbelegung des Eingabefelds
+([useLobby.js](src/hooks/useLobby.js): `typedName ?? userData?.name`).
+
+Eindeutig ist das **Paar** aus Name und Code (`profiles_handle_unique` auf
+`lower(username), discriminator`) — der Name allein absichtlich nicht. Beide
+Namen sind auf **20 Zeichen** begrenzt. Bei jeder Änderung des Benutzernamens
+würfelt `set_username()` einen **neuen** Code aus; sonst könnte man sich
+gezielt an eine fremde Wunschkombination heranarbeiten.
 
 ## Supabase-Projektkonfiguration
 
@@ -62,23 +87,34 @@ npm run dev
 ```
 
 `npm run build` (Vite-Build nach `dist/`), `npm run preview`, `npm run lint` (ESLint 9 Flat Config).
-Es gibt **kein** `npm test`. Firebase-Projekt `party-box-45d2b` wird direkt aus dem
-Client angesprochen — kein Emulator-Setup, lokale Entwicklung schreibt in die Produktions-DB.
+Es gibt **kein** `npm test`; stattdessen die Verifikationsskripte in `scripts/`
+(`verify-phase0*.sql` über `npx supabase db query --linked -f …`,
+`verify-phase0*.mjs` über `node`). Supabase-Projekt `wlgvwpkqtiymlpctgufb` wird direkt
+angesprochen — kein Emulator-Setup, lokale Entwicklung schreibt in die Produktions-DB.
+
+> **Lint-Baseline:** `npm run lint` meldet 10 Probleme (8 Fehler, 2 Warnungen), alle
+> vorbestehend in `StadtLandFlussEngine.jsx` und `WerBinIchEngine.jsx`. Neue Arbeit
+> muss diese Zahl halten, nicht auf null bringen — die Engines werden in den
+> Phasen 1–5 ohnehin neu geschrieben.
 
 ## Struktur
 
 ```
 src/
   main.jsx                    Entry, rendert <App/> in StrictMode
-  App.jsx                     Orchestriert useAuth + useLobby, globale Modals
-  utils/firebase.js           Firebase-Init (Config HARDCODED, s.u.)
-  utils/helpers.js            generateLobbyCode, shuffleArray, ALPHABET
+  App.jsx                     Orchestriert useAuth + useLobby + useFriends, globale Overlays
+  lib/supabase.js             Client-Singleton + measureClockOffset()
+  lib/firestoreBridge.js      TRANSITIONAL: Firestore-kompatibler Shim für die Engines
+  utils/helpers.js            shuffleArray, ALPHABET, relativeTimeDe
   constants/gameData.js       Wortlisten (Codenames, Imposter) + Werwolf-Rollen
-  hooks/useAuth.js            Auth-State, Profil, Registrierung/Login
-  hooks/useLobby.js           Lobby CRUD + einziger onSnapshot-Listener
+  hooks/useAuth.js            Auth, Profil, Benutzername, Avatar
+  hooks/useLobby.js           Lobby-RPCs + 3 postgres_changes-Subscriptions
+  hooks/usePresence.js        Lobby-Presence-Kanal + globaler touch_presence-Herzschlag
+  hooks/useFriends.js         Freunde, Anfragen, Einladungen (Realtime + Poll)
   components/GameRouter.jsx   Welcome → Lobby → Spiel-Engine (switch)
   components/GameHeader.jsx   "Spiel beenden"/"verlassen"-Leiste
-  components/auth/            AuthMenu, ProfileModal
+  components/auth/            AuthMenu (oben links), ProfileModal (Reiter Profil/Freunde)
+  components/friends/         FriendsPanel, InviteToasts
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
   games/*Engine.jsx           5 Engines: StadtLandFluss, Codenames, Werwolf,
                               WerBinIch, Imposter (je 400–770 Zeilen)

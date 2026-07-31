@@ -1,10 +1,10 @@
-# Supabase — Phase 0a (Infrastruktur)
+# Supabase — Phase 0 (Infrastruktur, a + b + c)
 
 Migrationen, RPCs und Wartungsjobs für das Fundament der Supabase-Migration.
 Design und Begründungen: [../docs/supabase-migration-plan.md](../docs/supabase-migration-plan.md).
 
 **Status: deployt und vollständig verifiziert.** Projekt `PartyBox`
-(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), fünf Migrationen angewendet.
+(`wlgvwpkqtiymlpctgufb`, `eu-central-1`), sieben Migrationen angewendet.
 Datenbank nach jeder Verifikation wieder im Ausgangszustand — kein
 Testrückstand außer den bewusst permanenten Fixtures (Sentinel-Account,
 s. u.).
@@ -15,6 +15,10 @@ s. u.).
 | `scripts/verify-phase0a.mjs` (echter HTTP/RPC-Pfad, 21 Prüfungen inkl. echtem Parallel-Race) | ✅ alle bestanden |
 | `scripts/verify-purge-anonymous-users.sql` (echter DELETE-Pfad, 6 Fälle + 2 Regressionschecks) | ✅ alle bestanden, inkl. Sentinel-Fix |
 | `scripts/verify-sentinel-profile-visibility.sql` (RLS auf `profiles`, 4 Prüfungen) | ✅ alle bestanden |
+| `scripts/verify-phase0b-bridge.sql` (Patch-Formen aller fünf Engines, 11 Prüfungen) | ✅ alle bestanden |
+| `scripts/verify-phase0b.mjs` (zwei echte Clients, 30 Prüfungen) | ✅ alle bestanden |
+| `scripts/verify-phase0c.sql` (Identität, Freunde, Status, Einladungen, 16 Prüfungen) | ✅ alle bestanden |
+| `scripts/verify-phase0c.mjs` (zwei echte Clients, 30 Prüfungen inkl. 90-s-Ablauf) | ✅ alle bestanden |
 
 Ausführung siehe „Verifizieren" unten.
 
@@ -27,6 +31,8 @@ Ausführung siehe „Verifizieren" unten.
 | `20260730120200_realtime_storage_cron.sql` | Realtime-Publication, Storage-Bucket, 3 pg_cron-Jobs |
 | `20260730213000_sentinel_host_reassignment.sql` | Sentinel-Account „Ehemaliger Host" + Fix für `purge_stale_anonymous_users()`, s. u. |
 | `20260730214500_profiles_sentinel_visible.sql` | Zusätzliche SELECT-Policy: Sentinel-Profil für alle authentifizierten Nutzer lesbar, s. u. |
+| `20260730220000_phase0b_legacy_bridge.sql` | **TRANSITIONAL**: `lobbies.legacy_state`, `server_now()`, `legacy_apply_patch()` — fällt mit der ersten Spiele-Phase weg |
+| `20260731090000_phase0c_identity_and_friends.sql` | Benutzername + `discriminator`, Längengrenze 20, `friendships`, `user_status`, `lobby_invites` und ihre RPCs |
 
 ## RPCs
 
@@ -40,11 +46,40 @@ Ausführung siehe „Verifizieren" unten.
 | `claim_host(p_lobby)` | jedes aktive Mitglied | **Nur für den stillen Disconnect.** 30-Sekunden-Cooldown gegen Griefing. |
 | `leave_current_lobby_internal(p_except_lobby)` | niemand (intern) | Von `create_lobby`/`join_lobby` genutzt. |
 
+### Identität, Freunde, Einladungen (Phase 0c)
+
+| Funktion | Wer darf | Zweck |
+|---|---|---|
+| `set_username(p_username)` | jeder authentifizierte Nutzer | Setzt/ändert den Benutzernamen (3–20, `[A-Za-z0-9_]`) und **würfelt den vierstelligen Code neu**. |
+| `find_profile_by_handle(p_username, p_discriminator)` | jeder authentifizierte Nutzer | Exakter Treffer auf Name **und** Code. Kein Präfix, kein `like` — sonst wäre die Nutzertabelle durchprobierbar. |
+| `send_friend_request(p_username, p_discriminator)` | Nutzer mit eigenem Benutzernamen | Legt `pending` an; existiert die Gegenanfrage, wird daraus `accepted`. |
+| `respond_friend_request(p_other, p_accept)` | nur der **Empfänger** | Annehmen oder ablehnen (löscht die Zeile). |
+| `remove_friend(p_other)` | beide Seiten | Löscht das Paar — auch zum Zurückziehen einer eigenen Anfrage. |
+| `list_friends()` | jeder authentifizierte Nutzer | Freunde und offene Anfragen mit `online` / `in_lobby` / `last_seen_at`. **Gibt keinen Lobby-Code heraus**; bei offenen Anfragen bleibt der Status verborgen. |
+| `touch_presence(p_lobby)` | jeder authentifizierte Nutzer | Herzschlag alle 45 s. `p_lobby` wird nur übernommen, wenn der Aufrufer dort aktives Mitglied ist. |
+| `invite_friend_to_lobby(p_lobby, p_to_user)` | aktives Mitglied **und** bestätigter Freund | Legt eine Einladung an. |
+| `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code** — hier angebracht, man wurde ausdrücklich eingeladen. |
+| `decline_invite(p_invite)` | Empfänger | Löscht die Einladung. `join_lobby` räumt sie beim Beitritt selbst ab. |
+
+`friendships` nutzt das kanonisch geordnete Paar (`user_low < user_high`) als
+Primärschlüssel — der **strukturelle** Schutz gegen Doppel- und
+Gegenrichtungs-Einträge, dieselbe Denkweise wie die Teil-Unique-Indizes aus
+Phase 0a. `user_status` hat bewusst **kein** SELECT-Grant: der Online-Status
+ist ausschließlich über `list_friends()` sichtbar, also nur für bestätigte
+Freunde. Er liegt aus einem konkreten Grund nicht auf `profiles`: der Trigger
+`profiles_set_updated_at` würde `updated_at` mitziehen, und daraus baut der
+Client den Cache-Buster der Avatar-URL — jedes Profilbild würde alle
+45 Sekunden neu geladen.
+
 Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 `NOT_AUTHENTICATED`, `NOT_A_MEMBER`, `NOT_HOST`, `LOBBY_NOT_FOUND`,
 `GAME_IN_PROGRESS`, `DISPLAY_NAME_REQUIRED`, `DISPLAY_NAME_TOO_LONG`,
 `CANNOT_KICK_SELF`, `TARGET_NOT_ACTIVE_MEMBER`,
-`CLAIM_TOO_SOON_OR_ALREADY_HOST`, `CODE_GENERATION_FAILED`.
+`CLAIM_TOO_SOON_OR_ALREADY_HOST`, `CODE_GENERATION_FAILED`,
+`USERNAME_INVALID`, `USERNAME_TAKEN`, `PROFILE_NOT_FOUND`, `NO_USERNAME`,
+`USER_NOT_FOUND`, `CANNOT_FRIEND_SELF`, `ALREADY_FRIENDS`, `REQUEST_PENDING`,
+`REQUEST_NOT_FOUND`, `NOT_THE_RECIPIENT`, `NOT_FRIENDS`, `ALREADY_INVITED`,
+`ALREADY_IN_LOBBY`.
 
 ## Wartungsjobs (pg_cron)
 
@@ -53,6 +88,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 | `close-stale-lobbies` | alle 15 min | `closed_at` für Lobbys ohne Aktivität seit **24 h** |
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
 | `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — verwaiste Host-Lobbys werden vorher auf den Sentinel umgehängt, siehe unten |
+| `purge-old-invites` | stündlich :07 | Löscht Lobby-Einladungen älter als 2 Stunden |
 
 ## Deployen (bei künftigen Migrationen)
 

@@ -5,19 +5,33 @@ nicht neu ausmessen müssen, was hier schon belegt ist.
 
 ---
 
-## 1. Spielerliste: Namen werden auf 0 px gequetscht
+## 1. Spielerliste: Namen wurden auf 0 px gequetscht — GELÖST in Phase 0c
 
 **Datei:** [src/components/lobby/LobbyWaitingScreen.jsx](../src/components/lobby/LobbyWaitingScreen.jsx),
 Spielerzeile (`div.space-y-3 > div`)
 
-**Symptom:** In der Lobby-Spielerliste ist der Spielername unsichtbar. Der Text
-steht korrekt im DOM (`"Anna"`, `"Ben"`) und die Barrierefreiheits-Struktur
-liest ihn vor — er hat nur keine Breite. Bei der eigenen Zeile bleibt ein
-Rest von ~10 px, bei fremden Zeilen 0 px.
+**Symptom (behoben):** In der Lobby-Spielerliste war der Spielername
+unsichtbar. Der Text stand korrekt im DOM (`"Anna"`, `"Ben"`) und die
+Barrierefreiheits-Struktur las ihn vor — er hatte nur keine Breite. Bei der
+eigenen Zeile blieb ein Rest von ~10 px, bei fremden Zeilen 0 px.
 
-**Status:** vorbestehend, unabhängig von der Supabase-Migration. Tritt mit
-Firestore genauso auf; die Migration hat es nur sichtbar gemacht, weil beim
-Testen längere Namen benutzt wurden.
+**Lösung:** `flex-wrap` auf der Zeile, `basis-full` auf dem linken Block
+(Avatar + Name bekommen eine eigene Zeile) **plus** `overflow-wrap: anywhere`
+statt `truncate` am Namen. Der zweite Teil ist nötig: bei 20 Zeichen reicht
+auch die volle Zeilenbreite nicht, der Name muss umbrechen dürfen.
+
+Gemessen nach der Umstellung, Viewport 1280×900:
+
+| Name | vorher | nachher |
+|---|---|---|
+| `Carl` | — | 32 px, eine Zeile, vollständig |
+| `Bartholomaeus-Anna12` (20 Zeichen) | abgeschnitten | 145 px über zwei Zeilen, vollständig |
+
+Die Messung erfolgte über `scrollWidth <= clientWidth`, nicht per Augenschein.
+
+Die Zahlen unten bleiben stehen, weil sie erklären, **warum** es zweizeilig
+sein muss — eine einzeilige Lösung ist bei dieser Spaltenbreite rechnerisch
+unmöglich.
 
 ### Gemessene Zahlen (Viewport 1280×900, `lg`-Layout)
 
@@ -65,13 +79,14 @@ bekommt eine eigene Zeile:
 also etwa doppelt so hoch. Das ist eine sichtbare Design-Entscheidung und
 wurde deshalb nicht einseitig umgesetzt.
 
-### Offene Alternativen für die Design-Phase
+### Verworfene Alternativen
 
-1. Zweizeilige Spielerzeile (oben belegt, kostet Höhe).
 2. Spielerspalte im Grid verbreitern — aktuell `lg:col-span-1` von
-   `lg:grid-cols-3` innerhalb `max-w-4xl`.
+   `lg:grid-cols-3` innerhalb `max-w-4xl`. Verworfen: der Spielekatalog
+   würde schmaler, und bei 20 Zeichen bräuchte es trotzdem den Umbruch.
 3. Punkte-Badge oder Host-Buttons anders unterbringen (Kontextmenü, nur bei
-   Hover, kompaktere Darstellung).
+   Hover, kompaktere Darstellung). Nicht weiterverfolgt, weil die
+   Zweizeiligkeit das Problem ohne versteckte Bedienelemente löst.
 
 ---
 
@@ -109,3 +124,35 @@ keine E-Mail mehr** — sie ist einstufig. Betroffen ist nur noch der
 in kurzer Zeit."
 
 Vor dem Produktivgang: eigenen SMTP-Anbieter hinterlegen.
+
+---
+
+## 4. Online-Status hängt an einem Client-Herzschlag
+
+`public.touch_presence()` wird vom Client alle 45 Sekunden gerufen,
+`list_friends()` zählt jemanden nach 90 Sekunden ohne Schlag als offline.
+
+Der Herzschlag läuft **auch im Hintergrund-Tab** weiter — „online" soll
+heißen „die App ist offen", und wer kurz die Tabs wechselt, ist nicht weg.
+Browser drosseln Hintergrund-Timer auf etwa einen Lauf pro Minute; das bleibt
+unter den 90 Sekunden. Bei sehr aggressiver Drosselung (Safari, stark
+ausgelastetes Gerät) kann jemand kurzzeitig fälschlich als offline gelten.
+Der nächste Schlag korrigiert das, und beim Sichtbarwerden feuert sofort
+einer.
+
+Gegen einen hart abgestürzten Browser hilft das Verfahren korrekt: es kommt
+schlicht kein Schlag mehr.
+
+---
+
+## 5. Lobby-Präsenz und Freundes-Präsenz sind zwei getrennte Systeme
+
+Der grüne Punkt **in der Lobby** kommt aus dem Realtime-Presence-Kanal
+(`usePresence`, sofort), der Punkt in der **Freundesliste** aus
+`user_status.last_seen_at` (bis zu 90 Sekunden Verzug).
+
+Das ist Absicht: Presence lebt nur im Realtime-Server, Postgres sieht sie
+nicht — „zuletzt online vor 3 Stunden" ließe sich daraus nicht beantworten.
+Umgekehrt wäre ein 90-Sekunden-Fenster in der Lobby zu träge. Die Folge:
+dieselbe Person kann für ein paar Sekunden in der Lobby schon grün und in
+der Freundesliste noch grau sein.
