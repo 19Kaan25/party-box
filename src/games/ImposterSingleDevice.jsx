@@ -4,23 +4,24 @@
  *  Der komplette Rundenablauf laeuft auf dem Geraet des Hosts. Alle anderen
  *  Lobby-Mitglieder sehen nur "Spiel laeuft...".
  *
- *  WICHTIG -- warum so wenig auf dem Server liegt:
- *  Wort, Rollenverteilung, Aufdeck-Fortschritt und Votum bleiben im lokalen
- *  React-State. Sie gehen NICHT ueber die Bridge, weil
- *    a) sonst jeder Client das Geheimwort im Speicher haette, obwohl niemand
- *       ausser dem Host ueberhaupt mitspielt, und
- *    b) jedes Umblaettern sonst ein RPC + Realtime-Refetch waere -- auf einem
- *       weitergereichten Handy spuerbar traege.
+ *  Zustandshaltung: lokaler State ZUERST, Server hinterher.
+ *  Jeder Schritt setzt sofort den React-State (damit ein weitergereichtes
+ *  Handy nicht auf einen Roundtrip wartet) und spiegelt ihn danach nach
+ *  gameState.sd. Beim Mounten wird der lokale State aus gameState.sd
+ *  vorbelegt -- laedt der Host mitten in der Runde neu, geht es genau dort
+ *  weiter. Der Host bleibt waehrend der Runde die Wahrheit; die Serverkopie
+ *  ist reine Wiederherstellung.
  *
- *  Auf dem Server landen nur die nicht geheimen Daten, und zwar in genau
- *  vier Schreibvorgaengen:
- *    1. Runde starten        -> gameState.phase = 'SINGLE_RUNNING' + roster
- *    2. Ergebnis             -> usedImposterWords + players (Punkte)
- *    3. Einstellungen aendern-> gameState.phase = 'SETUP' + roster
- *    4. Zurueck zur Lobby    -> updateLobbyStatus('LOBBY_WAITING', ...)
+ *  gameState.sd = { step, roster, round, revealIndex, revealStage,
+ *                   votedOutKey, guessed, sessionUsed, summary }
+ *  gameState.phase = 'SETUP' | 'SINGLE_RUNNING'  -- daran haengt der
+ *  Nicht-Host-Schirm und die Weiche in ImposterEngine.jsx.
  *
- *  Ein Patch mit status 'LOBBY_WAITING' beendet die games-Zeile und wirft
- *  gameState weg -- deshalb fassen "Naechste Runde" und "Einstellungen
+ *  Dass damit auch das Geheimwort bei allen Clients liegt, ist bewusst in
+ *  Kauf genommen (Freundes-/Familienkreis) -- genau wie im Mehrgeraete-Modus.
+ *
+ *  FALLE: Ein Patch mit status 'LOBBY_WAITING' beendet die games-Zeile und
+ *  wirft gameState weg -- deshalb fassen "Naechste Runde" und "Einstellungen
  *  aendern" die Lobby nie an, damit die Mitspielerliste erhalten bleibt.
  * ===================================================================== */
 
@@ -59,7 +60,7 @@ const newGuestKey = () =>
  * dragstart, und dieses Feature ist ausdruecklich handy-first. Die
  * Chevron-Buttons bleiben als robuster Zweitweg (Touch, kleine Displays).
  * ------------------------------------------------------------------- */
-function RosterEditor({ items, myUserId, onReorder, onRemove }) {
+function RosterEditor({ items, myUserId, onReorder, onRemove, onCommit }) {
     const [dragKey, setDragKey] = useState(null);
     const [dragOffset, setDragOffset] = useState(0);
     const listRef = useRef(null);
@@ -78,7 +79,7 @@ function RosterEditor({ items, myUserId, onReorder, onRemove }) {
     };
 
     const handlePointerDown = (e, index) => {
-        dragInfo.current = { startY: e.clientY, index, rowHeight: measureRowHeight() };
+        dragInfo.current = { startY: e.clientY, index, startIndex: index, rowHeight: measureRowHeight() };
         setDragKey(items[index].key);
         setDragOffset(0);
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -94,8 +95,10 @@ function RosterEditor({ items, myUserId, onReorder, onRemove }) {
         if (target !== index) {
             // Basislinie mitziehen, damit die Zeile unter dem Finger bleibt.
             const nextStartY = startY + (target - index) * rowHeight;
-            dragInfo.current = { startY: nextStartY, index: target, rowHeight };
-            onReorder(index, target);
+            dragInfo.current = { ...dragInfo.current, startY: nextStartY, index: target };
+            // Waehrend des Ziehens nicht speichern -- das waere ein RPC pro
+            // uebersprungener Zeile. Gesichert wird beim Loslassen.
+            onReorder(index, target, false);
             setDragOffset(e.clientY - nextStartY);
         } else {
             setDragOffset(dy);
@@ -109,6 +112,9 @@ function RosterEditor({ items, myUserId, onReorder, onRemove }) {
         }
         setDragKey(null);
         setDragOffset(0);
+        // Nur sichern, wenn sich tatsaechlich etwas verschoben hat -- ein
+        // blosser Tipp auf den Griff soll keinen RPC ausloesen.
+        if (dragInfo.current.index !== dragInfo.current.startIndex) onCommit(items);
     };
 
     return (
@@ -191,25 +197,36 @@ function RosterEditor({ items, myUserId, onReorder, onRemove }) {
 export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
     const { gameState, players, id: lobbyCode, customImposterWords = [], usedImposterWords = [] } = lobby;
     const settings = gameState.settings || {};
+    // Gespiegelter Fortschritt. Wird NUR beim Mounten gelesen (Wiederherstellung
+    // nach einem Reload) -- waehrend der Runde fuehrt der lokale State.
+    const saved = gameState.sd || {};
 
     // Alle Hooks ganz oben -- die Phasen sind bedingte Returns (Engine-Konvention).
-    const [step, setStep] = useState('SETUP');
-    const [roster, setRoster] = useState(() => seedRoster(gameState.roster, players));
+    const [step, setStep] = useState(saved.step || 'SETUP');
+    const [roster, setRoster] = useState(() => seedRoster(saved.roster, players));
     const [guestInput, setGuestInput] = useState('');
-    const [round, setRound] = useState(null);
-    const [revealIndex, setRevealIndex] = useState(0);
-    const [revealStage, setRevealStage] = useState('HANDOFF');
-    const [votedOutKey, setVotedOutKey] = useState(null);
-    const [guessed, setGuessed] = useState({});
-    const [sessionUsed, setSessionUsed] = useState([]);
-    const [summary, setSummary] = useState(null);
+    const [round, setRound] = useState(saved.round || null);
+    const [revealIndex, setRevealIndex] = useState(saved.revealIndex || 0);
+    const [revealStage, setRevealStage] = useState(saved.revealStage || 'HANDOFF');
+    const [votedOutKey, setVotedOutKey] = useState(saved.votedOutKey || null);
+    const [guessed, setGuessed] = useState(saved.guessed || {});
+    const [sessionUsed, setSessionUsed] = useState(saved.sessionUsed || []);
+    const [summary, setSummary] = useState(saved.summary || null);
 
     // ---------------------------------------------------------
     // NICHT-HOST: das Spiel laeuft woanders
     // ---------------------------------------------------------
     if (!isHost) {
-        const list = gameState.roster || [];
+        const list = saved.roster || [];
         const running = gameState.phase === 'SINGLE_RUNNING';
+        const statusText = {
+            REVEAL: `Karten werden aufgedeckt (${Math.min((saved.revealIndex || 0) + 1, list.length || 1)} von ${list.length})`,
+            ORDER: 'Die Reihenfolge steht – die Diskussion läuft',
+            VOTE: 'Es wird abgestimmt',
+            RESOLVE: 'Die Auflösung läuft',
+            GUESS: 'Der Imposter darf raten',
+            RESULT: 'Runde vorbei – der Host macht weiter'
+        }[saved.step];
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
                 <GameHeader isHost={false} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} />
@@ -220,6 +237,9 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     <p className="text-slate-400 text-sm mt-3">
                         Imposter läuft diese Runde auf einem einzigen Handy. Schau auf das Gerät des Hosts.
                     </p>
+                    {running && statusText && (
+                        <p className="text-emerald-400 text-sm font-bold mt-4">{statusText}</p>
+                    )}
                     <div className="flex justify-center gap-1.5 mt-6">
                         {[0, 1, 2].map(i => (
                             <span
@@ -260,6 +280,19 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     const isLobbyMember = (userId) => !!userId && players.some(p => p.id === userId);
     const nameOf = (key) => roster.find(r => r.key === key)?.name || 'Unbekannt';
 
+    /**
+     * Fortschritt nach gameState.sd spiegeln. Wird immer NACH dem lokalen
+     * setState aufgerufen -- die Anzeige wartet nie auf den Roundtrip.
+     * `extra` nimmt Keys ausserhalb von sd auf (phase, players, ...).
+     */
+    const persist = async (fields, extra = {}) => {
+        const patch = { ...extra };
+        Object.entries(fields).forEach(([key, value]) => {
+            patch[`gameState.sd.${key}`] = value;
+        });
+        await updateDoc(doc(db, 'lobbies', lobbyCode), patch);
+    };
+
     // ---------------------------------------------------------
     // EINSTELLUNGEN (Server) -- nur waehrend SETUP
     // ---------------------------------------------------------
@@ -287,29 +320,32 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     };
 
     // ---------------------------------------------------------
-    // MITSPIELERLISTE (nur lokal, wird erst beim Rundenstart persistiert)
+    // MITSPIELERLISTE
     // ---------------------------------------------------------
-    const moveRosterItem = (from, to) => {
-        if (to < 0 || to >= roster.length || from === to) return;
-        setRoster(prev => {
-            const next = [...prev];
-            const [moved] = next.splice(from, 1);
-            next.splice(to, 0, moved);
-            return next;
-        });
+    const applyRoster = (next, save = true) => {
+        setRoster(next);
+        if (save) persist({ roster: next });
     };
 
-    const removeFromRoster = (key) => setRoster(prev => prev.filter(r => r.key !== key));
+    const moveRosterItem = (from, to, save = true) => {
+        if (to < 0 || to >= roster.length || from === to) return;
+        const next = [...roster];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        applyRoster(next, save);
+    };
+
+    const removeFromRoster = (key) => applyRoster(roster.filter(r => r.key !== key));
 
     const addLobbyMember = (player) => {
         if (roster.length >= MAX_ROSTER) return;
-        setRoster(prev => [...prev, { key: player.id, name: player.name, userId: player.id }]);
+        applyRoster([...roster, { key: player.id, name: player.name, userId: player.id }]);
     };
 
     const addGuest = () => {
         const name = guestInput.trim().slice(0, NAME_MAX);
         if (!name || roster.length >= MAX_ROSTER) return;
-        setRoster(prev => [...prev, { key: newGuestKey(), name, userId: null }]);
+        applyRoster([...roster, { key: newGuestKey(), name, userId: null }]);
         setGuestInput('');
     };
 
@@ -329,14 +365,16 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
 
         const count = Math.min(imposterCount, Math.max(1, Math.floor((roster.length - 1) / 2)));
         const imposterKeys = shuffleArray(roster.map(r => r.key)).slice(0, count);
-
-        setRound({
+        const nextRound = {
             word,
             categoryName: categoryNameOfWord(word, selectedCategories),
             imposterKeys,
             startIndex: Math.floor(Math.random() * roster.length)   // wer anfaengt, ist jede Runde neu ausgewuerfelt
-        });
-        setSessionUsed(prev => [...prev, word]);
+        };
+        const nextUsed = [...sessionUsed, word];
+
+        setRound(nextRound);
+        setSessionUsed(nextUsed);
         setRevealIndex(0);
         setRevealStage('HANDOFF');
         setVotedOutKey(null);
@@ -344,10 +382,20 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
         setSummary(null);
         setStep('REVEAL');
 
-        await updateDoc(doc(db, 'lobbies', lobbyCode), {
-            'gameState.phase': 'SINGLE_RUNNING',
-            'gameState.roster': roster
-        });
+        await persist(
+            {
+                step: 'REVEAL',
+                roster,
+                round: nextRound,
+                revealIndex: 0,
+                revealStage: 'HANDOFF',
+                votedOutKey: null,
+                guessed: {},
+                sessionUsed: nextUsed,
+                summary: null
+            },
+            { 'gameState.phase': 'SINGLE_RUNNING' }
+        );
     };
 
     // ---------------------------------------------------------
@@ -377,33 +425,31 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
             });
         }
 
-        const patch = { usedImposterWords: arrayUnion(round.word) };
+        const extra = { usedImposterWords: arrayUnion(round.word) };
         if (delta.size > 0) {
             // Der Server spiegelt players[].globalScore absolut nach
             // lobby_members.score -- wie in den anderen vier Engines.
-            patch.players = players.map(p => ({
+            extra.players = players.map(p => ({
                 ...p,
                 globalScore: (p.globalScore ?? 0) + (delta.get(p.id) ?? 0)
             }));
         }
 
-        setSummary({
+        const nextSummary = {
             caught,
             entries: roster
                 .filter(r => delta.has(r.userId))
                 .map(r => ({ key: r.key, name: r.name, points: delta.get(r.userId) }))
-        });
+        };
+        setSummary(nextSummary);
         setStep('RESULT');
 
-        await updateDoc(doc(db, 'lobbies', lobbyCode), patch);
+        await persist({ step: 'RESULT', summary: nextSummary }, extra);
     };
 
     const backToSetup = async () => {
         setStep('SETUP');
-        await updateDoc(doc(db, 'lobbies', lobbyCode), {
-            'gameState.phase': 'SETUP',
-            'gameState.roster': roster
-        });
+        await persist({ step: 'SETUP', roster }, { 'gameState.phase': 'SETUP' });
     };
 
     // ---------------------------------------------------------
@@ -459,6 +505,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                             myUserId={user.uid}
                             onReorder={moveRosterItem}
                             onRemove={removeFromRoster}
+                            onCommit={(items) => persist({ roster: items })}
                         />
 
                         {missingMembers.length > 0 && (
@@ -619,7 +666,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
         if (!current) {
             return (
                 <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6">
-                    <button onClick={() => setStep('ORDER')} className="bg-white text-slate-900 font-bold px-6 py-3 rounded-xl">
+                    <button onClick={() => { setStep('ORDER'); persist({ step: 'ORDER' }); }} className="bg-white text-slate-900 font-bold px-6 py-3 rounded-xl">
                         Weiter
                     </button>
                 </div>
@@ -639,7 +686,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                         <h2 className="text-4xl font-black text-white mt-2 mb-8 [overflow-wrap:anywhere]">{current.name}</h2>
 
                         <button
-                            onClick={() => setRevealStage('HIDDEN')}
+                            onClick={() => { setRevealStage('HIDDEN'); persist({ revealStage: 'HIDDEN' }); }}
                             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95"
                         >
                             Ich bin {current.name}
@@ -659,7 +706,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     <h2 className="text-2xl font-bold mb-6 text-white [overflow-wrap:anywhere]">{current.name}</h2>
 
                     <div
-                        onClick={() => { if (!shown) setRevealStage('SHOWN'); }}
+                        onClick={() => { if (!shown) { setRevealStage('SHOWN'); persist({ revealStage: 'SHOWN' }); } }}
                         className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-4 transition-all duration-500 transform border-4 border-dashed ${
                             shown
                                 ? (isImposter ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500')
@@ -706,12 +753,11 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
 
                     <button
                         onClick={() => {
-                            if (isLast) {
-                                setStep('ORDER');
-                            } else {
-                                setRevealIndex(revealIndex + 1);
-                            }
+                            const nextIndex = isLast ? revealIndex : revealIndex + 1;
+                            const nextStep = isLast ? 'ORDER' : 'REVEAL';
+                            if (isLast) setStep('ORDER'); else setRevealIndex(nextIndex);
                             setRevealStage('HANDOFF');
+                            persist({ step: nextStep, revealIndex: nextIndex, revealStage: 'HANDOFF' });
                         }}
                         disabled={!shown}
                         className="w-full mt-8 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold transition-all active:scale-95"
@@ -765,7 +811,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     </div>
 
                     <button
-                        onClick={() => setStep('VOTE')}
+                        onClick={() => { setStep('VOTE'); persist({ step: 'VOTE' }); }}
                         className="w-full mt-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95"
                     >
                         Weiter zur Abstimmung
@@ -795,7 +841,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                             return (
                                 <button
                                     key={r.key}
-                                    onClick={() => setVotedOutKey(r.key)}
+                                    onClick={() => { setVotedOutKey(r.key); persist({ votedOutKey: r.key }); }}
                                     className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
                                         selected
                                             ? 'border-emerald-500 bg-emerald-500/10'
@@ -813,7 +859,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     </div>
 
                     <button
-                        onClick={() => setStep('RESOLVE')}
+                        onClick={() => { setStep('RESOLVE'); persist({ step: 'RESOLVE' }); }}
                         disabled={!votedOutKey}
                         className="w-full mt-8 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed py-4 rounded-2xl text-white font-bold shadow-lg transition-all active:scale-95"
                     >
@@ -859,7 +905,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     </p>
 
                     <button
-                        onClick={() => setStep('GUESS')}
+                        onClick={() => { setStep('GUESS'); persist({ step: 'GUESS' }); }}
                         className="w-full mt-6 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-2xl font-bold transition-all active:scale-95"
                     >
                         Weiter
@@ -891,7 +937,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                                     </p>
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
-                                            onClick={() => setGuessed(prev => ({ ...prev, [key]: true }))}
+                                            onClick={() => { const next = { ...guessed, [key]: true }; setGuessed(next); persist({ guessed: next }); }}
                                             className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
                                                 yes ? 'border-emerald-500 bg-emerald-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-500 hover:border-slate-500'
                                             }`}
@@ -899,7 +945,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                                             Ja
                                         </button>
                                         <button
-                                            onClick={() => setGuessed(prev => ({ ...prev, [key]: false }))}
+                                            onClick={() => { const next = { ...guessed, [key]: false }; setGuessed(next); persist({ guessed: next }); }}
                                             className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
                                                 !yes ? 'border-slate-400 bg-slate-700/40 text-white' : 'border-slate-700 bg-slate-900 text-slate-500 hover:border-slate-500'
                                             }`}

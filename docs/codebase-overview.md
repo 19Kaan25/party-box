@@ -165,11 +165,18 @@ word: string                 imposters: uid[]        votes: { [uid]: uid }
 startTime: number
 ```
 
-*Ein Handy (`mode: 'SINGLE'`)* — Phasen `SETUP → SINGLE_RUNNING`. Der Server sieht nur
-diese beiden Phasen plus `roster: [{ key, name, userId }]`; der gesamte Rundenzustand
-(Wort, Imposter, Aufdeck-Index, Votum) bleibt im lokalen State des Host-Geräts und geht
-nie über die Bridge. Nicht-Hosts rendern anhand von `phase === 'SINGLE_RUNNING'` einen
-"Spiel läuft…"-Schirm. Details im Kopfkommentar von `ImposterSingleDevice.jsx`.
+*Ein Handy (`mode: 'SINGLE'`)* — Phasen `SETUP → SINGLE_RUNNING`, der Rundenfortschritt
+liegt daneben in `sd`:
+```
+sd: { step: 'SETUP' | 'REVEAL' | 'ORDER' | 'VOTE' | 'RESOLVE' | 'GUESS' | 'RESULT',
+      roster: [{ key, name, userId }],   round: { word, categoryName, imposterKeys, startIndex },
+      revealIndex, revealStage, votedOutKey, guessed: { [key]: bool },
+      sessionUsed: string[], summary }
+```
+Der Host führt lokal (kein Roundtrip pro Kartendreher) und spiegelt jeden Schritt nach
+`sd`; beim Mounten wird der lokale State daraus vorbelegt, ein Reload setzt die Runde also
+fort. Nicht-Hosts rendern anhand von `phase === 'SINGLE_RUNNING'` einen "Spiel läuft…"-Schirm
+mit Statuszeile aus `sd.step`. Details im Kopfkommentar von `ImposterSingleDevice.jsx`.
 
 `settings.timerDuration` wird gesetzt, aber nirgends ausgewertet — es gibt in Imposter
 keinen laufenden Timer.

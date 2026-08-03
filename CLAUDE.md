@@ -128,13 +128,17 @@ src/
 - **`'SINGLE'`** — ein Handy wandert reihum ([ImposterSingleDevice.jsx](src/games/ImposterSingleDevice.jsx)).
   Alle anderen Lobby-Mitglieder sehen nur "Spiel läuft…".
 
-Im Einzelgerät-Modus bleiben **Wort, Rollenverteilung, Aufdeck-Fortschritt und Votum im
-lokalen React-State des Hosts** und gehen nie über die Bridge — sonst hätte jeder Client
-das Geheimwort im Speicher, obwohl niemand sonst mitspielt, und jedes Umblättern wäre ein
-RPC plus Realtime-Refetch. Auf dem Server liegen nur `gameState.phase`
-(`'SETUP'` / `'SINGLE_RUNNING'`), `gameState.settings` und `gameState.roster`, verteilt auf
-genau vier Schreibvorgänge (Rundenstart, Ergebnis inkl. Punkte, Zurück-zum-Setup,
-Zurück-zur-Lobby).
+Zustandshaltung im Einzelgerät-Modus: **lokaler State zuerst, Server hinterher.** Jeder
+Schritt setzt sofort den React-State — ein weitergereichtes Handy darf nicht auf einen
+Roundtrip warten — und spiegelt ihn danach nach `gameState.sd` (`step`, `roster`, `round`,
+`revealIndex`, `revealStage`, `votedOutKey`, `guessed`, `sessionUsed`, `summary`). Beim
+Mounten wird der lokale State aus `gameState.sd` vorbelegt: lädt der Host mitten in der
+Runde neu, geht es genau dort weiter. `gameState.phase` (`'SETUP'` / `'SINGLE_RUNNING'`)
+trägt den Nicht-Host-Schirm und die Weiche in `ImposterEngine.jsx`.
+
+Dass damit auch das Geheimwort bei allen Clients liegt, ist bewusst in Kauf genommen —
+genau wie im Mehrgeräte-Modus (siehe Kopf dieser Datei: Klartext-Geheimnisse sind im
+Freundeskreis akzeptiert).
 
 **Falle:** Ein Patch mit `status: 'LOBBY_WAITING'` beendet die `games`-Zeile und verwirft
 alle `gameState`-Keys desselben Patches. "Nächste Runde" und "Einstellungen ändern" dürfen
