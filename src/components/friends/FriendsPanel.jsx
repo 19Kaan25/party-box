@@ -171,7 +171,11 @@ export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
                                     </p>
                                 </div>
                                 <div className="flex gap-1 shrink-0">
-                                    {inLobby && !p.in_lobby && (
+                                    {/* Auch fuer Freunde, die gerade woanders sitzen:
+                                        join_lobby verlaesst die alte Lobby beim
+                                        Annehmen. Ist die Person schon in DIESER
+                                        Lobby, meldet die RPC das verstaendlich. */}
+                                    {inLobby && (
                                         <button onClick={() => inviteToLobby(p.id)} disabled={busy}
                                             className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-700 transition-colors"
                                             title="In meine Lobby einladen">

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Users, LogOut, Check, Copy, Trophy, Crown, UserMinus, Play, Settings, ArrowRight } from 'lucide-react';
+import { Users, LogOut, Check, Copy, Trophy, Crown, UserMinus, Play, Settings, ArrowRight, UserPlus } from 'lucide-react';
 import AuthMenu from '../auth/AuthMenu';
 
 export default function LobbyWaitingScreen({
                                                authLogic,
                                                onOpenProfile,
                                                badgeCount,
+                                               friendsLogic,
                                                currentLobby,
                                                onlineIds,
                                                copyToClipboard,
@@ -17,6 +18,18 @@ export default function LobbyWaitingScreen({
                                                kickPlayer,
                                                updateLobbyStatus
                                            }) {
+    // Freundschaftsknopf nur, wenn beide Seiten einen Benutzernamen haben und
+    // noch keinerlei Beziehung besteht (auch keine laufende Anfrage).
+    const ownHandle = authLogic.userData?.username;
+    const relatedIds = new Set([
+        ...(friendsLogic?.friends || []),
+        ...(friendsLogic?.incoming || []),
+        ...(friendsLogic?.outgoing || []),
+    ].map((f) => f.id));
+
+    const canAddFriend = (p) =>
+        !!ownHandle && p.id !== user.uid && !!p.username && !!p.discriminator && !relatedIds.has(p.id);
+
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-8 relative">
             <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} badgeCount={badgeCount} />
@@ -98,6 +111,17 @@ export default function LobbyWaitingScreen({
                                             )}
                                             {p.isHost && <Trophy size={18} className="text-yellow-500 shrink-0 drop-shadow-md" title="Host" />}
 
+                                            {canAddFriend(p) && (
+                                                <button
+                                                    onClick={() => friendsLogic.sendRequest(`${p.username}#${p.discriminator}`)}
+                                                    disabled={friendsLogic.busy}
+                                                    className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-indigo-300 transition-colors disabled:opacity-40 shrink-0"
+                                                    title={`${p.username}#${p.discriminator} als Freund hinzufügen`}
+                                                >
+                                                    <UserPlus size={18} />
+                                                </button>
+                                            )}
+
                                             {isHost && p.id !== user.uid && (
                                                 <div className="flex items-center gap-0.5 ml-1 sm:ml-2 border-l border-slate-700 pl-1.5 sm:pl-2 shrink-0">
                                                     <button onClick={() => promotePlayer(p.id)} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-yellow-400 transition-colors" title="Zum Partyleiter ernennen">
@@ -113,6 +137,14 @@ export default function LobbyWaitingScreen({
                                 )
                             })}
                         </div>
+                        {friendsLogic?.error && (
+                            <p className="text-xs text-red-400 mt-3">{friendsLogic.error}</p>
+                        )}
+                        {!ownHandle && (
+                            <p className="text-xs text-slate-500 mt-3">
+                                Mit einem eigenen Benutzernamen kannst du Mitspieler direkt als Freunde hinzufügen.
+                            </p>
+                        )}
                     </div>
 
                     {/* Spielekatalog */}
@@ -122,7 +154,7 @@ export default function LobbyWaitingScreen({
                                 <h3 className="text-xl font-bold flex items-center gap-2"><Play className="text-pink-400" /> Spielekatalog</h3>
                                 {isHost ? (
                                     <button
-                                        onClick={() => updateLobbyStatus(currentLobby.status, null, { settings: { ...currentLobby.settings, globalLeaderboard: !currentLobby.settings.globalLeaderboard } })}
+                                        onClick={() => updateLobbyStatus(null, null, { settings: { ...currentLobby.settings, globalLeaderboard: !currentLobby.settings.globalLeaderboard } })}
                                         className={`flex w-full sm:w-auto items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg border transition-colors ${currentLobby.settings?.globalLeaderboard ? 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' : 'text-slate-400 border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
                                     >
                                         <Settings size={14} /> <span>Globales Scoring {currentLobby.settings?.globalLeaderboard ? 'an' : 'aus'}</span>

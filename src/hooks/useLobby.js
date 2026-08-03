@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, measureClockOffset } from '../lib/supabase';
-import { setActiveLobby } from '../lib/firestoreBridge';
+import { setActiveLobby, setPatchObserver } from '../lib/firestoreBridge';
+import { applyLegacyPatch, isSyncedMoment } from '../lib/legacyPatch';
 import { avatarUrl, isStaleSession } from './useAuth';
 import usePresence, { usePresenceHeartbeat } from './usePresence';
 
@@ -47,6 +48,10 @@ export default function useLobby(user, userData, updateUserProfile) {
     const [members, setMembers] = useState([]);
     const [gameRow, setGameRow] = useState(null);
     const [mySecret, setMySecret] = useState(null);
+    // Eigene Schreibvorgaenge, die noch nicht als Serverstand zurueck sind.
+    // Sie liegen als Ueberlagerung ueber currentLobby, damit ein Klick sofort
+    // sichtbar ist und der naechste Klick den eigenen vorherigen schon sieht.
+    const [pendingPatches, setPendingPatches] = useState([]);
     // null = der Nutzer hat noch nichts getippt -> Profilname gilt. Abgeleitet
     // statt per Effect gespiegelt, damit kein setState-im-Effect noetig ist.
     const [typedName, setTypedName] = useState(null);
@@ -65,6 +70,10 @@ export default function useLobby(user, userData, updateUserProfile) {
     // Verlassen sofort umspringt statt erst beim naechsten Schlag.
     usePresenceHeartbeat(user, lobbyId);
     const leavingRef = useRef(false);
+    const patchSeq = useRef(0);
+    // Von der Realtime-Subscription gesetzt, damit ein bestaetigter eigener
+    // Patch das Nachladen selbst anstossen kann.
+    const refetchRef = useRef(null);
 
     // Der Shim braucht die Lobby-UUID, kennt aber nur den Code.
     useEffect(() => {
@@ -73,17 +82,50 @@ export default function useLobby(user, userData, updateUserProfile) {
     }, [lobbyId, lobbyCode]);
 
     // -----------------------------------------------------------------
+    // Optimistische Ueberlagerung.
+    // Nimmt einen Patch entgegen, zeigt ihn sofort an und gibt settle(ok)
+    // zurueck. Gemeinsame Momente (Phasenwechsel) bleiben aussen vor, damit
+    // niemand eine neue Phase frueher sieht als der Rest -- siehe
+    // isSyncedMoment() in legacyPatch.js.
+    // -----------------------------------------------------------------
+    const trackPatch = useCallback((patch) => {
+        if (isSyncedMoment(patch)) return () => {};
+
+        const id = ++patchSeq.current;
+        setPendingPatches((prev) => [...prev, { id, patch, settledAt: null }]);
+
+        return (ok) => {
+            setPendingPatches((prev) => ok
+                // Zeitpunkt merken: ab jetzt liefert jeder frisch gestartete
+                // Refetch diesen Patch mit, die Ueberlagerung darf dann weg.
+                ? prev.map((e) => (e.id === id ? { ...e, settledAt: Date.now() } : e))
+                : prev.filter((e) => e.id !== id));
+            // Selbst nachladen statt auf postgres_changes zu warten: dessen
+            // Event kann den Client VOR der RPC-Antwort erreichen, der Refetch
+            // liefe dann zu frueh und die Ueberlagerung bliebe liegen.
+            if (ok) refetchRef.current?.();
+        };
+    }, []);
+
+    useEffect(() => {
+        setPatchObserver(trackPatch);
+        return () => setPatchObserver(null);
+    }, [trackPatch]);
+
+    // -----------------------------------------------------------------
     // Zustand aus den drei Tabellen laden.
     // -----------------------------------------------------------------
     const fetchLobbyState = useCallback(async (id) => {
         if (!id) return false;
+        // Alles, was VOR diesem Zeitpunkt bestaetigt wurde, steckt im Ergebnis.
+        const startedAt = Date.now();
 
         const [lobbyRes, memberRes, gameRes] = await Promise.all([
             supabase.from('lobbies')
                 .select('id, code, host_id, status, current_game, global_leaderboard, closed_at, legacy_state')
                 .eq('id', id).maybeSingle(),
             supabase.from('lobby_members')
-                .select('user_id, display_name, score, joined_at, profiles(avatar_path, updated_at)')
+                .select('user_id, display_name, score, joined_at, profiles(avatar_path, updated_at, username, discriminator)')
                 .eq('lobby_id', id).is('left_at', null).order('joined_at', { ascending: true }),
             supabase.from('games')
                 .select('id, game_key, phase, state, phase_deadline')
@@ -98,6 +140,11 @@ export default function useLobby(user, userData, updateUserProfile) {
 
         setLobbyRow(lobbyRes.data);
         setMembers(memberRes.data || []);
+        // Bestaetigte eigene Patches fallen lassen -- dieser Datensatz
+        // enthaelt sie bereits. Noch laufende bleiben ueberlagert.
+        setPendingPatches((prev) => prev.filter(
+            (e) => e.settledAt === null || e.settledAt > startedAt
+        ));
         // Bei einem Fehler den letzten bekannten Spielzustand behalten statt ihn
         // stillschweigend auf null zu setzen -- sonst wuerde ein einzelner
         // fehlgeschlagener Request die laufende Partie fuer den Client beenden.
@@ -122,6 +169,7 @@ export default function useLobby(user, userData, updateUserProfile) {
         setMembers([]);
         setGameRow(null);
         setMySecret(null);
+        setPendingPatches([]);
         if (message) setErrorMsg(message);
     }, []);
 
@@ -163,11 +211,29 @@ export default function useLobby(user, userData, updateUserProfile) {
     useEffect(() => {
         if (!lobbyId || !user?.id) return;
 
+        // Ein einziger Schreibvorgang loest bis zu drei postgres_changes aus
+        // (lobbies, lobby_members, games). Ohne Buendelung liefen dafuer drei
+        // volle Refetches parallel. Waehrend einer laeuft, wird nur gemerkt,
+        // dass danach noch einmal geladen werden muss.
+        let inFlight = false;
+        let queued = false;
+
         const refetch = async () => {
             if (leavingRef.current) return;
-            const ok = await fetchLobbyState(lobbyId);
-            if (!ok) clearLobby('Du bist nicht mehr in dieser Lobby.');
+            if (inFlight) { queued = true; return; }
+
+            inFlight = true;
+            let ok;
+            try {
+                ok = await fetchLobbyState(lobbyId);
+            } finally {
+                inFlight = false;
+            }
+            if (!ok) return clearLobby('Du bist nicht mehr in dieser Lobby.');
+            if (queued) { queued = false; refetch(); }
         };
+
+        refetchRef.current = refetch;
 
         const channel = supabase
             .channel(`lobby-db:${lobbyId}`)
@@ -183,14 +249,17 @@ export default function useLobby(user, userData, updateUserProfile) {
             // Stand vor der Unterbrechung eingefroren.
             .subscribe((status) => { if (status === 'SUBSCRIBED') refetch(); });
 
-        return () => { supabase.removeChannel(channel); };
+        return () => {
+            refetchRef.current = null;
+            supabase.removeChannel(channel);
+        };
     }, [lobbyId, user?.id, fetchLobbyState, clearLobby]);
 
     // -----------------------------------------------------------------
     // Kompatibilitaets-Objekt in der alten Firestore-Form. Dadurch bleiben
     // alle fuenf Engines, LobbyWaitingScreen und GameHeader unveraendert.
     // -----------------------------------------------------------------
-    const currentLobby = useMemo(() => {
+    const serverLobby = useMemo(() => {
         if (!lobbyRow) return null;
         const legacy = lobbyRow.legacy_state || {};
         return {
@@ -205,12 +274,22 @@ export default function useLobby(user, userData, updateUserProfile) {
                 isHost: m.user_id === lobbyRow.host_id,
                 globalScore: m.score,
                 photoURL: avatarUrl(m.profiles?.avatar_path, m.profiles?.updated_at),
+                // Nur gesetzt, wenn die Person einen Account mit Benutzernamen
+                // hat -- daran haengt der Freundschaftsknopf in der Lobby.
+                username: m.profiles?.username || null,
+                discriminator: m.profiles?.discriminator || null,
             })),
             usedImposterWords: legacy.usedImposterWords || [],
             customImposterWords: legacy.customImposterWords || [],
             gameState: gameRow?.state || {},
         };
     }, [lobbyRow, members, gameRow]);
+
+    // Serverstand plus die eigenen, noch nicht bestaetigten Schreibvorgaenge.
+    const currentLobby = useMemo(
+        () => pendingPatches.reduce((view, e) => applyLegacyPatch(view, e.patch), serverLobby),
+        [serverLobby, pendingPatches]
+    );
 
     // -----------------------------------------------------------------
     // Aktionen: alle ueber RPCs statt Read-Modify-Write auf einem Array.
@@ -285,13 +364,21 @@ export default function useLobby(user, userData, updateUserProfile) {
     };
 
     /** Ersetzt die alte Firestore-Schreibfunktion. Signatur unveraendert,
-     *  damit GameHeader, LobbyWaitingScreen und die Engines gleich bleiben. */
+     *  damit GameHeader, LobbyWaitingScreen und die Engines gleich bleiben.
+     *  status darf null sein -- dann bleibt der Lobby-Status unberuehrt und
+     *  der Patch gilt als reine Einstellungsaenderung (siehe isSyncedMoment). */
     const updateLobbyStatus = async (status, game = null, additionalData = {}) => {
         if (!lobbyId) return;
-        const patch = { status, ...(game && { currentGame: game }), ...additionalData };
+        const patch = {
+            ...(status && { status }),
+            ...(game && { currentGame: game }),
+            ...additionalData,
+        };
+        const settle = trackPatch(patch);
         const { error } = await supabase.rpc('legacy_apply_patch', {
             p_lobby: lobbyId, p_patch: patch,
         });
+        settle(!error);
         if (error) setErrorMsg(mapRpcError(error));
     };
 

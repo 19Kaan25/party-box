@@ -100,6 +100,16 @@ export default function ImposterEngine({ lobby, user, isHost, db, updateLobbySta
     // RENDERING: SETUP PHASE
     // ---------------------------------------------------------
     if (gameState.phase === 'SETUP') {
+        // Unter drei Leuten gibt es nichts zu enttarnen: der Imposter waere
+        // sofort klar. Im Einzelgeraet-Modus zaehlt stattdessen die
+        // Mitspielerliste, dort duerfen Gaeste ohne Account auffuellen.
+        const startBlockReason =
+            players.length < 3
+                ? 'Für „jeder sein Handy“ braucht ihr mindestens 3 Spieler in der Lobby. Zu zweit könnt ihr auf ein Handy wechseln und Gäste ergänzen.'
+                : ((gameState.settings?.selectedCategories || []).length === 0
+                    ? 'Wähle mindestens eine Kategorie.'
+                    : null);
+
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} />
@@ -181,10 +191,14 @@ export default function ImposterEngine({ lobby, user, isHost, db, updateLobbySta
                         </div>
                     </div>
 
+                    {isHost && startBlockReason && (
+                        <p className="text-center text-sm text-amber-400 mt-6">{startBlockReason}</p>
+                    )}
+
                     {isHost && (
                         <button
                             onClick={startGame}
-                            disabled={(gameState.settings?.selectedCategories || []).length === 0}
+                            disabled={!!startBlockReason}
                             className="w-full mt-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:scale-[1.01] active:scale-95"
                         >
                             Spiel starten

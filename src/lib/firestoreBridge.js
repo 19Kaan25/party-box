@@ -31,6 +31,17 @@ export function setActiveLobby(lobby) {
     activeLobby = lobby ? { id: lobby.id, code: lobby.code } : { id: null, code: null };
 }
 
+/**
+ * Vom Lobby-Hook gesetzt: bekommt jeden Patch VOR dem RPC zu sehen und darf
+ * ihn optimistisch anzeigen. Rueckgabe ist eine settle(ok)-Funktion, die nach
+ * der Antwort aufgerufen wird. Siehe src/lib/legacyPatch.js.
+ */
+let patchObserver = null;
+
+export function setPatchObserver(fn) {
+    patchObserver = fn;
+}
+
 /** Platzhalter fuer das frueher durchgereichte Firestore-Handle. */
 export const db = { __bridge: true };
 
@@ -63,9 +74,11 @@ export async function updateDoc(ref, patch) {
     }
     // Der Shim schreibt immer in die aktive Lobby. Die Engines sprechen
     // ohnehin nur ihre eigene an (ref.id === activeLobby.code).
+    const settle = patchObserver ? patchObserver(patch) : null;
     const { error } = await supabase.rpc('legacy_apply_patch', {
         p_lobby: activeLobby.id,
         p_patch: patch,
     });
+    settle?.(!error);
     if (error) throw error;
 }

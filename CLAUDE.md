@@ -102,6 +102,7 @@ src/
   App.jsx                     Orchestriert useAuth + useLobby + useFriends, globale Overlays
   lib/supabase.js             Client-Singleton + measureClockOffset()
   lib/firestoreBridge.js      TRANSITIONAL: Firestore-kompatibler Shim für die Engines
+  lib/legacyPatch.js          Clientseitiges legacy_apply_patch für die optimistische Anzeige
   utils/helpers.js            shuffleArray, ALPHABET, relativeTimeDe
   constants/gameData.js       Wortlisten (Codenames, Imposter) + Werwolf-Rollen
   hooks/useAuth.js            Auth, Profil, Benutzername, Avatar
@@ -173,7 +174,22 @@ Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), n
 
 - **Sync:** drei `postgres_changes`-Subscriptions (`lobbies`, `lobby_members`, `games`) auf
   einem Kanal pro Lobby ([useLobby.js](src/hooks/useLobby.js)), refetcht bei jedem Event
-  den vollen Zustand aus den drei Tabellen statt den Payload zu verwenden.
+  den vollen Zustand aus den drei Tabellen statt den Payload zu verwenden. Ein Schreibvorgang
+  löst bis zu drei Events aus; die Refetches werden gebündelt (läuft schon einer, wird
+  genau ein weiterer nachgezogen).
+- **Optimistische Überlagerung:** Eigene Patches werden über
+  [legacyPatch.js](src/lib/legacyPatch.js) sofort lokal angewendet und liegen als
+  Überlagerung über `currentLobby`, bis ein Refetch sie bestätigt hat. Ohne das kostete
+  jeder Klick 300–600 ms, und zwei schnelle Klicks auf dieselbe Liste (Imposter-Kategorien)
+  lasen beide denselben alten Serverstand — der zweite überschrieb den ersten, der Klick
+  ging verloren. Alle Patch-Operationen sind idempotent, die Überlagerung darf also
+  gefahrlos über einem Stand liegen, der sie bereits enthält.
+
+  **Ausgenommen sind gemeinsame Momente** (`isSyncedMoment`): Patches mit `status`,
+  `currentGame`, komplettem `gameState` oder `gameState.phase` werden **nicht** optimistisch
+  angezeigt. Sonst sähe der Auslöser eine neue Phase Millisekunden vor allen anderen und
+  hätte bei Spielen um Schnelligkeit einen Vorsprung. Neue Phasenwechsel deshalb immer über
+  einen dieser Keys schreiben.
 - **Spiellogik läuft weiterhin zu 100 % im Client** (Übergang, s. Kopf dieser Datei).
   Schreibzugriffe laufen über RPCs bzw. `legacy_apply_patch`, nie über direkte
   Tabellen-Updates vom Client.

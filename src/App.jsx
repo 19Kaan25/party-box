@@ -82,6 +82,7 @@ export default function App() {
         <GameRouter
             authLogic={authLogic}
             lobbyLogic={lobbyLogic}
+            friendsLogic={friendsLogic}
             uiProps={uiProps}
         />
 

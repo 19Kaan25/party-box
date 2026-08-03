@@ -10,7 +10,7 @@ import WerwolfEngine from '../games/WerwolfEngine';
 import WerBinIchEngine from '../games/WerBinIchEngine';
 import ImposterEngine from '../games/ImposterEngine';
 
-export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
+export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProps }) {
     const { user } = authLogic;
     const {
         currentLobby,
@@ -49,6 +49,7 @@ export default function GameRouter({ authLogic, lobbyLogic, uiProps }) {
                 authLogic={authLogic}
                 onOpenProfile={openProfile}
                 badgeCount={badgeCount}
+                friendsLogic={friendsLogic}
                 currentLobby={currentLobby}
                 onlineIds={lobbyLogic.onlineIds}
                 copied={copied}
