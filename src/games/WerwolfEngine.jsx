@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { doc, updateDoc } from '../lib/firestoreBridge';
-import { Sun, Moon, RefreshCw, Skull, List, Heart, HeartHandshake, Syringe, FlaskConical, Flag, Trophy, Users, Home, Target, Loader2 } from 'lucide-react';
+import { Sun, Moon, RefreshCw, Skull, List, Heart, HeartHandshake, Syringe, FlaskConical, Flag, Trophy, Users, Home, Target, Loader2, Smartphone } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';
+import WerwolfSingleDevice from './WerwolfSingleDevice';
 import { WERWOLF_ROLES } from '../constants/gameData';
 import { shuffleArray } from '../utils/helpers';
 
@@ -14,12 +15,30 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
     // ==========================================
     // SETUP Hooks
     const [narratorId, setNarratorId] = useState(user?.uid || '');
-    const [roleCounts, setRoleCounts] = useState({ WERWOLF: 1, DORFBEWOHNER: 1, SEHERIN: 1, HEXE: 0, AMOR: 0, JAEGER: 0 });
+    const [roleCounts, setRoleCounts] = useState({ WERWOLF: 1, DORFBEWOHNER: 1, SEHERIN: 1, HEXE: 0, AMOR: 0, JAEGER: 0, KLEINES_MAEDCHEN: 0 });
 
     // PLAYING Hooks
     const [hunterPrompt, setHunterPrompt] = useState(null);
     const [hunterTarget, setHunterTarget] = useState(null);
     const [isShooting, setIsShooting] = useState(false);
+
+    // ==========================================
+    // MODUS-WEICHE: alles auf einem Handy laeuft in einer eigenen Komponente.
+    // Die Phase wird mitgeprueft, damit eine laufende Einzelgeraet-Partie auch
+    // dann korrekt rendert, wenn der Modus-Flag verlorenginge.
+    // ==========================================
+    if (gameState.settings?.mode === 'SINGLE' || gameState.phase === 'SINGLE_RUNNING') {
+        return (
+            <WerwolfSingleDevice
+                lobby={lobby}
+                user={user}
+                isHost={isHost}
+                db={db}
+                updateLobbyStatus={updateLobbyStatus}
+                leaveLobby={leaveLobby}
+            />
+        );
+    }
 
     // ==========================================
     // Phase: SETUP
@@ -90,6 +109,25 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                     <div className="text-center mb-8">
                         <h2 className="text-4xl font-black tracking-widest text-indigo-400 uppercase">Werwolf</h2>
                         <p className="text-slate-400 mt-2">Wähle einen Erzähler und konfiguriere die Rollen.</p>
+                    </div>
+
+                    {/* Modus-Umschalter: dasselbe Spiel auf einem einzigen Handy */}
+                    <div className="bg-slate-800 rounded-3xl p-4 border border-slate-700 shadow-xl mb-6">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button className="p-3 rounded-xl border-2 border-indigo-500 bg-indigo-500/10 text-white transition-all text-left">
+                                <span className="block font-bold text-sm">Jeder sein Handy</span>
+                                <span className="text-[10px] opacity-60">Alle in der Lobby spielen mit</span>
+                            </button>
+                            <button
+                                onClick={() => updateDoc(doc(db, 'lobbies', lobbyCode), {
+                                    'gameState.settings': { ...(gameState.settings || {}), mode: 'SINGLE' }
+                                })}
+                                className="p-3 rounded-xl border-2 border-slate-700 bg-slate-900/50 text-slate-500 hover:border-slate-500 transition-all text-left"
+                            >
+                                <span className="font-bold text-sm flex items-center gap-1.5"><Smartphone size={14} /> Ein Handy</span>
+                                <span className="text-[10px] opacity-60">Rollen reihum aufdecken</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -660,11 +698,13 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                     const s = playerState[p.id];
                     if (!s) return p;
 
+                    // Punktetabelle identisch zum Einzelgeraet-Modus:
+                    // Sieger 5, das Liebespaar 8 (schwerste Siegbedingung).
                     let addedPoints = 0;
                     if (winningFaction === 'LIEBESPAAR' && s.inLove) {
-                        addedPoints = 5;
+                        addedPoints = 8;
                     } else if (winningFaction === 'DORF' && s.role !== 'WERWOLF') {
-                        addedPoints = 3;
+                        addedPoints = 5;
                     } else if (winningFaction === 'WERWOLFE' && s.role === 'WERWOLF') {
                         addedPoints = 5;
                     }
@@ -719,10 +759,10 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
 
                                 if (winningFaction === 'LIEBESPAAR') {
                                     isWinner = s.inLove;
-                                    pointsGained = 5;
+                                    pointsGained = 8;
                                 } else if (winningFaction === 'DORF') {
                                     isWinner = s.role !== 'WERWOLF';
-                                    pointsGained = 3;
+                                    pointsGained = 5;
                                 } else if (winningFaction === 'WERWOLFE') {
                                     isWinner = s.role === 'WERWOLF';
                                     pointsGained = 5;

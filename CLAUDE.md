@@ -117,17 +117,27 @@ src/
   games/*Engine.jsx           5 Engines: StadtLandFluss, Codenames, Werwolf,
                               WerBinIch, Imposter (je 400–770 Zeilen)
   games/ImposterSingleDevice.jsx  Imposter auf EINEM Handy (pass the phone)
+  games/WerwolfSingleDevice.jsx   Werwolf auf EINEM Handy (Erzähler-Dashboard)
+  components/RosterPanel.jsx      Mitspielerliste der Einzelgerät-Modi (Drag, Gäste)
+  utils/roster.js                 seedRoster/newGuestKey (getrennt wegen react-refresh)
   games/ImposterSetupPanels.jsx   Kategorien-/Wörter-Panels, von beiden Imposter-Modi genutzt
   games/imposterWords.js          Wortpool-Helfer (eigene Datei wegen react-refresh)
 ```
 
-## Imposter: zwei Modi
+## Einzelgerät-Modi: Imposter und Werwolf
 
-`ImposterEngine.jsx` ist nur noch eine Weiche auf `gameState.settings.mode`:
+`ImposterEngine.jsx` und `WerwolfEngine.jsx` sind Weichen auf `gameState.settings.mode`:
 
 - **`'MULTI'` (Voreinstellung)** — der bisherige Ablauf, jeder spielt auf seinem Gerät.
-- **`'SINGLE'`** — ein Handy wandert reihum ([ImposterSingleDevice.jsx](src/games/ImposterSingleDevice.jsx)).
+- **`'SINGLE'`** — ein Handy wandert reihum
+  ([ImposterSingleDevice.jsx](src/games/ImposterSingleDevice.jsx),
+  [WerwolfSingleDevice.jsx](src/games/WerwolfSingleDevice.jsx)).
   Alle anderen Lobby-Mitglieder sehen nur "Spiel läuft…".
+
+Beide teilen sich [RosterPanel](src/components/RosterPanel.jsx): Lobby-Mitglieder sind
+vorbelegt, Gäste ohne Account ergänzbar, Reihenfolge per Pointer-Drag (kein HTML5-DnD —
+mobile Browser feuern kein `dragstart`). Gäste haben `userId === null` und bekommen
+deshalb nie globale Punkte.
 
 Zustandshaltung im Einzelgerät-Modus: **lokaler State zuerst, Server hinterher.** Jeder
 Schritt setzt sofort den React-State — ein weitergereichtes Handy darf nicht auf einen
@@ -144,6 +154,13 @@ Freundeskreis akzeptiert).
 **Falle:** Ein Patch mit `status: 'LOBBY_WAITING'` beendet die `games`-Zeile und verwirft
 alle `gameState`-Keys desselben Patches. "Nächste Runde" und "Einstellungen ändern" dürfen
 die Lobby deshalb nie anfassen, sonst ist die Mitspielerliste weg.
+
+**Werwolf-spezifisch:** Der Erzähler wird im Setup bestimmt und bekommt keine Rolle; die
+Rollenanzahl muss exakt der Mitspielerzahl entsprechen. Das Dashboard führt streng durch
+die Nachtschritte (`buildNightSteps` überspringt tote Rollen), Liebespaar- und Jäger-Ketten
+laufen in `killPlayers` automatisch, ein sterbender Jäger blockiert per Overlay alles
+Weitere — auch die Siegprüfung, denn sein Schuss kann das Ergebnis noch drehen.
+Punkte: Sieger **5**, Liebespaar **8**, Erzähler immer **2** — in beiden Modi identisch.
 
 ## Spielzustand: `games.state` (Kurzform)
 

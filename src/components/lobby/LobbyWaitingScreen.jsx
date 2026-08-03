@@ -186,7 +186,7 @@ export default function LobbyWaitingScreen({
                                     desc="Das Dorf schläft ein... Finde die Verräter!"
                                     color="indigo"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WERWOLF', { gameState: { phase: 'SETUP' } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WERWOLF', { gameState: { phase: 'SETUP', settings: { mode: 'MULTI' } } })}
                                 />
                                 <GameCard
                                     title="Wer bin ich?"

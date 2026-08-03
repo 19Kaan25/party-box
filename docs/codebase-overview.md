@@ -135,7 +135,9 @@ startingTeam, winner, customWords, pinnedWords
 ```
 
 **Werwolf** (`WerwolfEngine.jsx`)
-Phasen: `SETUP → PLAYING → FINAL_RESULTS`
+Zwei Modi über `settings.mode`, `WerwolfEngine.jsx` ist die Weiche.
+
+*Mehrgeräte (`'MULTI'`)* — Phasen `SETUP → PLAYING → FINAL_RESULTS`
 ```
 narrator: uid                dayNumber: number       isDay: bool
 playerState: { [uid]: { role, alive, inLove, deathReason } }
@@ -143,6 +145,20 @@ recentDeaths: [{ id, reason }]
 witchState: { healUsed, poisonUsed }
 hunterShooting: uid | null   winningFaction: 'DORF'|'WERWOLFE'|'LIEBESPAAR'|'UNENTSCHIEDEN'|null
 ```
+
+*Ein Handy (`'SINGLE'`, `WerwolfSingleDevice.jsx`)* — Phasen `SETUP → SINGLE_RUNNING`,
+Fortschritt daneben in `sd`:
+```
+sd: { step: 'SETUP'|'REVEAL'|'PLAY'|'RESULT',
+      roster: [{ key, name, userId }],  narratorKey,  roleCounts, rules,
+      revealIndex, revealStage,
+      game: { playerState: { [key]: { role, alive, inLove, deathReason } },
+              dayNumber, isDay, stepIndex, witchState, wolfVictim, poisonVictim,
+              healed, seerTarget, recentDeaths, pendingHunter, firstVictimKey, winner } }
+```
+Der Erzähler steht im `roster`, bekommt aber keinen `playerState`-Eintrag. Nachtschritte
+werden aus den lebenden Rollen berechnet (`buildNightSteps`), Liebespaar- und Jäger-Ketten
+löst `killPlayers` auf.
 
 **Wer bin ich?** (`WerBinIchEngine.jsx`)
 Phasen: `SETUP → INPUT → PLAYING → FINAL_RESULTS`

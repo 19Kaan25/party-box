@@ -32,7 +32,8 @@ export const WERWOLF_ROLES = {
   SEHERIN: { id: 'SEHERIN', name: 'Seherin', description: 'Du bist die Seherin! Du wachst jede Nacht als Erste auf und darfst die wahre Identität eines Mitspielers überprüfen. Nutze dein Wissen tagsüber weise, ohne dich sofort zu verraten.', color: 'text-purple-400', bg: 'bg-purple-500/20' },
   HEXE: { id: 'HEXE', name: 'Hexe', description: 'Du bist die Hexe! Du hast zwei Tränke: Einen Heiltrank (um das Opfer der Werwölfe zu retten) und einen Gifttrank (um nachts einen Spieler zu töten). Jeder Trank kann nur einmal im gesamten Spiel benutzt werden.', color: 'text-pink-400', bg: 'bg-pink-500/20' },
   AMOR: { id: 'AMOR', name: 'Amor', description: 'Du bist Amor! In der allerersten Nacht bestimmst du zwei Spieler, die sich unsterblich ineinander verlieben. Stirbt einer der beiden, stirbt der andere aus Liebeskummer sofort mit.', color: 'text-rose-400', bg: 'bg-rose-500/20' },
-  JAEGER: { id: 'JAEGER', name: 'Jäger', description: 'Du bist der Jäger! Wenn du stirbst (egal ob durch Werwölfe, das Dorf oder die Hexe), feuerst du in deinem letzten Atemzug einen Schuss ab und reißt einen Spieler deiner Wahl mit in den Tod.', color: 'text-amber-500', bg: 'bg-amber-500/20' }
+  JAEGER: { id: 'JAEGER', name: 'Jäger', description: 'Du bist der Jäger! Wenn du stirbst (egal ob durch Werwölfe, das Dorf oder die Hexe), feuerst du in deinem letzten Atemzug einen Schuss ab und reißt einen Spieler deiner Wahl mit in den Tod.', color: 'text-amber-500', bg: 'bg-amber-500/20' },
+  KLEINES_MAEDCHEN: { id: 'KLEINES_MAEDCHEN', name: 'Kleines Mädchen', description: 'Du bist das kleine Mädchen! Während die Werwölfe wach sind, darfst du heimlich blinzeln und versuchen, sie zu erkennen. Lass dich nicht erwischen — sonst bist du ihr nächstes Opfer.', color: 'text-sky-400', bg: 'bg-sky-500/20' }
 };
 
 export const IMPOSTER_CATEGORIES = {

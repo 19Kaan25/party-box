@@ -25,174 +25,18 @@
  *  aendern" die Lobby nie an, damit die Mitspielerliste erhalten bleibt.
  * ===================================================================== */
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-    VenetianMask, Ghost, Shield, Users, Settings, Plus, X,
-    GripVertical, ChevronUp, ChevronDown, Crown, Trophy, Check, Smartphone
+    VenetianMask, Ghost, Shield, Settings, Plus, Crown, Trophy, Check, Smartphone
 } from 'lucide-react';
 
 import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
 import GameHeader from '../components/GameHeader';
+import RosterPanel from '../components/RosterPanel';
 import { CategoryPicker, CustomWordManager } from './ImposterSetupPanels';
 import { buildWordPool, categoryNameOfWord } from './imposterWords';
 import { shuffleArray } from '../utils/helpers';
-
-const MAX_ROSTER = 20;
-const NAME_MAX = 20;
-
-/** Gespeicherte Liste bevorzugen, sonst alle Lobby-Mitglieder in Beitrittsreihenfolge. */
-const seedRoster = (saved, lobbyPlayers) => {
-    if (Array.isArray(saved) && saved.length > 0) {
-        return saved.map(r => ({ key: r.key, name: r.name, userId: r.userId ?? null }));
-    }
-    return lobbyPlayers.map(p => ({ key: p.id, name: p.name, userId: p.id }));
-};
-
-const newGuestKey = () =>
-    (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? `guest-${crypto.randomUUID()}`
-        : `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-/* ---------------------------------------------------------------------
- * Sortierbare Mitspielerliste.
- *
- * Pointer Events statt HTML5-Drag-and-Drop: mobile Browser feuern kein
- * dragstart, und dieses Feature ist ausdruecklich handy-first. Die
- * Chevron-Buttons bleiben als robuster Zweitweg (Touch, kleine Displays).
- * ------------------------------------------------------------------- */
-function RosterEditor({ items, myUserId, onReorder, onRemove, onCommit }) {
-    const [dragKey, setDragKey] = useState(null);
-    const [dragOffset, setDragOffset] = useState(0);
-    const listRef = useRef(null);
-    const dragInfo = useRef({ startY: 0, index: 0, rowHeight: 0 });
-
-    // Zeilenabstand exakt messen: Abstand der ersten beiden Zeilen inklusive
-    // Gap. Nur mit der reinen Zeilenhoehe wuerde das Ziel nach ein paar
-    // Zeilen auseinanderlaufen.
-    const measureRowHeight = () => {
-        const rows = listRef.current?.children;
-        if (!rows || rows.length === 0) return 56;
-        if (rows.length > 1) {
-            return rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top;
-        }
-        return rows[0].getBoundingClientRect().height;
-    };
-
-    const handlePointerDown = (e, index) => {
-        dragInfo.current = { startY: e.clientY, index, startIndex: index, rowHeight: measureRowHeight() };
-        setDragKey(items[index].key);
-        setDragOffset(0);
-        e.currentTarget.setPointerCapture(e.pointerId);
-    };
-
-    const handlePointerMove = (e) => {
-        if (!dragKey) return;
-        const { index, rowHeight, startY } = dragInfo.current;
-        const dy = e.clientY - startY;
-        const steps = rowHeight > 0 ? Math.round(dy / rowHeight) : 0;
-        const target = Math.max(0, Math.min(items.length - 1, index + steps));
-
-        if (target !== index) {
-            // Basislinie mitziehen, damit die Zeile unter dem Finger bleibt.
-            const nextStartY = startY + (target - index) * rowHeight;
-            dragInfo.current = { ...dragInfo.current, startY: nextStartY, index: target };
-            // Waehrend des Ziehens nicht speichern -- das waere ein RPC pro
-            // uebersprungener Zeile. Gesichert wird beim Loslassen.
-            onReorder(index, target, false);
-            setDragOffset(e.clientY - nextStartY);
-        } else {
-            setDragOffset(dy);
-        }
-    };
-
-    const endDrag = (e) => {
-        if (!dragKey) return;
-        if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
-            e.currentTarget.releasePointerCapture(e.pointerId);
-        }
-        setDragKey(null);
-        setDragOffset(0);
-        // Nur sichern, wenn sich tatsaechlich etwas verschoben hat -- ein
-        // blosser Tipp auf den Griff soll keinen RPC ausloesen.
-        if (dragInfo.current.index !== dragInfo.current.startIndex) onCommit(items);
-    };
-
-    return (
-        <div ref={listRef} className="space-y-2">
-            {items.map((item, index) => {
-                const isDragging = item.key === dragKey;
-                return (
-                    <div
-                        key={item.key}
-                        style={isDragging ? { transform: `translateY(${dragOffset}px)`, position: 'relative', zIndex: 20 } : undefined}
-                        className={`flex items-center gap-2 p-2 sm:p-3 rounded-xl border transition-colors ${
-                            isDragging
-                                ? 'border-emerald-500 bg-slate-800 shadow-xl shadow-black/40'
-                                : 'border-slate-700 bg-slate-900/60'
-                        }`}
-                    >
-                        <span
-                            onPointerDown={(e) => handlePointerDown(e, index)}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={endDrag}
-                            onPointerCancel={endDrag}
-                            style={{ touchAction: 'none' }}
-                            title="Zum Sortieren ziehen"
-                            className="shrink-0 text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing p-1"
-                        >
-                            <GripVertical size={18} />
-                        </span>
-
-                        <span className="shrink-0 w-6 text-center text-xs font-bold text-slate-500">{index + 1}</span>
-
-                        <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-xs text-white">
-                            {(item.name || '?').charAt(0).toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="font-bold text-sm text-slate-200 [overflow-wrap:anywhere]">
-                                {item.name}
-                                {item.userId === myUserId && <span className="text-slate-400 font-medium"> (Du)</span>}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-wider text-slate-500">
-                                {item.userId ? 'Lobby' : 'Gast'}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center shrink-0">
-                            <button
-                                onClick={() => onReorder(index, index - 1)}
-                                disabled={index === 0}
-                                title="Nach oben"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                            >
-                                <ChevronUp size={16} />
-                            </button>
-                            <button
-                                onClick={() => onReorder(index, index + 1)}
-                                disabled={index === items.length - 1}
-                                title="Nach unten"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                            >
-                                <ChevronDown size={16} />
-                            </button>
-                            <button
-                                onClick={() => onRemove(item.key)}
-                                title="Spielt nicht mit"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700 transition-colors"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-                    </div>
-                );
-            })}
-            {items.length === 0 && (
-                <p className="text-sm text-slate-500 italic py-4 text-center">Niemand ausgewählt.</p>
-            )}
-        </div>
-    );
-}
+import { seedRoster } from '../utils/roster';
 
 export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
     const { gameState, players, id: lobbyCode, customImposterWords = [], usedImposterWords = [] } = lobby;
@@ -204,7 +48,6 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // Alle Hooks ganz oben -- die Phasen sind bedingte Returns (Engine-Konvention).
     const [step, setStep] = useState(saved.step || 'SETUP');
     const [roster, setRoster] = useState(() => seedRoster(saved.roster, players));
-    const [guestInput, setGuestInput] = useState('');
     const [round, setRound] = useState(saved.round || null);
     const [revealIndex, setRevealIndex] = useState(saved.revealIndex || 0);
     const [revealStage, setRevealStage] = useState(saved.revealStage || 'HANDOFF');
@@ -326,30 +169,6 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
         setRoster(next);
         if (save) persist({ roster: next });
     };
-
-    const moveRosterItem = (from, to, save = true) => {
-        if (to < 0 || to >= roster.length || from === to) return;
-        const next = [...roster];
-        const [moved] = next.splice(from, 1);
-        next.splice(to, 0, moved);
-        applyRoster(next, save);
-    };
-
-    const removeFromRoster = (key) => applyRoster(roster.filter(r => r.key !== key));
-
-    const addLobbyMember = (player) => {
-        if (roster.length >= MAX_ROSTER) return;
-        applyRoster([...roster, { key: player.id, name: player.name, userId: player.id }]);
-    };
-
-    const addGuest = () => {
-        const name = guestInput.trim().slice(0, NAME_MAX);
-        if (!name || roster.length >= MAX_ROSTER) return;
-        applyRoster([...roster, { key: newGuestKey(), name, userId: null }]);
-        setGuestInput('');
-    };
-
-    const missingMembers = players.filter(p => !roster.some(r => r.userId === p.id));
 
     // ---------------------------------------------------------
     // RUNDENSTART
@@ -491,65 +310,14 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                         </div>
                     </div>
 
-                    {/* Mitspieler */}
-                    <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mb-6">
-                        <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                            <Users className="text-indigo-400" size={20} /> Mitspieler ({roster.length})
-                        </h3>
-                        <p className="text-xs text-slate-500 mb-4">
-                            In dieser Reihenfolge wird das Handy weitergegeben. Zum Sortieren am Griff ziehen.
-                        </p>
-
-                        <RosterEditor
-                            items={roster}
+                    <div className="mb-6">
+                        <RosterPanel
+                            roster={roster}
+                            players={players}
                             myUserId={user.uid}
-                            onReorder={moveRosterItem}
-                            onRemove={removeFromRoster}
-                            onCommit={(items) => persist({ roster: items })}
+                            onChange={applyRoster}
+                            hint="In dieser Reihenfolge wird das Handy weitergegeben. Zum Sortieren am Griff ziehen."
                         />
-
-                        {missingMembers.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-slate-700">
-                                <p className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2">Nicht dabei</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {missingMembers.map(p => (
-                                        <button
-                                            key={p.id}
-                                            onClick={() => addLobbyMember(p)}
-                                            className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 hover:border-emerald-500 px-3 py-1.5 rounded-lg text-xs transition-colors"
-                                        >
-                                            <Plus size={12} className="text-emerald-400" />
-                                            <span className="[overflow-wrap:anywhere]">{p.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="mt-5 pt-4 border-t border-slate-700">
-                            <p className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2">Gast hinzufügen</p>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={guestInput}
-                                    maxLength={NAME_MAX}
-                                    onChange={(e) => setGuestInput(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') addGuest(); }}
-                                    placeholder="Name ohne Account..."
-                                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
-                                />
-                                <button
-                                    onClick={addGuest}
-                                    disabled={!guestInput.trim() || roster.length >= MAX_ROSTER}
-                                    className="bg-emerald-600 p-2 rounded-lg hover:bg-emerald-500 disabled:opacity-40 transition-colors"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-                            <p className="text-[10px] text-slate-500 mt-2">
-                                Gäste spielen mit, bekommen aber keine globalen Punkte.
-                            </p>
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
