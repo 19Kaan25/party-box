@@ -15,9 +15,6 @@ React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 > React-Client um (Auth, Lobby, Presence, Reconnect, Avatare) und entfernte Firebase;
 > Phase 0c brachte Benutzernamen mit Code, Freundesliste, Online-Status und
 > Lobby-Einladungen.
-> **Die Firestore-Abschnitte weiter unten sind damit historisch** — sie beschreiben
-> den Stand vor der Migration und werden mit den Phasen 1–5 schrittweise ersetzt.
->
 > Übergangscode, der mit der ersten Spiele-Phase verschwindet: `src/lib/firestoreBridge.js`
 > und `legacy_apply_patch()` / `lobbies.legacy_state` (beide mit `TRANSITIONAL`-Header).
 > Die fünf Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
@@ -32,7 +29,7 @@ Häufigste Verwechslung beim Arbeiten an diesem Code.
 
 | Begriff | Spalte | Wo sichtbar | Verhalten |
 |---|---|---|---|
-| **Benutzername** `Kaan#1234` | `profiles.username` + `profiles.discriminator` | oben links, Profil, Freundesliste | dauerhaft, nur mit Account, damit fügt man sich hinzu |
+| **Benutzername** `Kaan#1234` | `profiles.username` + `profiles.discriminator` | oben rechts, Profil, Freundesliste | dauerhaft, nur mit Account, damit fügt man sich hinzu |
 | **Anzeigename / Nickname** | `lobby_members.display_name` | Spielerliste, alle fünf Spiele | frei getippt vor dem Erstellen/Beitreten |
 
 `profiles.display_name` ist **kein dritter Name**, sondern nur der zuletzt
@@ -70,8 +67,8 @@ Passwort-Reset angefordert wird (aktuell nur localhost — Vercel-URL fehlt noch
 | Build        | Vite 8 (`@vitejs/plugin-react`, Oxc)                             |
 | Styling      | Tailwind CSS v4 via `@tailwindcss/vite` — keine `tailwind.config`, keine `postcss.config` |
 | Icons        | `lucide-react`                                                    |
-| Backend      | Firebase 12: Auth (anonym + Email/Passwort) + Firestore           |
-| State        | Zwei eigene Hooks (`useAuth`, `useLobby`) + Prop-Drilling. Kein Redux/Zustand/Context |
+| Backend      | Supabase: Auth (anonym + Email/Passwort), Postgres, Realtime, Storage, pg_cron |
+| State        | Vier eigene Hooks (`useAuth`, `useLobby`, `usePresence`, `useFriends`) + Prop-Drilling. Kein Redux/Zustand/Context |
 | Routing      | Keins. `GameRouter` schaltet per `switch` auf `lobby.currentGame` |
 | Tests        | Keine. Kein Test-Runner installiert                               |
 | CI/CD        | Keine. Kein Hosting-/Deploy-Config im Repo                        |
@@ -113,40 +110,26 @@ src/
   hooks/useFriends.js         Freunde, Anfragen, Einladungen (Realtime + Poll)
   components/GameRouter.jsx   Welcome → Lobby → Spiel-Engine (switch)
   components/GameHeader.jsx   "Spiel beenden"/"verlassen"-Leiste
-  components/auth/            AuthMenu (oben links), ProfileModal (Reiter Profil/Freunde)
+  components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde)
   components/friends/         FriendsPanel, InviteToasts
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
   games/*Engine.jsx           5 Engines: StadtLandFluss, Codenames, Werwolf,
                               WerBinIch, Imposter (je 400–770 Zeilen)
 ```
 
-## Firestore-Schema (Kurzform)
+## Spielzustand: `games.state` (Kurzform)
 
-Nur zwei Collections. **Alles** an Spielzustand liegt in einem einzigen Lobby-Dokument.
-
-```
-users/{uid}
-  name, username, role ('user'), currentLobby: string|null, photoURL (base64 data-URI!)
-
-lobbies/{CODE}            // CODE = 4 Zeichen [A-Z0-9], via generateLobbyCode()
-  id, hostId, status: 'LOBBY_WAITING' | 'GAME_IN_PROGRESS'
-  currentGame: null | 'STADT_LAND_FLUSS' | 'CODENAMES' | 'WERWOLF' | 'WER_BIN_ICH' | 'IMPOSTER'
-  settings: { globalLeaderboard: bool }
-  scoreHistory: { [uid]: number }         // überlebt Verlassen/Rejoin
-  players: [{ id, name, isHost, globalScore, photoURL }]   // Array, kein Subcollection
-  usedImposterWords: string[], customImposterWords: string[]
-  gameState: {}                            // spielabhängig, s. docs/
-```
-
-`gameState` ist pro Spiel komplett anders geformt (Werwolf: `playerState`, `narrator`,
-`witchState`; Codenames: `board`, `teams`, `spymasters`; SLF: `answers`, `votes`,
-`gameScores`; …). Beim Verlassen eines Spiels wird `gameState: {}` gesetzt.
+Pro Spiel komplett anders geformt (Werwolf: `playerState`, `narrator`, `witchState`;
+Codenames: `board`, `teams`, `spymasters`; SLF: `answers`, `votes`, `gameScores`; …).
+Vollständiges Schema: [docs/supabase-migration-plan.md](docs/supabase-migration-plan.md) §4.
+Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), nicht direkt.
 
 ## Konventionen
 
 - **Sprache:** UI-Texte, Kommentare und Commit-Messages auf Deutsch. Code-Bezeichner englisch.
-- **Firestore-Writes:** Punkt-Pfade bevorzugt (`'gameState.phase'`), Arrays werden
-  read-modify-write ersetzt. Keine Transactions, kein `runTransaction`, kein Batch.
+- **Engine-Writes über die Bridge:** Punkt-Pfade (`'gameState.phase'`), Arrays per
+  `arrayUnion`. Firestore-Semantik, aber serverseitig auf `games.state` aufgelöst
+  (`legacy_apply_patch`, s. Kopf dieser Datei) — keine Transactions, kein Batch.
 - **Host-Autorität:** rein clientseitig (`if (!isHost) return;`). Nicht als Sicherheitsgrenze behandeln.
 - **Engine-Signatur:** `({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby })`.
   `db` wird als Prop durchgereicht, obwohl es importierbar wäre.
@@ -161,23 +144,26 @@ lobbies/{CODE}            // CODE = 4 Zeichen [A-Z0-9], via generateLobbyCode()
 
 ## Multiplayer-Modell (Kurz)
 
-- **Sync:** genau **ein** `onSnapshot` pro Client, auf `lobbies/{code}`
-  ([useLobby.js:38](src/hooks/useLobby.js#L38)). Jede Änderung eines beliebigen Spielers
-  pusht das komplette Dokument (inkl. aller Avatare) an alle.
-- **Spiellogik läuft zu 100 % im Client.** Keine Cloud Functions, keine Server-Validierung.
-- **Reconnect** über `users/{uid}.currentLobby`; **kein** Disconnect-Handling, keine Presence,
-  kein Cleanup verwaister Lobbys.
+- **Sync:** drei `postgres_changes`-Subscriptions (`lobbies`, `lobby_members`, `games`) auf
+  einem Kanal pro Lobby ([useLobby.js](src/hooks/useLobby.js)), refetcht bei jedem Event
+  den vollen Zustand aus den drei Tabellen statt den Payload zu verwenden.
+- **Spiellogik läuft weiterhin zu 100 % im Client** (Übergang, s. Kopf dieser Datei).
+  Schreibzugriffe laufen über RPCs bzw. `legacy_apply_patch`, nie über direkte
+  Tabellen-Updates vom Client.
+- **Reconnect** über `lobby_members` (aktive Mitgliedschaft), **Presence** über einen
+  öffentlichen Kanal (`usePresence.js`) plus periodischem Herzschlag.
 
 ## Fallen beim Arbeiten am Code
 
-- `.env` ist **committed** und wird **nirgends gelesen** — die Firebase-Config steht
-  hartcodiert in [src/utils/firebase.js](src/utils/firebase.js). `import.meta.env` kommt im
-  Code nicht vor.
-- **Es gibt keine `firestore.rules` im Repo** (auch nie in der Git-History). Regeln existieren
-  nur in der Firebase-Console und sind aus dem Code nicht verifizierbar.
-- Geheime Spielinformationen (Imposter-Wort, Werwolf-Rollen, Codenames-Farben) liegen im
-  Klartext im Lobby-Dokument, das jeder Spieler abonniert → per DevTools einsehbar.
-- `/default-avatar.png` wird an vielen Stellen referenziert, existiert aber **nicht** in `public/`.
+- **Zwei getrennte Env-Variablensätze für Vercel:** `VITE_SUPABASE_URL` /
+  `VITE_SUPABASE_ANON_KEY` (mit `VITE_`-Präfix, backt Vite zur **Build-Zeit** in den
+  Client-Bundle ein — ohne sie wirft [supabase.js](src/lib/supabase.js) beim Laden und die
+  App bleibt leer) vs. `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (ohne Präfix, nur für
+  `api/keep-alive.js`, niemals im Client). Nach Ändern der `VITE_`-Variablen ist ein
+  Redeploy nötig, ein reines Hinzufügen reicht nicht.
+- **Realtime liefert verpasste Events nach einem Verbindungsabriss nicht nach.** Bricht der
+  WebSocket kurz ab (Displaysperre, Hintergrund-Tab) und reconnectet automatisch, bleibt der
+  Client sonst auf altem Stand eingefroren. `useLobby.js` refetcht deshalb bei jedem
+  `SUBSCRIBED`-Status aktiv; `useFriends.js` hat diese Absicherung **noch nicht**.
 - `src/App.css` und `src/assets/*` werden nirgends importiert (toter Code).
 - `autoprefixer` + `postcss` sind DevDependencies ohne Config — Tailwind v4 braucht sie nicht.
-- `lobby.settings.globalLeaderboard` wird in 4 Engines **ohne** Optional Chaining gelesen.

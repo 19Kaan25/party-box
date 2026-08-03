@@ -98,7 +98,10 @@ export default function useLobby(user, userData, updateUserProfile) {
 
         setLobbyRow(lobbyRes.data);
         setMembers(memberRes.data || []);
-        setGameRow(gameRes.data || null);
+        // Bei einem Fehler den letzten bekannten Spielzustand behalten statt ihn
+        // stillschweigend auf null zu setzen -- sonst wuerde ein einzelner
+        // fehlgeschlagener Request die laufende Partie fuer den Client beenden.
+        if (!gameRes.error) setGameRow(gameRes.data || null);
 
         // Eigenes Geheimnis nachladen. In Phase 0b immer leer -- die Engines
         // halten ihre Geheimnisse noch im offenen Spielzustand. Der Aufruf
@@ -174,7 +177,11 @@ export default function useLobby(user, userData, updateUserProfile) {
                 { event: '*', schema: 'public', table: 'lobby_members', filter: `lobby_id=eq.${lobbyId}` }, refetch)
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'games', filter: `lobby_id=eq.${lobbyId}` }, refetch)
-            .subscribe();
+            // SUBSCRIBED feuert auch nach jedem automatischen Reconnect (Displaysperre,
+            // Tab im Hintergrund, kurzer Netzwerkabriss). Verpasste Events werden dabei
+            // NICHT nachgeliefert -- ohne diesen Refetch bliebe der Client sonst auf dem
+            // Stand vor der Unterbrechung eingefroren.
+            .subscribe((status) => { if (status === 'SUBSCRIBED') refetch(); });
 
         return () => { supabase.removeChannel(channel); };
     }, [lobbyId, user?.id, fetchLobbyState, clearLobby]);
