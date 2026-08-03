@@ -174,7 +174,9 @@ export default function LobbyWaitingScreen({
                                             settings: {
                                                 imposterCount: 1,
                                                 timerDuration: 180,
-                                                selectedCategories: ['orte']
+                                                selectedCategories: ['orte'],
+                                                mode: 'MULTI',
+                                                imposterHint: 'none'
                                             }
                                         }
                                     })}

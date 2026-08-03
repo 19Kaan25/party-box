@@ -154,12 +154,22 @@ nextRank: number             activeTurnId: uid
 ```
 
 **Imposter** (`ImposterEngine.jsx`)
-Phasen: `SETUP → ROLE_REVEAL → PLAYING → RESULT`
+Zwei Modi, umgeschaltet über `settings.mode`. `ImposterEngine.jsx` ist nur noch die
+Weiche; `'SINGLE'` rendert `ImposterSingleDevice.jsx`.
+
+*Mehrgeräte (`mode: 'MULTI'`, Voreinstellung)* — Phasen `SETUP → ROLE_REVEAL → PLAYING → RESULT`
 ```
-settings: { imposterCount: 1–3, timerDuration: 180, selectedCategories: string[] }
+settings: { imposterCount: 1–3, timerDuration: 180, selectedCategories: string[],
+            mode: 'MULTI' | 'SINGLE', imposterHint: 'none' | 'category' }
 word: string                 imposters: uid[]        votes: { [uid]: uid }
 startTime: number
 ```
+
+*Ein Handy (`mode: 'SINGLE'`)* — Phasen `SETUP → SINGLE_RUNNING`. Der Server sieht nur
+diese beiden Phasen plus `roster: [{ key, name, userId }]`; der gesamte Rundenzustand
+(Wort, Imposter, Aufdeck-Index, Votum) bleibt im lokalen State des Host-Geräts und geht
+nie über die Bridge. Nicht-Hosts rendern anhand von `phase === 'SINGLE_RUNNING'` einen
+"Spiel läuft…"-Schirm. Details im Kopfkommentar von `ImposterSingleDevice.jsx`.
 
 `settings.timerDuration` wird gesetzt, aber nirgends ausgewertet — es gibt in Imposter
 keinen laufenden Timer.

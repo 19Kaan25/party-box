@@ -115,7 +115,30 @@ src/
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
   games/*Engine.jsx           5 Engines: StadtLandFluss, Codenames, Werwolf,
                               WerBinIch, Imposter (je 400–770 Zeilen)
+  games/ImposterSingleDevice.jsx  Imposter auf EINEM Handy (pass the phone)
+  games/ImposterSetupPanels.jsx   Kategorien-/Wörter-Panels, von beiden Imposter-Modi genutzt
+  games/imposterWords.js          Wortpool-Helfer (eigene Datei wegen react-refresh)
 ```
+
+## Imposter: zwei Modi
+
+`ImposterEngine.jsx` ist nur noch eine Weiche auf `gameState.settings.mode`:
+
+- **`'MULTI'` (Voreinstellung)** — der bisherige Ablauf, jeder spielt auf seinem Gerät.
+- **`'SINGLE'`** — ein Handy wandert reihum ([ImposterSingleDevice.jsx](src/games/ImposterSingleDevice.jsx)).
+  Alle anderen Lobby-Mitglieder sehen nur "Spiel läuft…".
+
+Im Einzelgerät-Modus bleiben **Wort, Rollenverteilung, Aufdeck-Fortschritt und Votum im
+lokalen React-State des Hosts** und gehen nie über die Bridge — sonst hätte jeder Client
+das Geheimwort im Speicher, obwohl niemand sonst mitspielt, und jedes Umblättern wäre ein
+RPC plus Realtime-Refetch. Auf dem Server liegen nur `gameState.phase`
+(`'SETUP'` / `'SINGLE_RUNNING'`), `gameState.settings` und `gameState.roster`, verteilt auf
+genau vier Schreibvorgänge (Rundenstart, Ergebnis inkl. Punkte, Zurück-zum-Setup,
+Zurück-zur-Lobby).
+
+**Falle:** Ein Patch mit `status: 'LOBBY_WAITING'` beendet die `games`-Zeile und verwirft
+alle `gameState`-Keys desselben Patches. "Nächste Runde" und "Einstellungen ändern" dürfen
+die Lobby deshalb nie anfassen, sonst ist die Mitspielerliste weg.
 
 ## Spielzustand: `games.state` (Kurzform)
 

@@ -2,17 +2,36 @@ import React, { useState } from 'react';
 import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
 import {
     Settings, Shield, Ghost, Timer,
-    CheckCircle, VenetianMask, Plus, Trash2
+    CheckCircle, VenetianMask, Plus, Smartphone
 } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';
-import { IMPOSTER_CATEGORIES } from '../constants/gameData';
+import ImposterSingleDevice from './ImposterSingleDevice';
+import { CategoryPicker, CustomWordManager } from './ImposterSetupPanels';
+import { buildWordPool } from './imposterWords';
 import { shuffleArray } from '../utils/helpers';
 
 export default function ImposterEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
     const { gameState, players, id: lobbyCode, customImposterWords = [], usedImposterWords = [] } = lobby;
     const [showRole, setShowRole] = useState(false);
-    const [customInput, setCustomInput] = useState('');
+
+    // ---------------------------------------------------------
+    // MODUS-WEICHE: alles auf einem Handy laeuft in einer eigenen Komponente.
+    // Die Phase wird mitgeprueft, damit eine laufende Einzelgeraet-Runde auch
+    // dann korrekt rendert, wenn der Modus-Flag verlorenginge.
+    // ---------------------------------------------------------
+    if (gameState.settings?.mode === 'SINGLE' || gameState.phase === 'SINGLE_RUNNING') {
+        return (
+            <ImposterSingleDevice
+                lobby={lobby}
+                user={user}
+                isHost={isHost}
+                db={db}
+                updateLobbyStatus={updateLobbyStatus}
+                leaveLobby={leaveLobby}
+            />
+        );
+    }
 
     // ---------------------------------------------------------
     // HOST-LOGIK: EINSTELLUNGEN LIVE SYNCHRONISIEREN
@@ -33,35 +52,14 @@ export default function ImposterEngine({ lobby, user, isHost, db, updateLobbySta
         updateSetupSettings({ selectedCategories: next });
     };
 
-    const addCustomWord = async () => {
-        if (!customInput.trim()) return;
-        const lobbyRef = doc(db, 'lobbies', lobbyCode);
-        await updateDoc(lobbyRef, {
-            customImposterWords: arrayUnion(customInput.trim())
-        });
-        setCustomInput('');
-    };
-
-    const removeCustomWord = async (word) => {
-        const newList = customImposterWords.filter(w => w !== word);
-        await updateDoc(doc(db, 'lobbies', lobbyCode), { customImposterWords: newList });
-    };
-
     // ---------------------------------------------------------
     // SPIELSTART: ROLLEN & WORT VERTEILEN
     // ---------------------------------------------------------
     const startGame = async () => {
         const settings = gameState.settings;
-        let fullPool = [];
 
         // Pool aus gewählten Kategorien zusammenstellen
-        settings.selectedCategories.forEach(catId => {
-            if (catId === 'custom') {
-                fullPool = [...fullPool, ...customImposterWords];
-            } else {
-                fullPool = [...fullPool, ...IMPOSTER_CATEGORIES[catId].words];
-            }
-        });
+        const fullPool = buildWordPool(settings.selectedCategories, customImposterWords);
 
         // Bereits benutzte Wörter filtern
         const availableWords = fullPool.filter(w => !usedImposterWords.includes(w));
@@ -116,45 +114,38 @@ export default function ImposterEngine({ lobby, user, isHost, db, updateLobbySta
                         </p>
                     </div>
 
+                    {/* Modus-Umschalter: dasselbe Spiel auf einem einzigen Handy */}
+                    <div className="bg-slate-800 rounded-3xl p-4 border border-slate-700 shadow-xl mb-6">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                className="p-3 rounded-xl border-2 border-emerald-500 bg-emerald-500/10 text-white transition-all text-left"
+                            >
+                                <span className="block font-bold text-sm">Jeder sein Handy</span>
+                                <span className="text-[10px] opacity-60">Alle in der Lobby spielen mit</span>
+                            </button>
+                            <button
+                                disabled={!isHost}
+                                onClick={() => updateSetupSettings({ mode: 'SINGLE' })}
+                                className={`p-3 rounded-xl border-2 border-slate-700 bg-slate-900/50 text-slate-500 transition-all text-left ${isHost ? 'hover:border-slate-500' : 'cursor-default'}`}
+                            >
+                                <span className="font-bold text-sm flex items-center gap-1.5"><Smartphone size={14} /> Ein Handy</span>
+                                <span className="text-[10px] opacity-60">Karten reihum aufdecken</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Linke Seite: Kategorien */}
                         <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
                             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 <Shield className="text-blue-400" size={20} /> Kategorien
                             </h3>
-                            <div className="grid grid-cols-2 gap-3">
-                                {Object.values(IMPOSTER_CATEGORIES).map(cat => {
-                                    const isSelected = gameState.settings?.selectedCategories?.includes(cat.id);
-                                    return (
-                                        <button
-                                            key={cat.id}
-                                            disabled={!isHost}
-                                            onClick={() => toggleCategory(cat.id)}
-                                            className={`p-3 rounded-xl border-2 transition-all text-left ${
-                                                isSelected
-                                                    ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                                                    : 'border-slate-700 bg-slate-900/50 text-slate-500 hover:border-slate-500'
-                                            } ${!isHost && 'cursor-default'}`}
-                                        >
-                                            <span className="block font-bold text-sm">{cat.name}</span>
-                                            <span className="text-[10px] opacity-60">{cat.words.length} Wörter</span>
-                                        </button>
-                                    );
-                                })}
-                                {/* Custom Category Button */}
-                                <button
-                                    disabled={!isHost}
-                                    onClick={() => toggleCategory('custom')}
-                                    className={`p-3 rounded-xl border-2 transition-all text-left ${
-                                        gameState.settings?.selectedCategories?.includes('custom')
-                                            ? 'border-purple-500 bg-purple-500/10 text-white'
-                                            : 'border-slate-700 bg-slate-900/50 text-slate-500 hover:border-slate-500'
-                                    } ${!isHost && 'cursor-default'}`}
-                                >
-                                    <span className="block font-bold text-sm">Eigene Wörter</span>
-                                    <span className="text-[10px] opacity-60">{customImposterWords.length} hinterlegt</span>
-                                </button>
-                            </div>
+                            <CategoryPicker
+                                selected={gameState.settings?.selectedCategories || []}
+                                onToggle={toggleCategory}
+                                disabled={!isHost}
+                                customWordCount={customImposterWords.length}
+                            />
                         </div>
 
                         {/* Rechte Seite: Settings & Custom Words */}
@@ -185,27 +176,7 @@ export default function ImposterEngine({ lobby, user, isHost, db, updateLobbySta
                                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                                     <Plus className="text-purple-400" size={20} /> Eigene Wörter
                                 </h3>
-                                {isHost && (
-                                    <div className="flex gap-2 mb-4">
-                                        <input
-                                            type="text" value={customInput} onChange={(e) => setCustomInput(e.target.value)}
-                                            placeholder="Wort hinzufügen..."
-                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
-                                        />
-                                        <button onClick={addCustomWord} className="bg-purple-600 p-2 rounded-lg hover:bg-purple-500 transition-colors">
-                                            <Plus size={20} />
-                                        </button>
-                                    </div>
-                                )}
-                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
-                                    {customImposterWords.map((word, idx) => (
-                                        <span key={idx} className="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-xs flex items-center gap-2">
-                      {word}
-                                            {isHost && <Trash2 size={12} className="text-red-400 cursor-pointer hover:text-red-300" onClick={() => removeCustomWord(word)} />}
-                    </span>
-                                    ))}
-                                    {customImposterWords.length === 0 && <p className="text-xs text-slate-500 italic">Noch keine eigenen Wörter hinterlegt.</p>}
-                                </div>
+                                <CustomWordManager lobbyCode={lobbyCode} words={customImposterWords} isHost={isHost} />
                             </div>
                         </div>
                     </div>
