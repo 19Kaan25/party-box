@@ -34,6 +34,8 @@ Ausführung siehe „Verifizieren" unten.
 | `20260730220000_phase0b_legacy_bridge.sql` | **TRANSITIONAL**: `lobbies.legacy_state`, `server_now()`, `legacy_apply_patch()` — fällt mit der ersten Spiele-Phase weg |
 | `20260731090000_phase0c_identity_and_friends.sql` | Benutzername + `discriminator`, Längengrenze 20, `friendships`, `user_status`, `lobby_invites` und ihre RPCs |
 | `20260804133000_lobby_invites_24h_expiry.sql` | Einladungs-Ablauf 2 → 24 Stunden: `list_my_invites()`-Filter + `purge-old-invites`-Intervall |
+| `20260805090000_game_key_sprueche_klopfer.sql` | Enum-Wert `sprueche_klopfer` für `lobbies.current_game` — bewusst allein in einer eigenen Datei, s. u. |
+| `20260805090100_legacy_patch_sprueche_klopfer.sql` | `legacy_apply_patch()` mappt `'SPRUECHE_KLOPFER'` auf den neuen Enum-Wert |
 
 ## RPCs
 
@@ -90,6 +92,17 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
 | `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — verwaiste Host-Lobbys werden vorher auf den Sentinel umgehängt, siehe unten |
 | `purge-old-invites` | stündlich :07 | Löscht Lobby-Einladungen älter als 24 Stunden |
+
+### Warum der Enum-Wert eine eigene Migrationsdatei bekommt
+
+Postgres erlaubt seit Version 12 zwar `alter type … add value` innerhalb
+einer Transaktion, der neue Wert darf darin aber noch nicht **benutzt**
+werden. Da der CLI jede Migrationsdatei in einer eigenen Transaktion fährt,
+ist die Reihenfolge damit garantiert: erst committen, dann in
+`legacy_apply_patch()` referenzieren. Beides in einer Datei würde je nach
+Planer-Zeitpunkt mit „unsafe use of new value of enum type" scheitern.
+
+Dasselbe Muster gilt für jedes weitere neue Spiel.
 
 ## Deployen (bei künftigen Migrationen)
 

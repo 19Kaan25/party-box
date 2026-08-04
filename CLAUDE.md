@@ -1,6 +1,6 @@
 # PartyBox — CLAUDE.md
 
-Multiplayer-Partyspiel-App (5 Minispiele) für Freundesgruppen im selben Raum.
+Multiplayer-Partyspiel-App (6 Minispiele) für Freundesgruppen im selben Raum.
 React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 [docs/codebase-overview.md](docs/codebase-overview.md).
 
@@ -17,7 +17,7 @@ React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 > Lobby-Einladungen.
 > Übergangscode, der mit der ersten Spiele-Phase verschwindet: `src/lib/firestoreBridge.js`
 > und `legacy_apply_patch()` / `lobbies.legacy_state` (beide mit `TRANSITIONAL`-Header).
-> Die fünf Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
+> Die sechs Engines schreiben weiterhin clientseitig und ohne Geheimnis-Trennung —
 > das ist Absicht und Aufgabe der Phasen 1–5. Geheimnisse im Klartext sind im
 > Freundes-/Familienkreis bewusst akzeptiert und kein Blocker.
 >
@@ -30,7 +30,7 @@ Häufigste Verwechslung beim Arbeiten an diesem Code.
 | Begriff | Spalte | Wo sichtbar | Verhalten |
 |---|---|---|---|
 | **Benutzername** `Kaan#1234` | `profiles.username` + `profiles.discriminator` | oben rechts, Profil, Freundesliste | dauerhaft, nur mit Account, damit fügt man sich hinzu |
-| **Anzeigename / Nickname** | `lobby_members.display_name` | Spielerliste, alle fünf Spiele | frei getippt vor dem Erstellen/Beitreten |
+| **Anzeigename / Nickname** | `lobby_members.display_name` | Spielerliste, alle sechs Spiele | frei getippt vor dem Erstellen/Beitreten |
 
 `profiles.display_name` ist **kein dritter Name**, sondern nur der zuletzt
 benutzte Nickname als Vorbelegung des Eingabefelds
@@ -105,6 +105,7 @@ src/
   lib/legacyPatch.js          Clientseitiges legacy_apply_patch für die optimistische Anzeige
   utils/helpers.js            shuffleArray, ALPHABET, relativeTimeDe
   constants/gameData.js       Wortlisten (Codenames, Imposter) + Werwolf-Rollen
+  constants/bluffStatements.json  350 Lückensätze für Sprücheklopfer (7 Kategorien)
   hooks/useAuth.js            Auth, Profil, Benutzername, Avatar
   hooks/useLobby.js           Lobby-RPCs + 3 postgres_changes-Subscriptions
   hooks/usePresence.js        Lobby-Presence-Kanal + globaler touch_presence-Herzschlag
@@ -116,8 +117,8 @@ src/
   components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde)
   components/friends/         FriendsPanel, InviteToasts
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
-  games/*Engine.jsx           5 Engines: StadtLandFluss, Codenames, Werwolf,
-                              WerBinIch, Imposter (je 400–770 Zeilen)
+  games/*Engine.jsx           6 Engines: StadtLandFluss, Codenames, Werwolf,
+                              WerBinIch, Imposter, Sprücheklopfer (je 400–770 Zeilen)
   games/ImposterSingleDevice.jsx  Imposter auf EINEM Handy (pass the phone)
   games/WerwolfSingleDevice.jsx   Werwolf auf EINEM Handy (Erzähler-Dashboard)
   components/RosterPanel.jsx      Mitspielerliste der Einzelgerät-Modi (Drag, Gäste)
@@ -165,6 +166,31 @@ die Nachtschritte (`buildNightSteps` überspringt tote Rollen), Liebespaar- und 
 laufen in `killPlayers` automatisch, ein sterbender Jäger blockiert per Overlay alles
 Weitere — auch die Siegprüfung, denn sein Schuss kann das Ergebnis noch drehen.
 Punkte: Sieger **5**, Liebespaar **8**, Erzähler immer **2** — in beiden Modi identisch.
+
+## Sprücheklopfer
+
+Lückensatz ausfüllen, anonym über den besten Spruch abstimmen (Quiplash-Prinzip).
+Einzige Engine ohne Einzelgerät-Modus und ohne Timer.
+
+Ablauf pro Runde: `WRITING` → `VOTING` → `REVEAL`, danach nächste Runde oder
+`RESULTS`. **10 Punkte pro erhaltener Stimme**, am Ende global 5/3/1 für die
+Plätze 1–3 (Gleichstand teilt sich den Platz — `rankOf()`).
+
+- **Daten:** [bluffStatements.json](src/constants/bluffStatements.json), 7 Kategorien
+  à 50 Sätze. Jeder Satz enthält genau **ein `___`** als Lücke; der Schlüssel im
+  JSON heißt `statements` (nicht `prompts`). Neue Kategorien brauchen keinen
+  Code — `Object.keys()` baut die Auswahl im Setup selbst auf.
+- **Alle Sätze der Partie werden EINMAL beim Start gezogen** und liegen in
+  `gameState.statements`. Sonst müsste jede Runde erst der Host würfeln und
+  alle anderen auf seinen Roundtrip warten.
+- **Mindestens 3 Spieler** (`MIN_PLAYERS`): bei zweien hätte jeder genau eine
+  fremde Antwort zur Auswahl und müsste sie zwangsläufig wählen.
+- **Der Host zieht automatisch weiter**, sobald alle geschrieben haben — mit
+  einem `useRef`-Riegel pro Phase+Runde, weil Phasenwechsel bewusst nicht
+  optimistisch angezeigt werden (`gameState.phase` steht also noch kurz auf
+  dem alten Wert, während der Effect erneut läuft).
+- Antworten stehen wie überall im Klartext in `gameState` — vor der Abstimmung
+  technisch einsehbar, dieselbe bewusste Abwägung wie beim Imposter-Wort.
 
 ## Spielzustand: `games.state` (Kurzform)
 

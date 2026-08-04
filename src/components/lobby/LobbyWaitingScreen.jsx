@@ -221,6 +221,13 @@ export default function LobbyWaitingScreen({
                                         }
                                     })}
                                 />
+                                <GameCard
+                                    title="Sprücheklopfer"
+                                    desc="Füll die Lücke im Satz — der beste Spruch gewinnt."
+                                    color="pink"
+                                    isHost={isHost}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'SPRUECHE_KLOPFER', { gameState: { phase: 'SETUP' } })}
+                                />
                             </div>
                         </div>
                     </div>
@@ -237,7 +244,8 @@ function GameCard({ title, desc, color, isHost, onClick }) {
         red: 'text-red-400 hover:border-red-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         indigo: 'text-indigo-400 hover:border-indigo-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         yellow: 'text-yellow-400 hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
-        emerald: 'text-emerald-400 hover:border-emerald-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
+        emerald: 'text-emerald-400 hover:border-emerald-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
+        pink: 'text-pink-400 hover:border-pink-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
     };
 
     return (

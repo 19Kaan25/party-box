@@ -1,0 +1,12 @@
+-- ---------------------------------------------------------------------
+-- Neues Spiel "Sprücheklopfer": Enum-Wert fuer lobbies.current_game.
+--
+-- BEWUSST eine eigene Migration, nur fuer diese eine Zeile: Postgres
+-- erlaubt zwar seit 12 ein ALTER TYPE ... ADD VALUE innerhalb einer
+-- Transaktion, der neue Wert darf darin aber noch nicht BENUTZT werden.
+-- Die naechste Migration (…_legacy_patch_sprueche_klopfer.sql) mappt
+-- 'SPRUECHE_KLOPFER' auf diesen Wert und braucht ihn deshalb committed --
+-- der Supabase-CLI faehrt jede Migrationsdatei in einer eigenen
+-- Transaktion, damit ist die Reihenfolge garantiert.
+-- ---------------------------------------------------------------------
+alter type public.game_key add value if not exists 'sprueche_klopfer';

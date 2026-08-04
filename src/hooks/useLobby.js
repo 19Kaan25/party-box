@@ -14,6 +14,7 @@ const GAME_KEY_TO_OLD = {
     codenames: 'CODENAMES',
     wer_bin_ich: 'WER_BIN_ICH',
     stadt_land_fluss: 'STADT_LAND_FLUSS',
+    sprueche_klopfer: 'SPRUECHE_KLOPFER',
 };
 
 /** RPC-Fehler-Tokens -> die bestehenden deutschen Meldungen. */
