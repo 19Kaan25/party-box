@@ -42,6 +42,25 @@ Namen sind auf **20 Zeichen** begrenzt. Bei jeder Änderung des Benutzernamens
 würfelt `set_username()` einen **neuen** Code aus; sonst könnte man sich
 gezielt an eine fremde Wunschkombination heranarbeiten.
 
+## Profilbilder: Zuschnitt vor dem Upload, Vorschau überall
+
+`AvatarCropModal.jsx` ersetzt die frühere automatische Verkleinerung
+(`resizeToWebp`, proportional + `object-cover` im Kreis, unsichtbar für den
+Nutzer, welcher Teil landet wo). Jetzt: kreisförmige Maske, Ziehen zum
+Verschieben, Regler zum Zoomen, erst beim Bestätigen wird auf `OUTPUT`
+(256 px) zugeschnitten. `zoom = 1` entspricht `object-fit: cover` für den
+ganzen Kreis. Kein Zuschneide-Paket installiert — reine Pointer-Events +
+Canvas, gleiche Machart wie das Drag in `RosterPanel.jsx`.
+
+`components/friends/Avatar.jsx` ist die **einzige** Stelle, die ein
+Profilbild rendert — Freundesliste, Einladungen, Lobby-Spielerliste,
+alle darüber. Klick öffnet eine große Vorschau. Zwei Wege an die
+Bild-URL: `person` (roher `avatar_path`, wird intern aufgelöst) oder ein
+schon fertiger `url`-Wert (die Lobby hat ihn längst inklusive
+Cache-Buster berechnet — `avatarUrl()` ein zweites Mal ohne `updated_at`
+aufzurufen würde den Cache-Buster verlieren). `url` gewinnt, wenn beides
+übergeben wird.
+
 ## Supabase-Projektkonfiguration
 
 `supabase/config.toml` ist die Quelle der Wahrheit und wird per
@@ -118,8 +137,9 @@ src/
   api/send-invite-push.js     Vercel-Function: sendet Web-Push fuer eine Lobby-Einladung
   components/GameRouter.jsx   Welcome → Lobby → Spiel-Engine (switch)
   components/GameHeader.jsx   "Spiel beenden"/"verlassen"-Leiste
-  components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde)
-  components/friends/         FriendsPanel, InviteToasts
+  components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde),
+                              AvatarCropModal (Zuschneiden vor dem Hochladen)
+  components/friends/         FriendsPanel, InviteToasts, Avatar (mit Klick-Vorschau, überall wiederverwendet)
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
   games/*Engine.jsx           6 Engines: StadtLandFluss, Codenames, Werwolf,
                               WerBinIch, Imposter, Sprücheklopfer (je 400–770 Zeilen)

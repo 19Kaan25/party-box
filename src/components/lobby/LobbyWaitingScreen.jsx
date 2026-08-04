@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, LogOut, Check, Copy, Trophy, Crown, UserMinus, Play, Settings, ArrowRight, UserPlus } from 'lucide-react';
 import AuthMenu from '../auth/AuthMenu';
+import Avatar from '../friends/Avatar';
 
 export default function LobbyWaitingScreen({
                                                authLogic,
@@ -85,13 +86,7 @@ export default function LobbyWaitingScreen({
                                     <div key={p.id} className={`p-3 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-y-2 gap-x-2 sm:gap-x-4 ${p.id === user.uid ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-slate-900/50'}`}>
                                         <div className="flex items-center gap-3 min-w-0 basis-full">
                                             <div className="relative shrink-0">
-                                                {p.photoURL ? (
-                                                    <img src={p.photoURL} alt={safeName} className="w-9 h-9 rounded-full object-cover border border-slate-600 shadow-sm" />
-                                                ) : (
-                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm shadow-sm text-white">
-                                                        {safeName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
+                                                <Avatar url={p.photoURL} label={safeName} size="w-9 h-9" />
                                                 {/* Presence: ohne Disconnect-Handling blieb ein
                                                     Spieler nach dem Schliessen des Tabs bisher
                                                     unbemerkt in der Liste stehen. */}

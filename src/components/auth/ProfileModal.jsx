@@ -4,43 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { USERNAME_RE } from '../../hooks/useAuth';
 import usePushNotifications from '../../hooks/usePushNotifications';
 import useInstallPrompt from '../../hooks/useInstallPrompt';
+import AvatarCropModal from './AvatarCropModal';
 import FriendsPanel from '../friends/FriendsPanel';
 import InvitesPanel from '../friends/InvitesPanel';
-
-const MAX_SIZE = 256;
-
-/** Bild clientseitig auf MAX_SIZE verkleinern. Logik wie bisher, aber als
- *  WebP-Blob statt data-URI -- Ziel ist Supabase Storage, nicht mehr eine
- *  base64-Spalte, die bei jeder Aenderung an alle Clients ging. */
-function resizeToWebp(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden.'));
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onerror = () => reject(new Error('Bild konnte nicht geladen werden.'));
-            img.onload = () => {
-                let { width, height } = img;
-                if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                canvas.toBlob(
-                    (blob) => (blob ? resolve(blob) : reject(new Error('Konvertierung fehlgeschlagen.'))),
-                    'image/webp',
-                    0.8
-                );
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-}
 
 export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCode, initialTab = 'profil', onClose, onAcceptInvite }) {
     const {
@@ -70,14 +36,25 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCo
 
     const handle = userData?.handle;
 
-    const handleImageUpload = async (e) => {
+    // Datei nicht sofort hochladen -- erst im Crop-Dialog den Ausschnitt
+    // waehlen lassen, der ersetzt die alte automatische Verkleinerung
+    // komplett (die entschied per object-cover unsichtbar, welcher Teil im
+    // Kreis landet).
+    const [cropFile, setCropFile] = useState(null);
+
+    const handleFileSelected = (e) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (file) setCropFile(file);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const uploadCroppedAvatar = async (blob) => {
+        setCropFile(null);
+        if (!user) return;
 
         setUploadError('');
         setIsSaving(true);
         try {
-            const blob = await resizeToWebp(file);
             // Storage-Policy erlaubt Schreiben nur im eigenen Ordner.
             const path = `${user.id}/avatar.webp`;
             const { error: err } = await supabase.storage
@@ -90,7 +67,6 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCo
             setUploadError(err.message || 'Upload fehlgeschlagen.');
         } finally {
             setIsSaving(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -167,7 +143,7 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCo
                                         </div>
                                     )}
                                 </div>
-                                <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                                <input type="file" ref={fileInputRef} onChange={handleFileSelected} accept="image/*" className="hidden" />
 
                                 <div className="flex items-center gap-3 mt-3">
                                     <button
@@ -315,6 +291,14 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCo
                     )}
                 </div>
             </div>
+
+            {cropFile && (
+                <AvatarCropModal
+                    file={cropFile}
+                    onCancel={() => setCropFile(null)}
+                    onConfirm={uploadCroppedAvatar}
+                />
+            )}
         </div>
     );
 }
