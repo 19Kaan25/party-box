@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 
 /**
  * Presence pro Lobby. Ersetzt das komplett fehlende Disconnect-Handling
@@ -29,8 +29,17 @@ const HEARTBEAT_MS = 45_000;
  * ist offen und die Person kann auf eine Einladung reagieren" -- wer kurz
  * die Tabs wechselt, ist nicht weg. Browser drosseln Timer im Hintergrund
  * auf etwa einen Lauf pro Minute; das bleibt unter den 90 Sekunden, ab
- * denen list_friends() jemanden als offline zaehlt. Geschlossen wird der
- * Tab, hoert der Schlag ganz auf -- genau das ist das Signal.
+ * denen list_friends() jemanden als offline zaehlt.
+ *
+ * Fuer den Fall, dass die Seite ganz geschlossen/verlassen wird, reicht das
+ * nicht: ohne eigenes Signal bliebe jemand bis zu 90 Sekunden lang faelschlich
+ * "online" stehen. Deshalb zusaetzlich ein pagehide-Handler, der go_offline()
+ * feuert -- bewusst per fetch(..., {keepalive: true}) statt supabase.rpc():
+ * der Browser kann die Seite beenden, bevor ein Promise ueber den normalen
+ * Client aufloest, keepalive-Requests ueberleben genau das. Kein Ersatz fuer
+ * den Heartbeat, nur ein frueheres Signal fuer den haeufigsten Fall
+ * (Tab/App schliessen) -- ein Absturz bleibt weiterhin auf die 90-Sekunden-
+ * Toleranz angewiesen.
  */
 export function usePresenceHeartbeat(user, lobbyId) {
     useEffect(() => {
@@ -44,14 +53,41 @@ export function usePresenceHeartbeat(user, lobbyId) {
             });
         };
 
+        // pagehide darf nicht auf ein Promise warten -- Token deshalb
+        // synchron nachhalten statt bei Bedarf per getSession() zu holen.
+        let accessToken = null;
+        supabase.auth.getSession().then(({ data }) => {
+            accessToken = data.session?.access_token ?? null;
+        });
+        const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
+            accessToken = session?.access_token ?? null;
+        });
+
+        const goOffline = () => {
+            if (!accessToken) return;
+            fetch(`${SUPABASE_URL}/rest/v1/rpc/go_offline`, {
+                method: 'POST',
+                keepalive: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: '{}',
+            }).catch(() => {});
+        };
+
         beat();
         const timer = setInterval(beat, HEARTBEAT_MS);
         // Beim Zurueckkommen sofort melden, statt auf den naechsten
         // (im Hintergrund gedrosselten) Lauf zu warten.
         document.addEventListener('visibilitychange', beat);
+        window.addEventListener('pagehide', goOffline);
 
         return () => {
             stopped = true;
+            authSub.subscription.unsubscribe();
+            window.removeEventListener('pagehide', goOffline);
             clearInterval(timer);
             document.removeEventListener('visibilitychange', beat);
         };

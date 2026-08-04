@@ -36,6 +36,8 @@ Ausführung siehe „Verifizieren" unten.
 | `20260804133000_lobby_invites_24h_expiry.sql` | Einladungs-Ablauf 2 → 24 Stunden: `list_my_invites()`-Filter + `purge-old-invites`-Intervall |
 | `20260805090000_game_key_sprueche_klopfer.sql` | Enum-Wert `sprueche_klopfer` für `lobbies.current_game` — bewusst allein in einer eigenen Datei, s. u. |
 | `20260805090100_legacy_patch_sprueche_klopfer.sql` | `legacy_apply_patch()` mappt `'SPRUECHE_KLOPFER'` auf den neuen Enum-Wert |
+| `20260806090000_invite_retry_window.sql` | `invite_friend_to_lobby()`: unbeantwortete eigene Einladung blockiert nach 2 Minuten keinen erneuten Versuch mehr |
+| `20260806090100_go_offline_rpc.sql` | Neue RPC `go_offline()` — explizites Signal beim Verlassen der Seite statt nur der 90-Sekunden-Toleranz |
 
 ## RPCs
 
@@ -60,6 +62,7 @@ Ausführung siehe „Verifizieren" unten.
 | `remove_friend(p_other)` | beide Seiten | Löscht das Paar — auch zum Zurückziehen einer eigenen Anfrage. |
 | `list_friends()` | jeder authentifizierte Nutzer | Freunde und offene Anfragen mit `online` / `in_lobby` / `last_seen_at`. **Gibt keinen Lobby-Code heraus**; bei offenen Anfragen bleibt der Status verborgen. |
 | `touch_presence(p_lobby)` | jeder authentifizierte Nutzer | Herzschlag alle 45 s. `p_lobby` wird nur übernommen, wenn der Aufrufer dort aktives Mitglied ist. |
+| `go_offline()` | jeder authentifizierte Nutzer | Löscht die eigene `user_status`-Zeile sofort — Signal beim Verlassen der Seite (`pagehide`), Gegenstück zu `touch_presence`. |
 | `invite_friend_to_lobby(p_lobby, p_to_user)` | aktives Mitglied **und** bestätigter Freund | Legt eine Einladung an. |
 | `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code**, jünger als 24 h — hier angebracht, man wurde ausdrücklich eingeladen. |
 | `decline_invite(p_invite)` | Empfänger | Löscht die Einladung. `join_lobby` räumt sie beim Beitritt selbst ab. |

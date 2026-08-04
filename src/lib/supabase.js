@@ -10,6 +10,14 @@ if (!url || !anonKey) {
     );
 }
 
+// Fuer den einen Fall, der bewusst NICHT ueber den supabase-js-Client laeuft:
+// das go_offline()-Signal beim pagehide-Event in usePresence.js braucht
+// fetch(..., {keepalive: true}) mit synchron verfuegbarem Token, kein
+// Promise-Umweg ueber den Client -- der Browser kann die Seite beenden,
+// bevor das Promise aufloest.
+export const SUPABASE_URL = url;
+export const SUPABASE_ANON_KEY = anonKey;
+
 // Singleton. Beide Werte sind per Design oeffentlich; die Absicherung leisten
 // die RLS-Policies, nicht die Geheimhaltung dieser Keys.
 export const supabase = createClient(url, anonKey, {

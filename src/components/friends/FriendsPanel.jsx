@@ -31,7 +31,7 @@ function PersonLine({ person }) {
 export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
     const {
         friends, incoming, outgoing, error, setError, busy,
-        sendRequest, respond, removeFriend, inviteToLobby,
+        sendRequest, respond, removeFriend, inviteToLobby, inviteErrors,
     } = friendsLogic;
 
     const [input, setInput] = useState('');
@@ -143,41 +143,49 @@ export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
                 ) : (
                     <div className="space-y-2">
                         {friends.map((p) => (
-                            <div key={p.id} className="flex items-center gap-3 bg-slate-900/60 rounded-xl p-2.5 border border-slate-700/50">
-                                <Avatar person={p} />
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <StatusDot online={p.online} inLobby={p.in_lobby} />
-                                        <p className="font-bold text-slate-200 text-sm truncate">
-                                            {p.username}#{p.discriminator}
+                            <div key={p.id} className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-700/50">
+                                <div className="flex items-center gap-3">
+                                    <Avatar person={p} />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <StatusDot online={p.online} inLobby={p.in_lobby} />
+                                            <p className="font-bold text-slate-200 text-sm truncate">
+                                                {p.username}#{p.discriminator}
+                                            </p>
+                                        </div>
+                                        <p className="text-xs text-slate-500 truncate pl-4.5">
+                                            {p.in_lobby ? 'in einer Lobby'
+                                                : p.online ? 'online'
+                                                : relativeTimeDe(p.last_seen_at)}
                                         </p>
                                     </div>
-                                    <p className="text-xs text-slate-500 truncate pl-4.5">
-                                        {p.in_lobby ? 'in einer Lobby'
-                                            : p.online ? 'online'
-                                            : relativeTimeDe(p.last_seen_at)}
-                                    </p>
-                                </div>
-                                <div className="flex gap-1 shrink-0">
-                                    {/* Auch fuer Freunde, die gerade woanders sitzen:
-                                        join_lobby verlaesst die alte Lobby beim
-                                        Annehmen. Ist die Person schon in DIESER
-                                        Lobby, meldet die RPC das verstaendlich. */}
-                                    {inLobby && (
-                                        <button onClick={() => inviteToLobby(p.id)} disabled={busy}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-700 transition-colors"
-                                            title="In meine Lobby einladen">
-                                            <UserPlus size={18} />
+                                    <div className="flex gap-1 shrink-0">
+                                        {/* Auch fuer Freunde, die gerade woanders sitzen:
+                                            join_lobby verlaesst die alte Lobby beim
+                                            Annehmen. Ist die Person schon in DIESER
+                                            Lobby, meldet die RPC das verstaendlich. */}
+                                        {inLobby && (
+                                            <button onClick={() => inviteToLobby(p.id)} disabled={busy}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-700 transition-colors"
+                                                title="In meine Lobby einladen">
+                                                <UserPlus size={18} />
+                                            </button>
+                                        )}
+                                        <button onClick={() => {
+                                            if (window.confirm(`${p.username}#${p.discriminator} wirklich entfernen?`)) removeFriend(p.id);
+                                        }} disabled={busy}
+                                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700 transition-colors"
+                                            title="Freund entfernen">
+                                            <Trash2 size={16} />
                                         </button>
-                                    )}
-                                    <button onClick={() => {
-                                        if (window.confirm(`${p.username}#${p.discriminator} wirklich entfernen?`)) removeFriend(p.id);
-                                    }} disabled={busy}
-                                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700 transition-colors"
-                                        title="Freund entfernen">
-                                        <Trash2 size={16} />
-                                    </button>
+                                    </div>
                                 </div>
+                                {/* Rueckmeldung zur Lobby-Einladung nur hier, direkt am
+                                    betroffenen Freund -- verschwindet von selbst nach 4s
+                                    (INVITE_ERROR_MS in useFriends.js). */}
+                                {inviteErrors?.[p.id] && (
+                                    <p className="text-xs text-amber-400 mt-2 pl-12">{inviteErrors[p.id]}</p>
+                                )}
                             </div>
                         ))}
                     </div>

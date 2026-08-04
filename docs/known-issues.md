@@ -143,6 +143,16 @@ einer.
 Gegen einen hart abgestürzten Browser hilft das Verfahren korrekt: es kommt
 schlicht kein Schlag mehr.
 
+**Ergänzt:** ein `pagehide`-Handler ruft zusätzlich `go_offline()` (löscht die
+`user_status`-Zeile) beim Schließen von Tab/App — vorher gab es dafür kein
+Signal, jemand stand bis zu 90 Sekunden lang fälschlich online, obwohl er die
+App längst verlassen hatte. Bewusst per `fetch(..., {keepalive: true})` statt
+`supabase.rpc()`: der Browser kann die Seite beenden, bevor ein normales
+Promise auflöst, ein `keepalive`-Request übersteht genau das. Deckt den
+häufigsten Fall ab (aktives Schließen), **nicht** einen Absturz oder das
+Trennen der Internetverbindung — dafür bleibt die 90-Sekunden-Toleranz oben
+die einzige Absicherung. `usePresence.js`.
+
 ---
 
 ## 5. Lobby-Präsenz und Freundes-Präsenz sind zwei getrennte Systeme

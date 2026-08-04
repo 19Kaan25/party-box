@@ -8,6 +8,11 @@ import { isStaleSession } from './useAuth';
  *  jemand hinschaut. */
 const POLL_MS = 30_000;
 
+/** Wie lange eine Lobby-Einladungs-Rueckmeldung (z. B. "bereits eingeladen")
+ *  neben dem betroffenen Freund stehen bleibt, bevor sie von selbst
+ *  verschwindet. */
+const INVITE_ERROR_MS = 4_000;
+
 /** RPC-Tokens -> deutsche Meldungen, gleiche Machart wie in useLobby.js. */
 function mapFriendError(err) {
     const msg = err?.message || '';
@@ -22,7 +27,7 @@ function mapFriendError(err) {
     if (msg.includes('NOT_A_MEMBER')) return 'Du bist in keiner Lobby.';
     if (msg.includes('NOT_FRIENDS')) return 'Einladen geht nur bei bestätigter Freundschaft.';
     if (msg.includes('ALREADY_INVITED')) return 'Diese Person hast du bereits eingeladen.';
-    if (msg.includes('ALREADY_IN_LOBBY')) return 'Diese Person ist schon in deiner Lobby.';
+    if (msg.includes('ALREADY_IN_LOBBY')) return 'Diese Person ist schon in der Lobby.';
     if (msg.includes('NOT_AUTHENTICATED')) return 'Sitzung abgelaufen. Bitte lade die Seite neu.';
     return 'Da ist etwas schiefgelaufen. Bitte versuche es erneut.';
 }
@@ -41,12 +46,39 @@ export default function useFriends(user, lobbyId, panelOpen) {
     const [friends, setFriends] = useState([]);
     const [invites, setInvites] = useState([]);
     const [error, setError] = useState('');
+    // Rueckmeldung zu einer Lobby-Einladung, pro Ziel-Freund statt global --
+    // sonst haengt "bereits eingeladen" noch am Freunde-Reiter, wenn man
+    // laengst zurueck in der Lobby ist (der geteilte error-State wird dort
+    // ebenfalls angezeigt, siehe LobbyWaitingScreen). Verschwindet von
+    // selbst nach INVITE_ERROR_MS.
+    const [inviteErrors, setInviteErrors] = useState({});
+    const inviteErrorTimers = useRef({});
     const [busy, setBusy] = useState(false);
     const mounted = useRef(true);
 
     useEffect(() => {
         mounted.current = true;
-        return () => { mounted.current = false; };
+        // Dieselbe Objekt-Referenz wie inviteErrorTimers.current -- neue
+        // Timer, die nach dem Mount dazukommen, landen also trotzdem hier
+        // und werden beim Unmount mit aufgeraeumt.
+        const timers = inviteErrorTimers.current;
+        return () => {
+            mounted.current = false;
+            Object.values(timers).forEach(clearTimeout);
+        };
+    }, []);
+
+    const setInviteError = useCallback((otherId, message) => {
+        setInviteErrors((prev) => ({ ...prev, [otherId]: message }));
+        clearTimeout(inviteErrorTimers.current[otherId]);
+        inviteErrorTimers.current[otherId] = setTimeout(() => {
+            if (!mounted.current) return;
+            setInviteErrors((prev) => {
+                const next = { ...prev };
+                delete next[otherId];
+                return next;
+            });
+        }, INVITE_ERROR_MS);
     }, []);
 
     const refresh = useCallback(async () => {
@@ -123,12 +155,20 @@ export default function useFriends(user, lobbyId, panelOpen) {
         () => supabase.rpc('remove_friend', { p_other: otherId })
     ), [run]);
 
-    const inviteToLobby = useCallback((otherId) => {
-        if (!lobbyId) { setError('Du bist in keiner Lobby.'); return Promise.resolve(false); }
-        return run(() => supabase.rpc('invite_friend_to_lobby', {
-            p_lobby: lobbyId, p_to_user: otherId,
-        }));
-    }, [run, lobbyId]);
+    const inviteToLobby = useCallback(async (otherId) => {
+        if (!lobbyId) { setInviteError(otherId, 'Du bist in keiner Lobby.'); return false; }
+        setBusy(true);
+        try {
+            const { error: err } = await supabase.rpc('invite_friend_to_lobby', {
+                p_lobby: lobbyId, p_to_user: otherId,
+            });
+            if (err) { setInviteError(otherId, mapFriendError(err)); return false; }
+            await refresh();
+            return true;
+        } finally {
+            setBusy(false);
+        }
+    }, [lobbyId, refresh, setInviteError]);
 
     const declineInvite = useCallback((inviteId) => run(
         () => supabase.rpc('decline_invite', { p_invite: inviteId })
@@ -150,6 +190,7 @@ export default function useFriends(user, lobbyId, panelOpen) {
         badgeCount: grouped.incoming.length + invites.length,
         error,
         setError,
+        inviteErrors,
         busy,
         refresh,
         sendRequest,
