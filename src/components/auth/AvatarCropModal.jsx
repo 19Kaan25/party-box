@@ -142,6 +142,17 @@ export default function AvatarCropModal({ file, onCancel, onConfirm }) {
                             style={{
                                 width: display.w,
                                 height: display.h,
+                                // Tailwinds Preflight setzt "img { max-width:
+                                // 100%; height: auto }" (zur Bildbreite passend
+                                // auf den Elternblock begrenzt) -- ohne dieses
+                                // Override kappte der Browser die Breite auf
+                                // die 280px des Containers, sobald display.w
+                                // grösser war, waehrend die Hoehe unangetastet
+                                // blieb. Ergebnis: das Bild wirkte beim
+                                // Reinzoomen zunehmend schmal gestaucht, und
+                                // die Kreismaske landete nicht mehr dort, wo
+                                // "left" es eigentlich platziert hatte.
+                                maxWidth: 'none',
                                 left: VIEWPORT / 2 - display.w / 2 + offset.x,
                                 top: VIEWPORT / 2 - display.h / 2 + offset.y,
                             }}
