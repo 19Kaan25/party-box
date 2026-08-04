@@ -38,6 +38,7 @@ Ausführung siehe „Verifizieren" unten.
 | `20260805090100_legacy_patch_sprueche_klopfer.sql` | `legacy_apply_patch()` mappt `'SPRUECHE_KLOPFER'` auf den neuen Enum-Wert |
 | `20260806090000_invite_retry_window.sql` | `invite_friend_to_lobby()`: unbeantwortete eigene Einladung blockiert nach 2 Minuten keinen erneuten Versuch mehr |
 | `20260806090100_go_offline_rpc.sql` | Neue RPC `go_offline()` — explizites Signal beim Verlassen der Seite statt nur der 90-Sekunden-Toleranz |
+| `20260807090000_go_offline_keeps_last_seen.sql` | Bugfix: `go_offline()` datiert `last_seen_at` zurück statt die Zeile zu löschen — sonst zeigte die Freundesliste „unbekannt" statt „vor 1 Min." |
 | `20260806100000_lobby_join_requests.sql` | Neue Tabelle `lobby_join_requests` + drei RPCs: Beitrittsanfragen an einen Freund, der schon in einer Lobby sitzt |
 | `20260806110000_push_subscriptions.sql` | Neue Tabelle `push_subscriptions` + zwei RPCs für Web-Push-Abos |
 
@@ -64,7 +65,7 @@ Ausführung siehe „Verifizieren" unten.
 | `remove_friend(p_other)` | beide Seiten | Löscht das Paar — auch zum Zurückziehen einer eigenen Anfrage. |
 | `list_friends()` | jeder authentifizierte Nutzer | Freunde und offene Anfragen mit `online` / `in_lobby` / `last_seen_at`. **Gibt keinen Lobby-Code heraus**; bei offenen Anfragen bleibt der Status verborgen. |
 | `touch_presence(p_lobby)` | jeder authentifizierte Nutzer | Herzschlag alle 45 s. `p_lobby` wird nur übernommen, wenn der Aufrufer dort aktives Mitglied ist. |
-| `go_offline()` | jeder authentifizierte Nutzer | Löscht die eigene `user_status`-Zeile sofort — Signal beim Verlassen der Seite (`pagehide`), Gegenstück zu `touch_presence`. |
+| `go_offline()` | jeder authentifizierte Nutzer | Datiert `last_seen_at` auf „91 Sekunden zurück" — sofort offline, Zeile bleibt für „vor X" bestehen. Signal beim Verlassen der Seite (`pagehide`), Gegenstück zu `touch_presence`. |
 | `request_to_join_lobby(p_to_user)` | bestätigter Freund | Legt eine Beitrittsanfrage an — Ziel-Lobby wird serverseitig aus der aktiven Mitgliedschaft von `p_to_user` aufgelöst, der Anfragende kennt sie nicht. |
 | `list_my_join_requests()` | Empfänger | Offene Anfragen an dich, nur solange du noch aktives Mitglied der betroffenen Lobby bist. |
 | `respond_join_request(p_request, p_accept)` | Empfänger | Bei Zustimmung entsteht eine normale `lobby_invites`-Zeile an den Anfragenden (dieselbe Mechanik wie `invite_friend_to_lobby`) — kein zweiter Beitritts-Pfad im Client. |

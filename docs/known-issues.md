@@ -143,10 +143,14 @@ einer.
 Gegen einen hart abgestürzten Browser hilft das Verfahren korrekt: es kommt
 schlicht kein Schlag mehr.
 
-**Ergänzt:** ein `pagehide`-Handler ruft zusätzlich `go_offline()` (löscht die
-`user_status`-Zeile) beim Schließen von Tab/App — vorher gab es dafür kein
-Signal, jemand stand bis zu 90 Sekunden lang fälschlich online, obwohl er die
-App längst verlassen hatte. Bewusst per `fetch(..., {keepalive: true})` statt
+**Ergänzt:** ein `pagehide`-Handler ruft zusätzlich `go_offline()` beim
+Schließen von Tab/App — vorher gab es dafür kein Signal, jemand stand bis zu
+90 Sekunden lang fälschlich online, obwohl er die App längst verlassen hatte.
+`go_offline()` setzt `last_seen_at` auf „91 Sekunden in der Vergangenheit"
+statt die `user_status`-Zeile zu löschen (**Bugfix vom 2026-08-07**: die
+erste Fassung löschte die Zeile, damit zeigte die Freundesliste hinterher
+„unbekannt" statt „vor 1 Min." — `relativeTimeDe()` braucht einen
+Zeitstempel, kein `NULL`). Bewusst per `fetch(..., {keepalive: true})` statt
 `supabase.rpc()`: der Browser kann die Seite beenden, bevor ein normales
 Promise auflöst, ein `keepalive`-Request übersteht genau das. Deckt den
 häufigsten Fall ab (aktives Schließen), **nicht** einen Absturz oder das
