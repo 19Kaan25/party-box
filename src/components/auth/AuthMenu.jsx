@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus, Loader2, KeyRound } from 'lucide-react';
 
-export default function AuthMenu({ authLogic, onOpenProfile, badgeCount = 0 }) {
+export default function AuthMenu({ authLogic, onOpenProfile, badgeCount = 0, friendRequestCount = 0, inviteCount = 0 }) {
     const {
         user, userData, authActionLoading, error, recoveryMode,
         registerWithEmail, loginWithEmail, requestPasswordReset, setNewPassword, setError,
@@ -63,9 +63,12 @@ export default function AuthMenu({ authLogic, onOpenProfile, badgeCount = 0 }) {
                     </>
                 ) : (
                     <button
-                        // Bei offenen Anfragen direkt in den Freunde-Reiter --
-                        // sonst ist der rote Punkt ein Hinweis ohne Ziel.
-                        onClick={() => onOpenProfile(badgeCount > 0 ? 'freunde' : 'profil')}
+                        // Direkt in den Reiter, der etwas Neues hat -- sonst ist
+                        // der rote Punkt ein Hinweis ohne Ziel. Freundschafts-
+                        // anfragen vor Lobby-Einladungen, falls beides ansteht.
+                        onClick={() => onOpenProfile(
+                            friendRequestCount > 0 ? 'freunde' : inviteCount > 0 ? 'einladungen' : 'profil'
+                        )}
                         className="flex items-center gap-3 hover:bg-slate-700/50 pr-4 pl-1 py-1 rounded-xl transition-colors relative"
                     >
                         <div className="relative shrink-0">

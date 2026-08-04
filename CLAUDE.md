@@ -220,6 +220,14 @@ Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), n
   Benutzernamen einen `UserPlus`-Knopf, sobald keine Beziehung (Freund/eingehend/ausgehend)
   besteht — `send_friend_request` läuft dann direkt aus der Spielerliste, ohne Umweg über
   das Profil-Menü.
+- **Lobby-Einladungen:** eigener Reiter „Einladungen" im Profil-Modal
+  ([InvitesPanel.jsx](src/components/friends/InvitesPanel.jsx)), getrennt vom Reiter
+  „Freunde" — beide hatten sich vorher einen kombinierten Badge geteilt, jetzt zeigt jeder
+  Reiter nur seine eigene Zahl (`ProfileModal.jsx`). `AuthMenu` öffnet beim Klick auf den
+  Avatar-Badge gezielt den Reiter mit etwas Neuem (Freundschaftsanfragen vor Einladungen).
+  Laufen serverseitig nach 24 h ab (`list_my_invites()` filtert, `purge-old-invites` räumt
+  stündlich auf) — rein clientseitiges Ausblenden reicht nicht, weil `useFriends.js` ohne
+  ein DB-Ereignis oder offenes Panel nicht von selbst neu lädt.
 
 ## PWA (Kurz)
 

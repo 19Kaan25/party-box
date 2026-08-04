@@ -33,6 +33,7 @@ Ausführung siehe „Verifizieren" unten.
 | `20260730214500_profiles_sentinel_visible.sql` | Zusätzliche SELECT-Policy: Sentinel-Profil für alle authentifizierten Nutzer lesbar, s. u. |
 | `20260730220000_phase0b_legacy_bridge.sql` | **TRANSITIONAL**: `lobbies.legacy_state`, `server_now()`, `legacy_apply_patch()` — fällt mit der ersten Spiele-Phase weg |
 | `20260731090000_phase0c_identity_and_friends.sql` | Benutzername + `discriminator`, Längengrenze 20, `friendships`, `user_status`, `lobby_invites` und ihre RPCs |
+| `20260804133000_lobby_invites_24h_expiry.sql` | Einladungs-Ablauf 2 → 24 Stunden: `list_my_invites()`-Filter + `purge-old-invites`-Intervall |
 
 ## RPCs
 
@@ -58,7 +59,7 @@ Ausführung siehe „Verifizieren" unten.
 | `list_friends()` | jeder authentifizierte Nutzer | Freunde und offene Anfragen mit `online` / `in_lobby` / `last_seen_at`. **Gibt keinen Lobby-Code heraus**; bei offenen Anfragen bleibt der Status verborgen. |
 | `touch_presence(p_lobby)` | jeder authentifizierte Nutzer | Herzschlag alle 45 s. `p_lobby` wird nur übernommen, wenn der Aufrufer dort aktives Mitglied ist. |
 | `invite_friend_to_lobby(p_lobby, p_to_user)` | aktives Mitglied **und** bestätigter Freund | Legt eine Einladung an. |
-| `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code** — hier angebracht, man wurde ausdrücklich eingeladen. |
+| `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code**, jünger als 24 h — hier angebracht, man wurde ausdrücklich eingeladen. |
 | `decline_invite(p_invite)` | Empfänger | Löscht die Einladung. `join_lobby` räumt sie beim Beitritt selbst ab. |
 
 `friendships` nutzt das kanonisch geordnete Paar (`user_low < user_high`) als
@@ -88,7 +89,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 | `close-stale-lobbies` | alle 15 min | `closed_at` für Lobbys ohne Aktivität seit **24 h** |
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
 | `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — verwaiste Host-Lobbys werden vorher auf den Sentinel umgehängt, siehe unten |
-| `purge-old-invites` | stündlich :07 | Löscht Lobby-Einladungen älter als 2 Stunden |
+| `purge-old-invites` | stündlich :07 | Löscht Lobby-Einladungen älter als 24 Stunden |
 
 ## Deployen (bei künftigen Migrationen)
 

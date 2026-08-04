@@ -26,7 +26,7 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
         promotePlayer
     } = lobbyLogic;
 
-    const { openProfile, badgeCount, copied, handleCopy } = uiProps;
+    const { openProfile, badgeCount, friendRequestCount, inviteCount, copied, handleCopy } = uiProps;
 
     if (!currentLobby) {
         return (
@@ -34,6 +34,8 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
                 authLogic={authLogic}
                 onOpenProfile={openProfile}
                 badgeCount={badgeCount}
+                friendRequestCount={friendRequestCount}
+                inviteCount={inviteCount}
                 errorMsg={errorMsg}
                 playerName={playerName}
                 setPlayerName={setPlayerName}
@@ -49,6 +51,8 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
                 authLogic={authLogic}
                 onOpenProfile={openProfile}
                 badgeCount={badgeCount}
+                friendRequestCount={friendRequestCount}
+                inviteCount={inviteCount}
                 friendsLogic={friendsLogic}
                 currentLobby={currentLobby}
                 onlineIds={lobbyLogic.onlineIds}

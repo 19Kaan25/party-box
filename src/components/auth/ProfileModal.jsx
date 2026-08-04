@@ -3,6 +3,7 @@ import { X, LogOut, Camera, Loader2, Trash2, Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase';
 import { USERNAME_RE } from '../../hooks/useAuth';
 import FriendsPanel from '../friends/FriendsPanel';
+import InvitesPanel from '../friends/InvitesPanel';
 
 const MAX_SIZE = 256;
 
@@ -39,7 +40,7 @@ function resizeToWebp(file) {
     });
 }
 
-export default function ProfileModal({ authLogic, friendsLogic, inLobby, initialTab = 'profil', onClose }) {
+export default function ProfileModal({ authLogic, friendsLogic, inLobby, initialTab = 'profil', onClose, onAcceptInvite }) {
     const {
         user, userData, updateUserProfile, removeAvatar, setUsername,
         logOutUser, authActionLoading, error, setError,
@@ -103,16 +104,20 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
                 </button>
 
                 <div className="flex gap-1 p-2 pt-5 px-5 border-b border-slate-700">
-                    {[['profil', 'Profil'], ['freunde', 'Freunde']].map(([key, label]) => (
+                    {[
+                        ['profil', 'Profil', 0],
+                        ['freunde', 'Freunde', friendsLogic?.incoming?.length || 0],
+                        ['einladungen', 'Einladungen', friendsLogic?.invites?.length || 0],
+                    ].map(([key, label, badge]) => (
                         <button
                             key={key}
                             onClick={() => { setTab(key); setError(null); }}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${tab === key ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                         >
                             {label}
-                            {key === 'freunde' && friendsLogic?.badgeCount > 0 && (
+                            {badge > 0 && (
                                 <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                                    {friendsLogic.badgeCount}
+                                    {badge}
                                 </span>
                             )}
                         </button>
@@ -229,11 +234,16 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
                                 <LogOut size={18} /> Abmelden
                             </button>
                         </>
-                    ) : (
+                    ) : tab === 'freunde' ? (
                         <FriendsPanel
                             friendsLogic={friendsLogic}
                             ownHandle={handle}
                             inLobby={inLobby}
+                        />
+                    ) : (
+                        <InvitesPanel
+                            friendsLogic={friendsLogic}
+                            onAccept={onAcceptInvite}
                         />
                     )}
                 </div>

@@ -312,17 +312,18 @@ export default function useLobby(user, userData, updateUserProfile) {
         e?.preventDefault?.();
         const name = playerName.trim();
         const code = (joinCode || '').toUpperCase().trim();
-        if (!user || !name || !code) return setErrorMsg('Bitte fülle alle Felder aus.');
+        if (!user || !name || !code) { setErrorMsg('Bitte fülle alle Felder aus.'); return false; }
 
         const { data, error } = await supabase.rpc('join_lobby', {
             p_code: code, p_display_name: name,
         });
-        if (error) return setErrorMsg(mapRpcError(error));
+        if (error) { setErrorMsg(mapRpcError(error)); return false; }
 
         if (name !== userData?.name) await updateUserProfile(name, null);
         setErrorMsg('');
         await fetchLobbyState(data.lobby_id);
         measureClockOffset();
+        return true;
     };
 
     const leaveLobby = async () => {

@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
 import { UserPlus, Check, X, Loader2, Send, Trash2, Users } from 'lucide-react';
-import { avatarUrl } from '../../hooks/useAuth';
 import { relativeTimeDe } from '../../utils/helpers';
+import Avatar from './Avatar';
 
 /** Kleiner Statuspunkt. Die drei Zustaende kommen direkt aus list_friends():
  *  online + in_lobby, nur online, oder offline mit last_seen_at. */
 function StatusDot({ online, inLobby }) {
     const color = inLobby ? 'bg-purple-400' : online ? 'bg-green-400' : 'bg-slate-600';
     return <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color}`} />;
-}
-
-function Avatar({ person, size = 'w-9 h-9' }) {
-    const url = avatarUrl(person.avatar_path);
-    const initial = (person.username || person.display_name || 'S').charAt(0).toUpperCase();
-    return url ? (
-        <img src={url} alt="" className={`${size} rounded-full object-cover border border-slate-600 shrink-0`} />
-    ) : (
-        <div className={`${size} rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-sm text-white shrink-0`}>
-            {initial}
-        </div>
-    );
 }
 
 /** Eine Person mit Handle. Der Anzeigename steht daneben, weil er in der

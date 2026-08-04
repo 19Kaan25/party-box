@@ -6,6 +6,8 @@ export default function WelcomeScreen({
                                           authLogic,
                                           onOpenProfile,
                                           badgeCount,
+                                          friendRequestCount,
+                                          inviteCount,
                                           errorMsg,
                                           playerName,
                                           setPlayerName,
@@ -14,7 +16,13 @@ export default function WelcomeScreen({
                                       }) {
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-6 flex flex-col items-center justify-center relative">
-            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} badgeCount={badgeCount} />
+            <AuthMenu
+                authLogic={authLogic}
+                onOpenProfile={onOpenProfile}
+                badgeCount={badgeCount}
+                friendRequestCount={friendRequestCount}
+                inviteCount={inviteCount}
+            />
 
             <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 mt-20 sm:mt-16">
                 <div className="text-center mb-8">

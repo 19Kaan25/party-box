@@ -6,6 +6,8 @@ export default function LobbyWaitingScreen({
                                                authLogic,
                                                onOpenProfile,
                                                badgeCount,
+                                               friendRequestCount,
+                                               inviteCount,
                                                friendsLogic,
                                                currentLobby,
                                                onlineIds,
@@ -32,7 +34,13 @@ export default function LobbyWaitingScreen({
 
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-8 relative">
-            <AuthMenu authLogic={authLogic} onOpenProfile={onOpenProfile} badgeCount={badgeCount} />
+            <AuthMenu
+                authLogic={authLogic}
+                onOpenProfile={onOpenProfile}
+                badgeCount={badgeCount}
+                friendRequestCount={friendRequestCount}
+                inviteCount={inviteCount}
+            />
 
             <div className="max-w-4xl mx-auto mt-20 sm:mt-16">
                 <div className="flex justify-between items-center mb-8 bg-slate-800 p-4 rounded-2xl border border-slate-700">

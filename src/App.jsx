@@ -22,8 +22,10 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [profileTab, setProfileTab] = useState(null);   // null = Dialog zu
 
-  // Der Freunde-Reiter pollt den Online-Status nur, solange er offen ist.
-  const friendsLogic = useFriends(user, lobbyLogic.lobbyId, profileTab === 'freunde');
+  // Freunde- und Einladungen-Reiter pollen nur, solange einer von beiden
+  // offen ist -- Freunde fuer den Online-Status, Einladungen dafuer, dass
+  // eine inzwischen abgelaufene Einladung auch ohne Neuladen verschwindet.
+  const friendsLogic = useFriends(user, lobbyLogic.lobbyId, profileTab === 'freunde' || profileTab === 'einladungen');
 
   // Globale Ladezustände. Der Installations-Hinweis haengt bewusst auch hier
   // dran: er soll unabhaengig von Anmeldung und Lobby erscheinen, und gerade
@@ -63,8 +65,9 @@ export default function App() {
   // direkt -- dort haengen Nickname-Pruefung, Fehlermeldungen und das
   // Nachladen des Lobby-Zustands dran.
   const acceptInvite = async (invite) => {
-    await lobbyLogic.handleJoinLobby(null, invite.lobby_code);
+    const ok = await lobbyLogic.handleJoinLobby(null, invite.lobby_code);
     await friendsLogic.refresh();
+    return ok;
   };
 
   const uiProps = {
@@ -72,6 +75,10 @@ export default function App() {
     handleCopy,
     openProfile: setProfileTab,
     badgeCount: friendsLogic.badgeCount,
+    // Getrennt von badgeCount (der Summe): AuthMenu muss wissen, WELCHER
+    // Reiter etwas Neues hat, um dorthin statt blind zu "Freunde" zu oeffnen.
+    friendRequestCount: friendsLogic.incoming.length,
+    inviteCount: friendsLogic.invites.length,
   };
 
   return (
@@ -84,6 +91,11 @@ export default function App() {
                 inLobby={!!lobbyLogic.lobbyId}
                 initialTab={profileTab}
                 onClose={() => setProfileTab(null)}
+                onAcceptInvite={async (invite) => {
+                  // Angenommen -> die Lobby wechselt, das Modal soll den Blick
+                  // darauf nicht verstellen.
+                  if (await acceptInvite(invite)) setProfileTab(null);
+                }}
             />
         )}
 
