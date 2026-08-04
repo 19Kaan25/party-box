@@ -38,9 +38,10 @@ Ausführung siehe „Verifizieren" unten.
 | `20260805090100_legacy_patch_sprueche_klopfer.sql` | `legacy_apply_patch()` mappt `'SPRUECHE_KLOPFER'` auf den neuen Enum-Wert |
 | `20260806090000_invite_retry_window.sql` | `invite_friend_to_lobby()`: unbeantwortete eigene Einladung blockiert nach 2 Minuten keinen erneuten Versuch mehr |
 | `20260806090100_go_offline_rpc.sql` | Neue RPC `go_offline()` — explizites Signal beim Verlassen der Seite statt nur der 90-Sekunden-Toleranz |
-| `20260807090000_go_offline_keeps_last_seen.sql` | Bugfix: `go_offline()` datiert `last_seen_at` zurück statt die Zeile zu löschen — sonst zeigte die Freundesliste „unbekannt" statt „vor 1 Min." |
 | `20260806100000_lobby_join_requests.sql` | Neue Tabelle `lobby_join_requests` + drei RPCs: Beitrittsanfragen an einen Freund, der schon in einer Lobby sitzt |
 | `20260806110000_push_subscriptions.sql` | Neue Tabelle `push_subscriptions` + zwei RPCs für Web-Push-Abos |
+| `20260807090000_go_offline_keeps_last_seen.sql` | Bugfix: `go_offline()` datiert `last_seen_at` zurück statt die Zeile zu löschen — sonst zeigte die Freundesliste „unbekannt" statt „vor 1 Min." |
+| `20260808090000_avatar_bucket_size_limit.sql` | `avatars`-Bucket-Limit 256 KB → 1 MB, für die neue 512-px-Avatar-Auflösung |
 
 ## RPCs
 

@@ -48,9 +48,26 @@ gezielt an eine fremde Wunschkombination heranarbeiten.
 (`resizeToWebp`, proportional + `object-cover` im Kreis, unsichtbar für den
 Nutzer, welcher Teil landet wo). Jetzt: kreisförmige Maske, Ziehen zum
 Verschieben, Regler zum Zoomen, erst beim Bestätigen wird auf `OUTPUT`
-(256 px) zugeschnitten. `zoom = 1` entspricht `object-fit: cover` für den
-ganzen Kreis. Kein Zuschneide-Paket installiert — reine Pointer-Events +
+(512 px, s. u.) zugeschnitten. `zoom = 1` entspricht `object-fit: cover` für
+den ganzen Kreis. Kein Zuschneide-Paket installiert — reine Pointer-Events +
 Canvas, gleiche Machart wie das Drag in `RosterPanel.jsx`.
+
+**512 statt 256 px** (seit [20260808090000_avatar_bucket_size_limit.sql](supabase/migrations/20260808090000_avatar_bucket_size_limit.sql)):
+die Klick-Vorschau in `Avatar.jsx` zeigt das Bild bildschirmfüllend — bei
+256 px auf einem Handy sichtbar hochskaliert und verpixelt, obwohl die
+Quelle (z. B. ein iPhone-Foto) viel mehr Auflösung hatte. In der kleinen
+Darstellung (36–112 px an allen anderen Stellen) fiel das nie auf. Das
+Bucket-Limit `avatars.file_size_limit` musste dafür von 256 KB auf 1 MB
+mit angehoben werden — war explizit auf die alte, kleinere Auflösung
+zugeschnitten.
+
+**Löschen/Ändern räumt sauber auf, ohne eigenes Zutun:** Der Storage-Pfad ist
+immer `{user_id}/avatar.webp` (fest, nicht pro Upload versioniert). Ein neuer
+Upload läuft mit `upsert: true` — überschreibt exakt diese eine Datei, keine
+zweite entsteht. `removeAvatar()` in [useAuth.js](src/hooks/useAuth.js)
+löscht die Datei aktiv aus dem Storage, erst danach wird `avatar_path` in der
+DB auf `null` gesetzt. Es gibt also nie mehrere Versionen oder verwaiste
+Dateien pro Nutzer.
 
 `components/friends/Avatar.jsx` ist die **einzige** Stelle, die ein
 Profilbild rendert — Freundesliste, Einladungen, Lobby-Spielerliste,

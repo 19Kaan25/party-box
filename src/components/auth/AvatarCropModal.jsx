@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Check, ZoomIn } from 'lucide-react';
 
 /** Sichtbarer Ausschnitt (quadratisch, in CSS-Pixeln) und Ziel-Aufloesung
- *  des hochgeladenen Bildes. 256 passt zur bisherigen Konstante in
- *  ProfileModal.jsx (MAX_SIZE) -- der Avatar wird nirgends grösser
- *  dargestellt. */
+ *  des hochgeladenen Bildes. 512 statt der frueheren 256: die Klick-Vorschau
+ *  in Avatar.jsx zeigt das Bild bildschirmfuellend (`max-w-full max-h-full`)
+ *  -- bei 256 war das auf einem Handy sichtbar hochskaliert und wirkte
+ *  verpixelt, obwohl die Quelle (z. B. ein iPhone-Foto) selbst viel mehr
+ *  Aufloesung hatte. In der kleinen Darstellung (36-112 px an anderen
+ *  Stellen) war der Unterschied nie zu sehen. */
 const VIEWPORT = 280;
-const OUTPUT = 256;
+const OUTPUT = 512;
 const MAX_ZOOM = 3;
 
 /**
