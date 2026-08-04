@@ -249,6 +249,40 @@ Zwei Regeln, die nicht verhandelbar sind:
 Details und die Falle „altes Startbildschirm-Symbol repariert sich nicht":
 [docs/known-issues.md](docs/known-issues.md) §6–8.
 
+## Hosting: zwei Deployments, ein Backend
+
+Die App läuft parallel auf zwei Hosts, beide zeigen auf **dasselbe**
+Supabase-Projekt (`wlgvwpkqtiymlpctgufb`) — Hosting ist reine Auslieferung
+von `dist/`, Lobby und Spielzustand leben in Supabase. Jemand auf der einen
+URL kann deshalb problemlos mit jemandem auf der anderen spielen, solange
+beide denselben Stand ausliefern.
+
+| Ziel | URL | Deploy |
+|---|---|---|
+| Vercel (primär) | production-Domain im Vercel-Dashboard | automatisch bei Push auf `main` |
+| Firebase Hosting | https://party-box-45d2b.web.app | **manuell**, s. u. |
+
+**Nach jedem `git push` auf `main`, das `dist/`-relevanten Code ändert
+(alles außer reinen Doku-/Migrations-Commits), zusätzlich auf Firebase
+Hosting deployen** — sonst läuft dort weiter eine alte Version und die
+beiden Deployments laufen auseinander:
+
+```bash
+npm run build && firebase deploy --only hosting --project party-box-45d2b
+```
+
+Config in [firebase.json](firebase.json) / [.firebaserc](.firebaserc)
+(Public-Dir `dist`, SPA-Rewrite auf `index.html`, wie bei Vercel — keine
+eigene Firebase-Hosting-Historie außer diesen beiden Dateien, das Original-
+Setup von vor der Supabase-Migration existierte nur außerhalb des Repos).
+Firebase-CLI ist bereits eingeloggt, kein erneuter `firebase login` nötig.
+
+`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` kommen beim lokalen Build aus
+`.env.local` — dieselben Werte, die auch Vercel als Environment-Variable
+gesetzt hat (s. Fallen unten). Ein Build mit abweichenden Werten würde
+gegen ein anderes Supabase-Projekt laufen und beide Deployments würden
+NICHT mehr zusammenspielen können.
+
 ## Fallen beim Arbeiten am Code
 
 - **Zwei getrennte Env-Variablensätze für Vercel:** `VITE_SUPABASE_URL` /
