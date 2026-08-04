@@ -109,6 +109,8 @@ src/
   hooks/useLobby.js           Lobby-RPCs + 3 postgres_changes-Subscriptions
   hooks/usePresence.js        Lobby-Presence-Kanal + globaler touch_presence-Herzschlag
   hooks/useFriends.js         Freunde, Anfragen, Einladungen (Realtime + Poll)
+  hooks/useInstallPrompt.js   PWA: Plattform + beforeinstallprompt (zeigt nichts an)
+  components/InstallBanner.jsx  PWA-Hinweis, in App.jsx in allen drei Zweigen
   components/GameRouter.jsx   Welcome → Lobby → Spiel-Engine (switch)
   components/GameHeader.jsx   "Spiel beenden"/"verlassen"-Leiste
   components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde)
@@ -141,11 +143,13 @@ deshalb nie globale Punkte.
 
 Zustandshaltung im Einzelgerät-Modus: **lokaler State zuerst, Server hinterher.** Jeder
 Schritt setzt sofort den React-State — ein weitergereichtes Handy darf nicht auf einen
-Roundtrip warten — und spiegelt ihn danach nach `gameState.sd` (`step`, `roster`, `round`,
-`revealIndex`, `revealStage`, `votedOutKey`, `guessed`, `sessionUsed`, `summary`). Beim
-Mounten wird der lokale State aus `gameState.sd` vorbelegt: lädt der Host mitten in der
-Runde neu, geht es genau dort weiter. `gameState.phase` (`'SETUP'` / `'SINGLE_RUNNING'`)
-trägt den Nicht-Host-Schirm und die Weiche in `ImposterEngine.jsx`.
+Roundtrip warten — und spiegelt ihn danach nach `gameState.sd`. Beim Mounten wird der
+lokale State aus `gameState.sd` vorbelegt: lädt der Host mitten in der Runde neu, geht es
+genau dort weiter. `gameState.phase` (`'SETUP'` / `'SINGLE_RUNNING'`) trägt den
+Nicht-Host-Schirm und die jeweilige Modus-Weiche. Die `sd`-Form ist pro Spiel eigen —
+Imposter: `step, roster, round, revealIndex, revealStage, votedOutKey, guessed,
+sessionUsed, summary`; Werwolf: `step, roster, narratorKey, roleCounts, rules,
+revealIndex, revealStage, game` (Details: [docs/codebase-overview.md](docs/codebase-overview.md) §2.2).
 
 Dass damit auch das Geheimwort bei allen Clients liegt, ist bewusst in Kauf genommen —
 genau wie im Mehrgeräte-Modus (siehe Kopf dieser Datei: Klartext-Geheimnisse sind im
@@ -212,6 +216,30 @@ Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), n
   Tabellen-Updates vom Client.
 - **Reconnect** über `lobby_members` (aktive Mitgliedschaft), **Presence** über einen
   öffentlichen Kanal (`usePresence.js`) plus periodischem Herzschlag.
+- **Freundschaft aus der Lobby heraus:** `LobbyWaitingScreen` zeigt pro Mitspieler mit
+  Benutzernamen einen `UserPlus`-Knopf, sobald keine Beziehung (Freund/eingehend/ausgehend)
+  besteht — `send_friend_request` läuft dann direkt aus der Spielerliste, ohne Umweg über
+  das Profil-Menü.
+
+## PWA (Kurz)
+
+Installierbar über `public/manifest.json` + die `apple-*`-Meta-Tags in
+`index.html` (iOS liest das Manifest nicht). Service Worker via
+`vite-plugin-pwa` in [vite.config.js](vite.config.js), `registerType: 'autoUpdate'`.
+
+Zwei Regeln, die nicht verhandelbar sind:
+
+- **Precache nur Build-Artefakte**, kein `index.html`, kein `navigateFallback`,
+  **kein `runtimeCaching`**. Ein gecachter Lobby- oder Spielzustand wäre nicht
+  veraltet, sondern falsch. Supabase-REST, Realtime-WebSocket und `/api/*`
+  laufen unverändert am Service Worker vorbei. Preis: offline startet die App nicht.
+- **Icons nur über [scripts/generate-icons.mjs](scripts/generate-icons.mjs)**
+  neu erzeugen (`node scripts/generate-icons.mjs [quelle]`) — die
+  Maskable-Varianten brauchen mehr Rand als die normalen und müssen gemeinsam
+  entstehen. Quelle ist derzeit `public/icon.png` und für 512 px zu klein.
+
+Details und die Falle „altes Startbildschirm-Symbol repariert sich nicht":
+[docs/known-issues.md](docs/known-issues.md) §6–8.
 
 ## Fallen beim Arbeiten am Code
 

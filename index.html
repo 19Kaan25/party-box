@@ -1,11 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicon: vorher als image/svg+xml deklariert, verlinkt war aber eine PNG. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+
     <link rel="manifest" href="/manifest.json" />
-    <title>party-game</title>
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- iOS liest das Manifest nicht: Startbildschirm-Name, Vollbild und Icon
+         kommen dort ausschliesslich aus diesen vier Zeilen. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PartyBox" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+
+    <title>PartyBox</title>
   </head>
   <body>
     <div id="root"></div>

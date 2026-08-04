@@ -6,6 +6,7 @@ import useFriends from './hooks/useFriends';
 
 import ProfileModal from './components/auth/ProfileModal';
 import InviteToasts from './components/friends/InviteToasts';
+import InstallBanner from './components/InstallBanner';
 import GameRouter from './components/GameRouter';
 
 const APP_VERSION = "v1.1.0";
@@ -24,20 +25,28 @@ export default function App() {
   // Der Freunde-Reiter pollt den Online-Status nur, solange er offen ist.
   const friendsLogic = useFriends(user, lobbyLogic.lobbyId, profileTab === 'freunde');
 
-  // Globale Ladezustände
+  // Globale Ladezustände. Der Installations-Hinweis haengt bewusst auch hier
+  // dran: er soll unabhaengig von Anmeldung und Lobby erscheinen, und gerade
+  // wer die Seite zum ersten Mal oeffnet, sieht diese Zwischenschirme.
   if (authLoading) {
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 animate-pulse">
-          Lade Sitzung...
-        </div>
+        <>
+          <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 animate-pulse">
+            Lade Sitzung...
+          </div>
+          <InstallBanner />
+        </>
     );
   }
 
   if (!user) {
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
-          Lade Authentifizierung...
-        </div>
+        <>
+          <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+            Lade Authentifizierung...
+          </div>
+          <InstallBanner />
+        </>
     );
   }
 
@@ -91,6 +100,8 @@ export default function App() {
             onAccept={acceptInvite}
             onDecline={friendsLogic.declineInvite}
         />
+
+        <InstallBanner />
 
         {/* Globale App-Version */}
         <div className="fixed bottom-2 right-2 text-[10px] text-slate-600/50 font-mono z-[60] pointer-events-none">

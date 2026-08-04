@@ -156,3 +156,85 @@ nicht — „zuletzt online vor 3 Stunden" ließe sich daraus nicht beantworten.
 Umgekehrt wäre ein 90-Sekunden-Fenster in der Lobby zu träge. Die Folge:
 dieselbe Person kann für ein paar Sekunden in der Lobby schon grün und in
 der Freundesliste noch grau sein.
+
+---
+
+## 6. PWA: ein bereits hinzugefügtes Startbildschirm-Symbol repariert sich nicht von selbst
+
+**Betrifft jeden, der PartyBox vor dem Zweig `feat/pwa-install` zum
+Startbildschirm hinzugefügt hat.**
+
+iOS legt Symbol, Name und Anzeigemodus **im Moment des Hinzufügens** fest und
+schreibt sie in eine Verknüpfung. Danach liest es weder das Manifest noch die
+`apple-*`-Meta-Tags erneut — auch nicht beim Start und auch nicht nach einem
+Neuladen der Seite. Vorher hinzugefügte Verknüpfungen behalten deshalb für
+immer das alte (falsche) Symbol und starten weiter mit Safari-Leiste.
+
+**Was zu tun ist, einmalig pro Gerät:**
+
+1. Altes PartyBox-Symbol vom Startbildschirm löschen.
+2. Die Seite in Safari öffnen und neu laden (Manifest und Icons kommen frisch).
+3. Teilen → „Zum Home-Bildschirm“ → hinzufügen.
+
+Android/Chrome verhält sich in der Praxis genauso: das installierte Symbol
+wird zwar gelegentlich nachgezogen, verlässlich ist auch dort nur
+deinstallieren und neu installieren.
+
+Nebenwirkung derselben Mechanik: der Hinweis-Banner (`InstallBanner`) kann auf
+einem Gerät mit alter Verknüpfung weiterhin erscheinen, solange die Seite im
+normalen Browser-Tab geöffnet wird — `display-mode: standalone` gilt nur für
+das Fenster, das aus der Verknüpfung heraus gestartet wurde.
+
+---
+
+## 7. PWA: der Service Worker cacht bewusst nur Build-Artefakte
+
+Kein Versehen, sondern die Bedingung dafür, dass ein Service Worker in einer
+Live-Mehrspieler-App überhaupt vertretbar ist (Konfiguration:
+[vite.config.js](../vite.config.js)):
+
+- **Precache:** nur gehashte JS/CSS-Dateien, Bilder, Fonts. Kein `index.html`,
+  kein `navigateFallback` — Navigationsanfragen gehen immer ans Netz.
+- **Kein `runtimeCaching`:** ohne solche Regeln reicht Workbox alles durch,
+  was nicht im Precache steht. Supabase-REST-Aufrufe, der
+  Realtime-WebSocket und `/api/*` laufen also unverändert am Service Worker
+  vorbei.
+
+Eine gecachte Lobby oder ein gecachter Spielstand wäre nicht „etwas veraltet",
+sondern falsch: der Mitspieler ist längst weiter. Der Preis dieser Entscheidung
+ist, dass PartyBox **offline nicht startet** — was für ein Spiel, das ohne
+Server ohnehin nichts tut, kein Verlust ist.
+
+Wer hier später Caching-Regeln ergänzt: `registerType: 'autoUpdate'` sorgt
+dafür, dass eine neue Version sofort übernimmt (`skipWaiting`,
+`clientsClaim`). Ein Precache mit `index.html` würde genau diesen Effekt
+aushebeln.
+
+---
+
+## 8. PWA-Icons stammen aus einer zu kleinen Quelldatei
+
+Die Icons entstehen aus `public/icon.png` (Party-Pinguin) über
+[scripts/generate-icons.mjs](../scripts/generate-icons.mjs). Die Datei misst
+676×369, der sichtbare Pinguin darin nur **196×259 Pixel**.
+
+| Ziel | Motivgröße | Skalierung |
+|---|---|---|
+| `icon-180.png` (apple-touch) | 104×137 | 0,53× |
+| `icon-192.png` | 110×146 | 0,56× |
+| `icon-512.png` | 294×389 | **1,50×** |
+| `icon-512-maskable.png` | 232×307 | 1,19× |
+
+Nur das 512er wird nennenswert hochgerechnet und ist dadurch leicht weich —
+sichtbar praktisch nur in der Installations-Vorschau von Chrome, nicht auf dem
+Startbildschirm. **Sobald eine höher aufgelöste Originaldatei existiert** (SVG
+oder PNG ab 1024×1024):
+
+```bash
+node scripts/generate-icons.mjs pfad/zur/neuen-datei.png
+```
+
+Größen, Ränder und der Farbverlauf im Hintergrund bleiben dabei identisch. Die
+Maskable-Varianten brauchen mehr Rand als die normalen (Android schneidet je
+nach Launcher einen Kreis heraus); deshalb müssen beide Sätze immer gemeinsam
+neu entstehen — von Hand geht das genau einmal gut.
