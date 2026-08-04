@@ -253,7 +253,21 @@ Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), n
   Avatar-Badge gezielt den Reiter mit etwas Neuem (Freundschaftsanfragen vor Einladungen).
   Laufen serverseitig nach 24 h ab (`list_my_invites()` filtert, `purge-old-invites` räumt
   stündlich auf) — rein clientseitiges Ausblenden reicht nicht, weil `useFriends.js` ohne
-  ein DB-Ereignis oder offenes Panel nicht von selbst neu lädt.
+  ein DB-Ereignis oder offenes Panel nicht von selbst neu lädt. Rückmeldungen zu einer
+  Lobby-Einladung (z. B. „bereits eingeladen") hängen **pro Ziel-Freund**
+  (`useFriends.js`: `inviteErrors`), nicht am geteilten `error`-State — sonst blieb die
+  Meldung sichtbar, nachdem man den Freunde-Reiter längst verlassen hatte. Verschwindet
+  nach 4 s von selbst. Eine unbeantwortete eigene Einladung blockiert nach 2 Minuten
+  keinen erneuten Versuch mehr (`invite_friend_to_lobby`).
+- **Beitrittsanfragen:** Kehrseite der Lobby-Einladung — wer selbst in keiner (oder einer
+  anderen) Lobby sitzt, fragt einen Freund, der schon drin ist, ob er beitreten darf
+  (`request_to_join_lobby`, Button in [FriendsPanel.jsx](src/components/friends/FriendsPanel.jsx)
+  sobald `p.in_lobby`). Nimmt der Freund an, entsteht daraus **keine** direkte Beitritts-Aktion,
+  sondern dieselbe `lobby_invites`-Zeile wie bei einer normalen Einladung
+  (`respond_join_request`) — der Anfragende sieht sie im bereits bestehenden
+  „Einladungen"-Reiter und nimmt sie über den unveränderten Weg an. Eigene Tabelle
+  `lobby_join_requests`, 2-Stunden-Aufräumjob (kürzer als die 24 h der Einladungen selbst,
+  s. o. — eine spontane Anfrage veraltet schneller als eine ausgesprochene Einladung).
 
 ## PWA (Kurz)
 

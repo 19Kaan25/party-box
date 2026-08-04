@@ -38,6 +38,7 @@ Ausführung siehe „Verifizieren" unten.
 | `20260805090100_legacy_patch_sprueche_klopfer.sql` | `legacy_apply_patch()` mappt `'SPRUECHE_KLOPFER'` auf den neuen Enum-Wert |
 | `20260806090000_invite_retry_window.sql` | `invite_friend_to_lobby()`: unbeantwortete eigene Einladung blockiert nach 2 Minuten keinen erneuten Versuch mehr |
 | `20260806090100_go_offline_rpc.sql` | Neue RPC `go_offline()` — explizites Signal beim Verlassen der Seite statt nur der 90-Sekunden-Toleranz |
+| `20260806100000_lobby_join_requests.sql` | Neue Tabelle `lobby_join_requests` + drei RPCs: Beitrittsanfragen an einen Freund, der schon in einer Lobby sitzt |
 
 ## RPCs
 
@@ -63,6 +64,9 @@ Ausführung siehe „Verifizieren" unten.
 | `list_friends()` | jeder authentifizierte Nutzer | Freunde und offene Anfragen mit `online` / `in_lobby` / `last_seen_at`. **Gibt keinen Lobby-Code heraus**; bei offenen Anfragen bleibt der Status verborgen. |
 | `touch_presence(p_lobby)` | jeder authentifizierte Nutzer | Herzschlag alle 45 s. `p_lobby` wird nur übernommen, wenn der Aufrufer dort aktives Mitglied ist. |
 | `go_offline()` | jeder authentifizierte Nutzer | Löscht die eigene `user_status`-Zeile sofort — Signal beim Verlassen der Seite (`pagehide`), Gegenstück zu `touch_presence`. |
+| `request_to_join_lobby(p_to_user)` | bestätigter Freund | Legt eine Beitrittsanfrage an — Ziel-Lobby wird serverseitig aus der aktiven Mitgliedschaft von `p_to_user` aufgelöst, der Anfragende kennt sie nicht. |
+| `list_my_join_requests()` | Empfänger | Offene Anfragen an dich, nur solange du noch aktives Mitglied der betroffenen Lobby bist. |
+| `respond_join_request(p_request, p_accept)` | Empfänger | Bei Zustimmung entsteht eine normale `lobby_invites`-Zeile an den Anfragenden (dieselbe Mechanik wie `invite_friend_to_lobby`) — kein zweiter Beitritts-Pfad im Client. |
 | `invite_friend_to_lobby(p_lobby, p_to_user)` | aktives Mitglied **und** bestätigter Freund | Legt eine Einladung an. |
 | `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code**, jünger als 24 h — hier angebracht, man wurde ausdrücklich eingeladen. |
 | `decline_invite(p_invite)` | Empfänger | Löscht die Einladung. `join_lobby` räumt sie beim Beitritt selbst ab. |
@@ -85,7 +89,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 `USERNAME_INVALID`, `USERNAME_TAKEN`, `PROFILE_NOT_FOUND`, `NO_USERNAME`,
 `USER_NOT_FOUND`, `CANNOT_FRIEND_SELF`, `ALREADY_FRIENDS`, `REQUEST_PENDING`,
 `REQUEST_NOT_FOUND`, `NOT_THE_RECIPIENT`, `NOT_FRIENDS`, `ALREADY_INVITED`,
-`ALREADY_IN_LOBBY`.
+`ALREADY_IN_LOBBY`, `FRIEND_NOT_IN_LOBBY`, `ALREADY_REQUESTED`.
 
 ## Wartungsjobs (pg_cron)
 
@@ -95,6 +99,7 @@ Fehler sind stabile `UPPER_SNAKE`-Tokens in der Message:
 | `purge-old-games` | täglich 03:17 | Löscht Partien älter als 90 Tage (Cascade auf Events/Secrets) |
 | `purge-stale-anonymous-users` | täglich 03:43 | Löscht anonyme Accounts > 30 Tage ohne aktive Mitgliedschaft — verwaiste Host-Lobbys werden vorher auf den Sentinel umgehängt, siehe unten |
 | `purge-old-invites` | stündlich :07 | Löscht Lobby-Einladungen älter als 24 Stunden |
+| `purge-old-join-requests` | stündlich :12 | Löscht Beitrittsanfragen älter als 2 Stunden |
 
 ### Warum der Enum-Wert eine eigene Migrationsdatei bekommt
 

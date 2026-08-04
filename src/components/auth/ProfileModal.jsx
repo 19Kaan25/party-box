@@ -107,7 +107,7 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
                     {[
                         ['profil', 'Profil', 0],
                         ['freunde', 'Freunde', friendsLogic?.incoming?.length || 0],
-                        ['einladungen', 'Einladungen', friendsLogic?.invites?.length || 0],
+                        ['einladungen', 'Einladungen', (friendsLogic?.invites?.length || 0) + (friendsLogic?.joinRequests?.length || 0)],
                     ].map(([key, label, badge]) => (
                         <button
                             key={key}

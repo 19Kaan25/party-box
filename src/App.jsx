@@ -78,7 +78,7 @@ export default function App() {
     // Getrennt von badgeCount (der Summe): AuthMenu muss wissen, WELCHER
     // Reiter etwas Neues hat, um dorthin statt blind zu "Freunde" zu oeffnen.
     friendRequestCount: friendsLogic.incoming.length,
-    inviteCount: friendsLogic.invites.length,
+    inviteCount: friendsLogic.invites.length + friendsLogic.joinRequests.length,
   };
 
   return (

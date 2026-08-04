@@ -28,6 +28,9 @@ function mapFriendError(err) {
     if (msg.includes('NOT_FRIENDS')) return 'Einladen geht nur bei bestätigter Freundschaft.';
     if (msg.includes('ALREADY_INVITED')) return 'Diese Person hast du bereits eingeladen.';
     if (msg.includes('ALREADY_IN_LOBBY')) return 'Diese Person ist schon in der Lobby.';
+    if (msg.includes('FRIEND_NOT_IN_LOBBY')) return 'Diese Person ist gerade in keiner Lobby.';
+    if (msg.includes('ALREADY_REQUESTED')) return 'Du hast bereits eine Beitrittsanfrage geschickt.';
+    if (msg.includes('GAME_IN_PROGRESS')) return 'Dort läuft schon ein Spiel.';
     if (msg.includes('NOT_AUTHENTICATED')) return 'Sitzung abgelaufen. Bitte lade die Seite neu.';
     return 'Da ist etwas schiefgelaufen. Bitte versuche es erneut.';
 }
@@ -45,6 +48,7 @@ export function parseHandle(input) {
 export default function useFriends(user, lobbyId, panelOpen) {
     const [friends, setFriends] = useState([]);
     const [invites, setInvites] = useState([]);
+    const [joinRequests, setJoinRequests] = useState([]);
     const [error, setError] = useState('');
     // Rueckmeldung zu einer Lobby-Einladung, pro Ziel-Freund statt global --
     // sonst haengt "bereits eingeladen" noch am Freunde-Reiter, wenn man
@@ -83,13 +87,15 @@ export default function useFriends(user, lobbyId, panelOpen) {
 
     const refresh = useCallback(async () => {
         if (!user?.id) return;
-        const [f, i] = await Promise.all([
+        const [f, i, j] = await Promise.all([
             supabase.rpc('list_friends'),
             supabase.rpc('list_my_invites'),
+            supabase.rpc('list_my_join_requests'),
         ]);
         if (!mounted.current) return;
         if (!f.error) setFriends(f.data || []);
         if (!i.error) setInvites(i.data || []);
+        if (!j.error) setJoinRequests(j.data || []);
     }, [user?.id]);
 
     // Realtime auf die Struktur (Anfrage kam rein, Einladung kam rein). Damit
@@ -108,6 +114,9 @@ export default function useFriends(user, lobbyId, panelOpen) {
                 refresh)
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'lobby_invites', filter: `to_user=eq.${user.id}` },
+                refresh)
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'lobby_join_requests', filter: `to_user=eq.${user.id}` },
                 refresh)
             .subscribe();
 
@@ -174,6 +183,25 @@ export default function useFriends(user, lobbyId, panelOpen) {
         () => supabase.rpc('decline_invite', { p_invite: inviteId })
     ), [run]);
 
+    // Kehrseite von inviteToLobby: derselbe Fehlerkanal (pro Ziel-Freund,
+    // 4s Auto-Dismiss), weil beide Buttons in derselben Freundeszeile
+    // nebeneinander stehen koennen.
+    const requestToJoin = useCallback(async (otherId) => {
+        setBusy(true);
+        try {
+            const { error: err } = await supabase.rpc('request_to_join_lobby', { p_to_user: otherId });
+            if (err) { setInviteError(otherId, mapFriendError(err)); return false; }
+            await refresh();
+            return true;
+        } finally {
+            setBusy(false);
+        }
+    }, [refresh, setInviteError]);
+
+    const respondJoinRequest = useCallback((requestId, accept) => run(
+        () => supabase.rpc('respond_join_request', { p_request: requestId, p_accept: accept })
+    ), [run]);
+
     const grouped = useMemo(() => ({
         accepted: friends.filter((f) => f.direction === 'accepted'),
         incoming: friends.filter((f) => f.direction === 'incoming'),
@@ -185,9 +213,11 @@ export default function useFriends(user, lobbyId, panelOpen) {
         incoming: grouped.incoming,
         outgoing: grouped.outgoing,
         invites,
-        // Was am Profil-Knopf einen Punkt verdient: fremde Anfragen und
-        // Einladungen. Eigene offene Anfragen zaehlen nicht mit.
-        badgeCount: grouped.incoming.length + invites.length,
+        joinRequests,
+        // Was am Profil-Knopf einen Punkt verdient: fremde Anfragen,
+        // Einladungen und Beitrittsanfragen. Eigene offene Anfragen zaehlen
+        // nicht mit.
+        badgeCount: grouped.incoming.length + invites.length + joinRequests.length,
         error,
         setError,
         inviteErrors,
@@ -198,5 +228,7 @@ export default function useFriends(user, lobbyId, panelOpen) {
         removeFriend,
         inviteToLobby,
         declineInvite,
+        requestToJoin,
+        respondJoinRequest,
     };
 }

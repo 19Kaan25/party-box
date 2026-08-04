@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPlus, Check, X, Loader2, Send, Trash2, Users } from 'lucide-react';
+import { UserPlus, Check, X, Loader2, Send, Trash2, Users, LogIn } from 'lucide-react';
 import { relativeTimeDe } from '../../utils/helpers';
 import Avatar from './Avatar';
 
@@ -31,7 +31,7 @@ function PersonLine({ person }) {
 export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
     const {
         friends, incoming, outgoing, error, setError, busy,
-        sendRequest, respond, removeFriend, inviteToLobby, inviteErrors,
+        sendRequest, respond, removeFriend, inviteToLobby, inviteErrors, requestToJoin,
     } = friendsLogic;
 
     const [input, setInput] = useState('');
@@ -169,6 +169,18 @@ export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
                                                 className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-700 transition-colors"
                                                 title="In meine Lobby einladen">
                                                 <UserPlus size={18} />
+                                            </button>
+                                        )}
+                                        {/* Umgekehrte Richtung: der Freund sitzt schon in
+                                            einer Lobby, ich frage nach statt einzuladen.
+                                            Unabhaengig davon, ob ich selbst gerade in
+                                            einer Lobby bin -- ein Beitritt verlaesst sie
+                                            ohnehin automatisch. */}
+                                        {p.in_lobby && (
+                                            <button onClick={() => requestToJoin(p.id)} disabled={busy}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-purple-300 hover:bg-slate-700 transition-colors"
+                                                title="Beitrittsanfrage senden">
+                                                <LogIn size={18} />
                                             </button>
                                         )}
                                         <button onClick={() => {
