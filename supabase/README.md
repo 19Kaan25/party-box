@@ -39,6 +39,7 @@ Ausführung siehe „Verifizieren" unten.
 | `20260806090000_invite_retry_window.sql` | `invite_friend_to_lobby()`: unbeantwortete eigene Einladung blockiert nach 2 Minuten keinen erneuten Versuch mehr |
 | `20260806090100_go_offline_rpc.sql` | Neue RPC `go_offline()` — explizites Signal beim Verlassen der Seite statt nur der 90-Sekunden-Toleranz |
 | `20260806100000_lobby_join_requests.sql` | Neue Tabelle `lobby_join_requests` + drei RPCs: Beitrittsanfragen an einen Freund, der schon in einer Lobby sitzt |
+| `20260806110000_push_subscriptions.sql` | Neue Tabelle `push_subscriptions` + zwei RPCs für Web-Push-Abos |
 
 ## RPCs
 
@@ -67,6 +68,8 @@ Ausführung siehe „Verifizieren" unten.
 | `request_to_join_lobby(p_to_user)` | bestätigter Freund | Legt eine Beitrittsanfrage an — Ziel-Lobby wird serverseitig aus der aktiven Mitgliedschaft von `p_to_user` aufgelöst, der Anfragende kennt sie nicht. |
 | `list_my_join_requests()` | Empfänger | Offene Anfragen an dich, nur solange du noch aktives Mitglied der betroffenen Lobby bist. |
 | `respond_join_request(p_request, p_accept)` | Empfänger | Bei Zustimmung entsteht eine normale `lobby_invites`-Zeile an den Anfragenden (dieselbe Mechanik wie `invite_friend_to_lobby`) — kein zweiter Beitritts-Pfad im Client. |
+| `save_push_subscription(p_endpoint, p_p256dh, p_auth)` | jeder authentifizierte Nutzer | Legt das eigene Push-Abo an/aktualisiert es (Upsert auf `endpoint`). |
+| `delete_push_subscription(p_endpoint)` | jeder authentifizierte Nutzer | Entfernt das eigene Push-Abo, z. B. bei widerrufener Berechtigung. |
 | `invite_friend_to_lobby(p_lobby, p_to_user)` | aktives Mitglied **und** bestätigter Freund | Legt eine Einladung an. |
 | `list_my_invites()` | Empfänger | Offene Einladungen **inklusive Lobby-Code**, jünger als 24 h — hier angebracht, man wurde ausdrücklich eingeladen. |
 | `decline_invite(p_invite)` | Empfänger | Löscht die Einladung. `join_lobby` räumt sie beim Beitritt selbst ab. |

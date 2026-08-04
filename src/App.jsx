@@ -89,6 +89,7 @@ export default function App() {
                 authLogic={authLogic}
                 friendsLogic={friendsLogic}
                 inLobby={!!lobbyLogic.lobbyId}
+                lobbyCode={lobbyLogic.lobbyCode}
                 initialTab={profileTab}
                 onClose={() => setProfileTab(null)}
                 onAcceptInvite={async (invite) => {

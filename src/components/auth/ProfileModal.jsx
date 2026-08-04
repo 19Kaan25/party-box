@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, LogOut, Camera, Loader2, Trash2, Check, Pencil } from 'lucide-react';
+import { X, LogOut, Camera, Loader2, Trash2, Check, Pencil, Bell, BellOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { USERNAME_RE } from '../../hooks/useAuth';
+import usePushNotifications from '../../hooks/usePushNotifications';
+import useInstallPrompt from '../../hooks/useInstallPrompt';
 import FriendsPanel from '../friends/FriendsPanel';
 import InvitesPanel from '../friends/InvitesPanel';
 
@@ -40,7 +42,7 @@ function resizeToWebp(file) {
     });
 }
 
-export default function ProfileModal({ authLogic, friendsLogic, inLobby, initialTab = 'profil', onClose, onAcceptInvite }) {
+export default function ProfileModal({ authLogic, friendsLogic, inLobby, lobbyCode, initialTab = 'profil', onClose, onAcceptInvite }) {
     const {
         user, userData, updateUserProfile, removeAvatar, setUsername,
         logOutUser, authActionLoading, error, setError,
@@ -52,6 +54,19 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
     const [nameDraft, setNameDraft] = useState('');
     const [editingName, setEditingName] = useState(false);
     const fileInputRef = useRef(null);
+
+    const push = usePushNotifications(user);
+    const { isIOS, isStandalone } = useInstallPrompt();
+    const [pushBusy, setPushBusy] = useState(false);
+    const [pushError, setPushError] = useState(false);
+
+    const enablePush = async () => {
+        setPushBusy(true);
+        setPushError(false);
+        const ok = await push.subscribe();
+        setPushError(!ok);
+        setPushBusy(false);
+    };
 
     const handle = userData?.handle;
 
@@ -227,6 +242,57 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
                                 {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
                             </div>
 
+                            {(push.supported || (isIOS && !isStandalone)) && (
+                                <div className="mb-6 bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        {push.permission === 'granted'
+                                            ? <Bell size={16} className="text-green-400 shrink-0" />
+                                            : <BellOff size={16} className="text-slate-400 shrink-0" />}
+                                        <span className="text-sm font-bold text-slate-200">Benachrichtigungen</span>
+                                    </div>
+
+                                    {isIOS && !isStandalone ? (
+                                        <p className="text-xs text-slate-500">
+                                            Auf dem iPhone erst zum Home-Bildschirm hinzufügen (Reiter
+                                            „Profil" → Installations-Hinweis) — im normalen Browser-Tab
+                                            kann Safari keine Benachrichtigungen senden.
+                                        </p>
+                                    ) : push.permission === 'granted' ? (
+                                        <p className="text-xs text-slate-500">
+                                            Aktiv — du bekommst eine Meldung, wenn dich jemand offline
+                                            in eine Lobby einlädt.
+                                        </p>
+                                    ) : push.permission === 'denied' ? (
+                                        <p className="text-xs text-slate-500">
+                                            Blockiert. Zum Aktivieren die Berechtigung in den
+                                            Browser-Einstellungen für diese Seite zurücksetzen.
+                                        </p>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs text-slate-500 mb-2">
+                                                Bekomme eine Meldung, wenn dich jemand offline in eine
+                                                Lobby einlädt.
+                                            </p>
+                                            <button
+                                                onClick={enablePush}
+                                                disabled={pushBusy}
+                                                className="text-xs font-bold text-indigo-300 hover:text-indigo-200 flex items-center gap-1.5 disabled:opacity-50"
+                                            >
+                                                {pushBusy
+                                                    ? <Loader2 size={14} className="animate-spin" />
+                                                    : <Bell size={14} />}
+                                                Aktivieren
+                                            </button>
+                                            {pushError && (
+                                                <p className="text-xs text-red-400 mt-2">
+                                                    Konnte nicht aktiviert werden. Bitte erneut versuchen.
+                                                </p>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
                             <button
                                 onClick={() => { onClose(); logOutUser(); }}
                                 className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 font-bold py-3 rounded-xl border border-red-900/50 transition-all flex items-center justify-center gap-2"
@@ -239,6 +305,7 @@ export default function ProfileModal({ authLogic, friendsLogic, inLobby, initial
                             friendsLogic={friendsLogic}
                             ownHandle={handle}
                             inLobby={inLobby}
+                            lobbyCode={lobbyCode}
                         />
                     ) : (
                         <InvitesPanel

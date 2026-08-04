@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { UserPlus, Check, X, Loader2, Send, Trash2, Users, LogIn } from 'lucide-react';
+import { UserPlus, Check, X, Loader2, Send, Trash2, Users, LogIn, BellRing } from 'lucide-react';
 import { relativeTimeDe } from '../../utils/helpers';
+import { sendInvitePush } from '../../lib/sendInvitePush';
 import Avatar from './Avatar';
+
+/** Vorbelegung fuer die Push-Nachricht -- wird nur verschickt, wenn das
+ *  Feld beim Absenden leer geblieben ist. server-seitig identisch als
+ *  Fallback hinterlegt (api/send-invite-push.js), diese Variante hier ist
+ *  nur die sichtbare Vorschau im Eingabefeld. */
+const standardPushMessage = (lobbyCode) => `Du wurdest in eine Lobby eingeladen (${lobbyCode}).`;
 
 /** Kleiner Statuspunkt. Die drei Zustaende kommen direkt aus list_friends():
  *  online + in_lobby, nur online, oder offline mit last_seen_at. */
@@ -28,17 +35,44 @@ function PersonLine({ person }) {
     );
 }
 
-export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
+export default function FriendsPanel({ friendsLogic, ownHandle, inLobby, lobbyCode }) {
     const {
         friends, incoming, outgoing, error, setError, busy,
         sendRequest, respond, removeFriend, inviteToLobby, inviteErrors, requestToJoin,
     } = friendsLogic;
 
     const [input, setInput] = useState('');
+    // Wer offline ist, bekommt statt eines sofortigen Klicks diese Box:
+    // Standardtext oder eigene Nachricht, BEVOR die Einladung + der
+    // Push-Versand ausgeloest werden. composeFor haelt die Freund-ID, fuer
+    // die die Box gerade offen ist -- nie mehr als eine gleichzeitig.
+    const [composeFor, setComposeFor] = useState(null);
+    const [messageDraft, setMessageDraft] = useState('');
+    const [sendingPushFor, setSendingPushFor] = useState(null);
 
     const submit = async () => {
         const ok = await sendRequest(input);
         if (ok) setInput('');
+    };
+
+    const openInvite = (p) => {
+        if (p.online) { inviteToLobby(p.id); return; }
+        setComposeFor((prev) => (prev === p.id ? null : p.id));
+        setMessageDraft('');
+    };
+
+    const sendOfflineInvite = async (p) => {
+        setSendingPushFor(p.id);
+        try {
+            const ok = await inviteToLobby(p.id);
+            // Die Einladung gilt auch, wenn der Push-Versand scheitert (kein
+            // Abo, Endpunkt nicht erreichbar) -- deshalb kein await auf einen
+            // Erfolg hier, sendInvitePush wirft ohnehin nie.
+            if (ok) await sendInvitePush({ toUserId: p.id, lobbyCode, message: messageDraft });
+            setComposeFor(null);
+        } finally {
+            setSendingPushFor(null);
+        }
     };
 
     if (!ownHandle) {
@@ -165,9 +199,9 @@ export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
                                             Annehmen. Ist die Person schon in DIESER
                                             Lobby, meldet die RPC das verstaendlich. */}
                                         {inLobby && (
-                                            <button onClick={() => inviteToLobby(p.id)} disabled={busy}
-                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-700 transition-colors"
-                                                title="In meine Lobby einladen">
+                                            <button onClick={() => openInvite(p)} disabled={busy}
+                                                className={`p-1.5 rounded-lg transition-colors ${composeFor === p.id ? 'text-indigo-300 bg-slate-700' : 'text-slate-400 hover:text-indigo-300 hover:bg-slate-700'}`}
+                                                title={p.online ? 'In meine Lobby einladen' : 'In meine Lobby einladen (per Push, ist offline)'}>
                                                 <UserPlus size={18} />
                                             </button>
                                         )}
@@ -197,6 +231,41 @@ export default function FriendsPanel({ friendsLogic, ownHandle, inLobby }) {
                                     (INVITE_ERROR_MS in useFriends.js). */}
                                 {inviteErrors?.[p.id] && (
                                     <p className="text-xs text-amber-400 mt-2 pl-12">{inviteErrors[p.id]}</p>
+                                )}
+
+                                {composeFor === p.id && (
+                                    <div className="mt-2.5 pl-12 pr-1">
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
+                                            <BellRing size={12} /> Ist offline — Einladung kommt als Push-Benachrichtigung an
+                                        </div>
+                                        <textarea
+                                            value={messageDraft}
+                                            onChange={(e) => setMessageDraft(e.target.value)}
+                                            placeholder={standardPushMessage(lobbyCode)}
+                                            maxLength={140}
+                                            rows={2}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white resize-none focus:outline-none focus:border-indigo-500 mb-2"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => sendOfflineInvite(p)}
+                                                disabled={busy || sendingPushFor === p.id}
+                                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white text-xs font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                                            >
+                                                {sendingPushFor === p.id
+                                                    ? <Loader2 size={13} className="animate-spin" />
+                                                    : <Send size={13} />}
+                                                {messageDraft.trim() ? 'Eigene Nachricht senden' : 'Standardnachricht senden'}
+                                            </button>
+                                            <button
+                                                onClick={() => setComposeFor(null)}
+                                                disabled={sendingPushFor === p.id}
+                                                className="px-3 text-slate-400 hover:text-white text-xs rounded-lg transition-colors"
+                                            >
+                                                Abbrechen
+                                            </button>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         ))}

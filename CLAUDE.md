@@ -111,7 +111,11 @@ src/
   hooks/usePresence.js        Lobby-Presence-Kanal + globaler touch_presence-Herzschlag
   hooks/useFriends.js         Freunde, Anfragen, Einladungen (Realtime + Poll)
   hooks/useInstallPrompt.js   PWA: Plattform + beforeinstallprompt (zeigt nichts an)
+  hooks/usePushNotifications.js  Web-Push-Berechtigung + Abo (zeigt nichts an)
   components/InstallBanner.jsx  PWA-Hinweis, in App.jsx in allen drei Zweigen
+  lib/sendInvitePush.js       Ruft api/send-invite-push.js auf, wirft nie
+  sw.js                       Eigener Service Worker (injectManifest): Precache + push/notificationclick
+  api/send-invite-push.js     Vercel-Function: sendet Web-Push fuer eine Lobby-Einladung
   components/GameRouter.jsx   Welcome → Lobby → Spiel-Engine (switch)
   components/GameHeader.jsx   "Spiel beenden"/"verlassen"-Leiste
   components/auth/            AuthMenu (oben rechts), ProfileModal (Reiter Profil/Freunde)
@@ -273,7 +277,10 @@ Die Engines schreiben weiterhin über die `TRANSITIONAL`-Brücke (siehe oben), n
 
 Installierbar über `public/manifest.json` + die `apple-*`-Meta-Tags in
 `index.html` (iOS liest das Manifest nicht). Service Worker via
-`vite-plugin-pwa` in [vite.config.js](vite.config.js), `registerType: 'autoUpdate'`.
+`vite-plugin-pwa` in [vite.config.js](vite.config.js), `registerType: 'autoUpdate'`,
+Strategie **`injectManifest`** (nicht `generateSW`) mit eigener [src/sw.js](src/sw.js) —
+`generateSW` erlaubt keine eigenen Event-Listener, und `push`/`notificationclick`
+(s. u.) brauchen genau das.
 
 Zwei Regeln, die nicht verhandelbar sind:
 
@@ -281,6 +288,9 @@ Zwei Regeln, die nicht verhandelbar sind:
   **kein `runtimeCaching`**. Ein gecachter Lobby- oder Spielzustand wäre nicht
   veraltet, sondern falsch. Supabase-REST, Realtime-WebSocket und `/api/*`
   laufen unverändert am Service Worker vorbei. Preis: offline startet die App nicht.
+  Gilt unverändert auch nach dem Umstieg auf `injectManifest` — `src/sw.js` ruft
+  `precacheAndRoute()` mit genau derselben Dateiliste auf, Push kommt als
+  unabhängiger Event-Listener dazu, rührt das Caching nicht an.
 - **Icons nur über [scripts/generate-icons.mjs](scripts/generate-icons.mjs)**
   neu erzeugen (`node scripts/generate-icons.mjs [quelle]`) — die
   Maskable-Varianten brauchen mehr Rand als die normalen und müssen gemeinsam
@@ -288,6 +298,42 @@ Zwei Regeln, die nicht verhandelbar sind:
 
 Details und die Falle „altes Startbildschirm-Symbol repariert sich nicht":
 [docs/known-issues.md](docs/known-issues.md) §6–8.
+
+## Push-Benachrichtigungen (Kurz)
+
+Web Push (VAPID), bewusst **kein** Firebase Cloud Messaging — Firebase wurde in
+Phase 0b gerade erst entfernt (s. Kopf dieser Datei). Einziger Auslöser bisher:
+eine Lobby-Einladung an einen Freund, der laut `list_friends()` gerade nicht
+online ist.
+
+- **Opt-in pro Nutzer**, unabhängig vom Einladen: Reiter „Profil" im
+  Profil-Modal, `usePushNotifications.js` (Berechtigung + Abo, zeigt selbst
+  nichts an) speichert das Abo über `save_push_subscription()`. Ohne
+  `VITE_VAPID_PUBLIC_KEY` bleibt `supported` `false`, kein Fehler — die
+  Einladung fällt dann einfach auf den normalen „Einladungen"-Reiter zurück.
+- **iOS-Einschränkung:** Web Push funktioniert dort NUR für eine zum
+  Home-Bildschirm hinzugefügte App (`display-mode: standalone`), nicht im
+  normalen Safari-Tab. `ProfileModal.jsx` zeigt in diesem Fall einen Hinweis
+  statt des Aktivieren-Knopfs (`useInstallPrompt().isIOS && !isStandalone`).
+- **Ablauf beim Einladen:** Ist der Freund offline, öffnet
+  [FriendsPanel.jsx](src/components/friends/FriendsPanel.jsx) statt eines
+  sofortigen `inviteToLobby()`-Aufrufs eine kleine Box mit Standardtext oder
+  freiem Feld. Absenden legt zuerst ganz normal die `lobby_invites`-Zeile an,
+  danach ruft [sendInvitePush.js](src/lib/sendInvitePush.js)
+  `/api/send-invite-push` auf — schlägt der Push-Versand fehl, bleibt die
+  Einladung trotzdem gültig, `sendInvitePush()` wirft deshalb nie.
+- **Der Versand läuft ausschließlich über Vercel** (`api/send-invite-push.js`,
+  braucht `SUPABASE_SERVICE_ROLE_KEY` + `VAPID_PRIVATE_KEY`, beide ohne
+  `VITE_`-Präfix und nur im Vercel-Dashboard gesetzt). Die Firebase-Hosting-
+  Kopie hat keine eigenen Functions — ihr Client ruft denselben Vercel-
+  Endpunkt über die volle URL auf (`VITE_API_BASE_URL`), das macht ihn zu
+  einer Cross-Origin-Anfrage, daher die CORS-Behandlung dort. Autorisiert wird
+  **nicht** über die Origin (reine Browser-Bremse), sondern serverseitig:
+  Access-Token echt? Existiert wirklich eine `lobby_invites`-Zeile für genau
+  dieses Aufrufer/Ziel-Paar? Erst dann wird gesendet.
+- Tote Abos (Push-Dienst antwortet 404/410, z. B. nach Berechtigungsentzug)
+  räumt `api/send-invite-push.js` bei jedem Versandversuch selbst aus
+  `push_subscriptions` auf.
 
 ## Hosting: zwei Deployments, ein Backend
 
@@ -329,8 +375,11 @@ NICHT mehr zusammenspielen können.
   `VITE_SUPABASE_ANON_KEY` (mit `VITE_`-Präfix, backt Vite zur **Build-Zeit** in den
   Client-Bundle ein — ohne sie wirft [supabase.js](src/lib/supabase.js) beim Laden und die
   App bleibt leer) vs. `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (ohne Präfix, nur für
-  `api/keep-alive.js`, niemals im Client). Nach Ändern der `VITE_`-Variablen ist ein
-  Redeploy nötig, ein reines Hinzufügen reicht nicht.
+  `api/keep-alive.js` und `api/send-invite-push.js`, niemals im Client). Nach Ändern der
+  `VITE_`-Variablen ist ein Redeploy nötig, ein reines Hinzufügen reicht nicht. Dasselbe
+  Muster bei den VAPID-Schlüsseln: `VITE_VAPID_PUBLIC_KEY` (Client) und `VAPID_PUBLIC_KEY`
+  (Server, identischer Wert, zwei Namen) vs. `VAPID_PRIVATE_KEY` (nur Server, echtes
+  Geheimnis). Siehe [.env.example](.env.example).
 - **Realtime liefert verpasste Events nach einem Verbindungsabriss nicht nach.** Bricht der
   WebSocket kurz ab (Displaysperre, Hintergrund-Tab) und reconnectet automatisch, bleibt der
   Client sonst auf altem Stand eingefroren. `useLobby.js` refetcht deshalb bei jedem
