@@ -13,7 +13,7 @@
  *  ist reine Wiederherstellung.
  *
  *  gameState.sd = { step, roster, round, revealIndex, revealStage,
- *                   votedOutKey, guessed, sessionUsed, summary }
+ *                   votedOutKey, sessionUsed, summary }
  *  gameState.phase = 'SETUP' | 'SINGLE_RUNNING'  -- daran haengt der
  *  Nicht-Host-Schirm und die Weiche in ImposterEngine.jsx.
  *
@@ -27,14 +27,14 @@
 
 import React, { useState } from 'react';
 import {
-    VenetianMask, Ghost, Shield, Settings, Plus, Crown, Trophy, Check, Smartphone
+    VenetianMask, Ghost, Shield, Settings, Plus, Minus, Crown, Trophy, Check, Smartphone
 } from 'lucide-react';
 
 import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
 import GameHeader from '../components/GameHeader';
 import RosterPanel from '../components/RosterPanel';
 import { CategoryPicker, CustomWordManager } from './ImposterSetupPanels';
-import { buildWordPool, categoryNameOfWord } from './imposterWords';
+import { buildWordPool, calculateImposterPoints, categoryNameOfWord } from './imposterWords';
 import { shuffleArray } from '../utils/helpers';
 import { seedRoster } from '../utils/roster';
 
@@ -52,21 +52,19 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     const [revealIndex, setRevealIndex] = useState(saved.revealIndex || 0);
     const [revealStage, setRevealStage] = useState(saved.revealStage || 'HANDOFF');
     const [votedOutKey, setVotedOutKey] = useState(saved.votedOutKey || null);
-    const [guessed, setGuessed] = useState(saved.guessed || {});
     const [sessionUsed, setSessionUsed] = useState(saved.sessionUsed || []);
     const [summary, setSummary] = useState(saved.summary || null);
 
     // ---------------------------------------------------------
     // NICHT-HOST: das Spiel laeuft woanders
     // ---------------------------------------------------------
-    if (!isHost) {
+    if (!isHost && !(gameState.phase === 'SETUP' && step === 'SETUP')) {
         const list = saved.roster || [];
         const running = gameState.phase === 'SINGLE_RUNNING';
         const statusText = {
             REVEAL: `Karten werden aufgedeckt (${Math.min((saved.revealIndex || 0) + 1, list.length || 1)} von ${list.length})`,
             ORDER: 'Die Reihenfolge steht – die Diskussion läuft',
             VOTE: 'Es wird abgestimmt',
-            RESOLVE: 'Die Auflösung läuft',
             GUESS: 'Der Imposter darf raten',
             RESULT: 'Runde vorbei – der Host macht weiter'
         }[saved.step];
@@ -116,8 +114,8 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // ---------------------------------------------------------
     const selectedCategories = settings.selectedCategories || [];
     const wordPool = buildWordPool(selectedCategories, customImposterWords);
-    // Imposter duerfen nie in der Ueberzahl sein.
-    const maxImposters = Math.min(3, Math.max(1, Math.floor((roster.length - 1) / 2)));
+    // Auch reine Imposter-Runden sind fuer Sonderregeln und Tests erlaubt.
+    const maxImposters = Math.max(1, roster.length);
     const imposterCount = Math.min(settings.imposterCount || 1, maxImposters);
     const scoringOn = !!lobby.settings?.globalLeaderboard;
     const isLobbyMember = (userId) => !!userId && players.some(p => p.id === userId);
@@ -140,9 +138,11 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // EINSTELLUNGEN (Server) -- nur waehrend SETUP
     // ---------------------------------------------------------
     const updateSetupSettings = async (newSettings) => {
-        await updateDoc(doc(db, 'lobbies', lobbyCode), {
-            'gameState.settings': { ...settings, ...newSettings }
+        const patch = {};
+        Object.entries(newSettings).forEach(([key, value]) => {
+            patch[`gameState.settings.${key}`] = value;
         });
+        await updateDoc(doc(db, 'lobbies', lobbyCode), patch);
     };
 
     const toggleCategory = (catId) => {
@@ -174,30 +174,32 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // RUNDENSTART
     // ---------------------------------------------------------
     const startRound = async () => {
-        if (roster.length < 3 || wordPool.length === 0) return;
+        const count = Math.min(imposterCount, roster.length);
+        const everyPlayerIsImposter = count === roster.length;
+        if (roster.length < 3 || (!everyPlayerIsImposter && wordPool.length === 0)) return;
 
         // Bereits gespielte Woerter meiden -- lobbyweit und innerhalb dieser Sitzung.
         const blocked = [...usedImposterWords, ...sessionUsed];
         const fresh = wordPool.filter(w => !blocked.includes(w));
         const poolToUse = fresh.length > 0 ? fresh : wordPool;
-        const word = poolToUse[Math.floor(Math.random() * poolToUse.length)];
+        const word = everyPlayerIsImposter
+            ? null
+            : poolToUse[Math.floor(Math.random() * poolToUse.length)];
 
-        const count = Math.min(imposterCount, Math.max(1, Math.floor((roster.length - 1) / 2)));
         const imposterKeys = shuffleArray(roster.map(r => r.key)).slice(0, count);
         const nextRound = {
             word,
-            categoryName: categoryNameOfWord(word, selectedCategories),
+            categoryName: word ? categoryNameOfWord(word, selectedCategories) : null,
             imposterKeys,
             startIndex: Math.floor(Math.random() * roster.length)   // wer anfaengt, ist jede Runde neu ausgewuerfelt
         };
-        const nextUsed = [...sessionUsed, word];
+        const nextUsed = word ? [...sessionUsed, word] : sessionUsed;
 
         setRound(nextRound);
         setSessionUsed(nextUsed);
         setRevealIndex(0);
         setRevealStage('HANDOFF');
         setVotedOutKey(null);
-        setGuessed({});
         setSummary(null);
         setStep('REVEAL');
 
@@ -209,7 +211,6 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                 revealIndex: 0,
                 revealStage: 'HANDOFF',
                 votedOutKey: null,
-                guessed: {},
                 sessionUsed: nextUsed,
                 summary: null
             },
@@ -221,30 +222,28 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // ERGEBNIS: Punkte verteilen (nur hier, nie in einem Effekt --
     // sonst koennte eine Neuberechnung doppelt gutschreiben)
     // ---------------------------------------------------------
-    const finishRound = async () => {
-        const caught = !!votedOutKey && round.imposterKeys.includes(votedOutKey);
+    const finishRound = async (guessedCorrect = false) => {
+        const points = calculateImposterPoints(
+            roster.map((entry) => entry.key),
+            round.imposterKeys,
+            votedOutKey,
+            guessedCorrect
+        );
+        const caught = round.imposterKeys.includes(votedOutKey);
+        const allImposters = round.imposterKeys.length === roster.length;
         const delta = new Map();
 
         if (scoringOn) {
-            if (caught) {
-                // +1 fuer jedes mitspielende Lobby-Mitglied ausser den Impostern.
-                roster.forEach(r => {
-                    if (isLobbyMember(r.userId) && !round.imposterKeys.includes(r.key)) {
-                        delta.set(r.userId, (delta.get(r.userId) ?? 0) + 1);
-                    }
-                });
-            }
-            // +3 fuer jeden Imposter, der das Wort erraten hat. Gaeste ohne
-            // Account bekommen nichts -- sie haben keinen Punktestand.
-            round.imposterKeys.forEach(key => {
-                const entry = roster.find(r => r.key === key);
-                if (entry && isLobbyMember(entry.userId) && guessed[key]) {
-                    delta.set(entry.userId, (delta.get(entry.userId) ?? 0) + 3);
+            roster.forEach((entry) => {
+                if (isLobbyMember(entry.userId) && points[entry.key] > 0) {
+                    delta.set(entry.userId, points[entry.key]);
                 }
             });
         }
 
-        const extra = { usedImposterWords: arrayUnion(round.word) };
+        const extra = {
+            ...(round.word && { usedImposterWords: arrayUnion(round.word) }),
+        };
         if (delta.size > 0) {
             // Der Server spiegelt players[].globalScore absolut nach
             // lobby_members.score -- wie in den anderen vier Engines.
@@ -256,6 +255,9 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
 
         const nextSummary = {
             caught,
+            guessedCorrect: caught ? guessedCorrect : null,
+            allImposters,
+            votedOutKey,
             entries: roster
                 .filter(r => delta.has(r.userId))
                 .map(r => ({ key: r.key, name: r.name, points: delta.get(r.userId) }))
@@ -271,19 +273,35 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
         await persist({ step: 'SETUP', roster }, { 'gameState.phase': 'SETUP' });
     };
 
+    const resolveSelection = async () => {
+        if (!votedOutKey) return;
+        const caught = round.imposterKeys.includes(votedOutKey);
+        const allImposters = round.imposterKeys.length === roster.length;
+        if (caught && !allImposters) {
+            setStep('GUESS');
+            await persist({ step: 'GUESS' });
+            return;
+        }
+        await finishRound(false);
+    };
+
     // ---------------------------------------------------------
     // RENDERING: SETUP
     // ---------------------------------------------------------
     if (step === 'SETUP') {
+        const noWordNeeded = roster.length > 0 && imposterCount === roster.length;
         const blockReason = roster.length < 3
             ? 'Mindestens 3 Mitspieler nötig.'
-            : (wordPool.length === 0 ? 'Keine Wörter im Pool – wähle eine Kategorie oder lege eigene Wörter an.' : null);
+            : (!noWordNeeded && wordPool.length === 0
+                ? 'Keine Wörter im Pool – wähle eine Kategorie oder lege eigene Wörter an.'
+                : null);
 
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} />
 
-                <div className="max-w-4xl mx-auto mt-8">
+                {!isHost && <p className="text-center text-sm text-slate-500 mt-8">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+                <div className={`max-w-4xl mx-auto mt-8 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-emerald-400 flex items-center justify-center gap-2">
                             <VenetianMask size={32} /> Imposter Setup
@@ -345,13 +363,36 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                                             <span>Anzahl Imposter</span>
                                             <span className="font-bold text-white">{imposterCount}</span>
                                         </label>
-                                        <input
-                                            type="range" min="1" max={maxImposters} step="1"
-                                            value={imposterCount}
-                                            onChange={(e) => updateSetupSettings({ imposterCount: parseInt(e.target.value) })}
-                                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 mt-2"
-                                        />
+                                        <div className="flex items-center gap-3 mt-2">
+                                            <button
+                                                type="button"
+                                                aria-label="Einen Imposter weniger"
+                                                disabled={imposterCount <= 1}
+                                                onClick={() => updateSetupSettings({ imposterCount: imposterCount - 1 })}
+                                                className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30"
+                                            >
+                                                <Minus size={18} />
+                                            </button>
+                                            <input
+                                                type="range" min="1" max={maxImposters} step="1"
+                                                value={imposterCount}
+                                                onChange={(e) => updateSetupSettings({ imposterCount: parseInt(e.target.value) })}
+                                                className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                            <button
+                                                type="button"
+                                                aria-label="Einen Imposter mehr"
+                                                disabled={imposterCount >= maxImposters}
+                                                onClick={() => updateSetupSettings({ imposterCount: imposterCount + 1 })}
+                                                className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30"
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                        </div>
                                         <p className="text-[10px] text-slate-500 mt-1">Höchstens {maxImposters} bei {roster.length} Mitspielern.</p>
+                                        {noWordNeeded && (
+                                            <p className="text-xs text-amber-300 mt-2">Wenn jeder Imposter ist, gibt es kein Geheimwort.</p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -365,12 +406,13 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                                                 return (
                                                     <button
                                                         key={opt.id}
+                                                        disabled={noWordNeeded}
                                                         onClick={() => updateSetupSettings({ imposterHint: opt.id })}
                                                         className={`p-3 rounded-xl border-2 transition-all text-left ${
                                                             active
                                                                 ? 'border-emerald-500 bg-emerald-500/10 text-white'
                                                                 : 'border-slate-700 bg-slate-900/50 text-slate-500 hover:border-slate-500'
-                                                        }`}
+                                                        } ${noWordNeeded ? 'cursor-default opacity-50' : ''}`}
                                                     >
                                                         <span className="block font-bold text-sm">{opt.label}</span>
                                                         <span className="text-[10px] opacity-60">{opt.hint}</span>
@@ -492,7 +534,11 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                                     <>
                                         <VenetianMask size={72} className="text-red-500 mb-3 mx-auto" />
                                         <h3 className="text-4xl font-black text-red-500 uppercase tracking-tighter">IMPOSTER</h3>
-                                        {(settings.imposterHint || 'none') === 'category' ? (
+                                        {!round.word ? (
+                                            <p className="text-slate-300 mt-4 px-2 text-sm font-medium">
+                                                In dieser Runde gibt es kein Geheimwort.
+                                            </p>
+                                        ) : (settings.imposterHint || 'none') === 'category' ? (
                                             <>
                                                 <p className="text-slate-400 text-sm mt-4">Kategorie:</p>
                                                 <div className="text-xl font-black text-white mt-1 bg-slate-900 px-4 py-2 rounded-xl border border-red-500/30">
@@ -552,7 +598,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                         <p className="text-slate-400 text-sm">Es beginnt</p>
                         <h2 className="text-3xl font-black text-white [overflow-wrap:anywhere]">{starter.name}</h2>
                         <p className="text-slate-400 text-sm mt-3">
-                            Jeder sagt reihum ein Wort, das zum Geheimwort passt – ohne es zu verraten.
+                            Nennt reihum passende Begriffe und redet so lange, wie ihr möchtet. Öffnet danach die Abstimmung.
                         </p>
                     </div>
 
@@ -582,7 +628,7 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                         onClick={() => { setStep('VOTE'); persist({ step: 'VOTE' }); }}
                         className="w-full mt-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95"
                     >
-                        Weiter zur Abstimmung
+                        Abstimmung öffnen
                     </button>
                 </div>
             </div>
@@ -600,7 +646,11 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                 <div className="max-w-md mx-auto mt-8 bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-2xl">
                     <h2 className="text-2xl font-bold text-center mb-1">Wer wurde rausgewählt?</h2>
                     <p className="text-slate-400 text-sm text-center mb-6">
-                        Zählt gemeinsam bis drei, zeigt auf einen Verdächtigen und tippt ihn hier an.
+                        Zählt gemeinsam bis drei und wählt eine Person aus. Die Auswahl kann bis zur Auflösung geändert werden.
+                    </p>
+
+                    <p className="text-xs uppercase font-bold tracking-widest text-slate-500 text-center mb-4">
+                        Eine Abstimmung
                     </p>
 
                     <div className="space-y-2">
@@ -627,56 +677,11 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                     </div>
 
                     <button
-                        onClick={() => { setStep('RESOLVE'); persist({ step: 'RESOLVE' }); }}
+                        onClick={resolveSelection}
                         disabled={!votedOutKey}
                         className="w-full mt-8 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed py-4 rounded-2xl text-white font-bold shadow-lg transition-all active:scale-95"
                     >
                         Auflösen
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // ---------------------------------------------------------
-    // RENDERING: AUFLOESUNG DER ABSTIMMUNG
-    // Das Geheimwort bleibt hier noch verdeckt -- der Imposter soll erst
-    // raten, bevor es auf dem Schirm steht.
-    // ---------------------------------------------------------
-    if (step === 'RESOLVE') {
-        const caught = round.imposterKeys.includes(votedOutKey);
-        return (
-            <div className="min-h-screen bg-slate-900 text-white p-6 flex items-center justify-center">
-                <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-2xl text-center">
-                    <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-6 border-2 ${
-                        caught ? 'bg-red-500/20 border-red-500 shadow-lg shadow-red-500/20' : 'bg-emerald-500/20 border-emerald-500'
-                    }`}>
-                        {caught ? <VenetianMask size={44} className="text-red-500" /> : <Shield size={44} className="text-emerald-500" />}
-                    </div>
-
-                    <h2 className="text-2xl font-bold [overflow-wrap:anywhere]">{nameOf(votedOutKey)}</h2>
-                    <p className={`text-3xl font-black uppercase tracking-tighter mt-2 ${caught ? 'text-red-500' : 'text-emerald-400'}`}>
-                        {caught ? 'war Imposter' : 'war unschuldig'}
-                    </p>
-
-                    <div className="bg-slate-900 rounded-2xl p-4 border border-slate-700 mt-8 text-left">
-                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">
-                            {round.imposterKeys.length > 1 ? 'Die Imposter waren' : 'Der Imposter war'}
-                        </p>
-                        {round.imposterKeys.map(key => (
-                            <p key={key} className="font-bold text-red-400 [overflow-wrap:anywhere]">{nameOf(key)}</p>
-                        ))}
-                    </div>
-
-                    <p className="text-slate-400 text-sm mt-6">
-                        Letzte Chance: {round.imposterKeys.length > 1 ? 'die Imposter sagen' : 'der Imposter sagt'} jetzt laut, welches Wort gesucht war.
-                    </p>
-
-                    <button
-                        onClick={() => { setStep('GUESS'); persist({ step: 'GUESS' }); }}
-                        className="w-full mt-6 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-2xl font-bold transition-all active:scale-95"
-                    >
-                        Weiter
                     </button>
                 </div>
             </div>
@@ -689,49 +694,25 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     if (step === 'GUESS') {
         return (
             <div className="min-h-screen bg-slate-900 text-white p-6 flex items-center justify-center">
-                <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-2xl">
-                    <h2 className="text-2xl font-bold text-center mb-2">Wort erraten?</h2>
-                    <p className="text-slate-400 text-sm text-center mb-8">
-                        Wer richtig geraten hat, bekommt 3 Punkte.
-                    </p>
-
-                    <div className="space-y-4">
-                        {round.imposterKeys.map(key => {
-                            const yes = !!guessed[key];
-                            return (
-                                <div key={key} className="bg-slate-900 rounded-2xl p-4 border border-slate-700">
-                                    <p className="font-bold mb-3 [overflow-wrap:anywhere]">
-                                        Hat <span className="text-red-400">{nameOf(key)}</span> das Wort erraten?
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            onClick={() => { const next = { ...guessed, [key]: true }; setGuessed(next); persist({ guessed: next }); }}
-                                            className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
-                                                yes ? 'border-emerald-500 bg-emerald-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-500 hover:border-slate-500'
-                                            }`}
-                                        >
-                                            Ja
-                                        </button>
-                                        <button
-                                            onClick={() => { const next = { ...guessed, [key]: false }; setGuessed(next); persist({ guessed: next }); }}
-                                            className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
-                                                !yes ? 'border-slate-400 bg-slate-700/40 text-white' : 'border-slate-700 bg-slate-900 text-slate-500 hover:border-slate-500'
-                                            }`}
-                                        >
-                                            Nein
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                <div className="max-w-md w-full bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-2xl text-center">
+                    <VenetianMask size={64} className="mx-auto text-red-500 mb-5" />
+                    <h2 className="text-3xl font-black [overflow-wrap:anywhere]">{nameOf(votedOutKey)}</h2>
+                    <p className="text-red-400 font-bold mt-2">wurde als Imposter enttarnt</p>
+                    <p className="text-slate-400 text-sm mt-6">Die Person darf das Geheimwort jetzt einmal laut erraten.</p>
+                    <div className="grid grid-cols-2 gap-3 mt-8">
+                        <button
+                            onClick={() => finishRound(true)}
+                            className="bg-emerald-600 hover:bg-emerald-500 rounded-xl py-4 font-bold"
+                        >
+                            Richtig geraten
+                        </button>
+                        <button
+                            onClick={() => finishRound(false)}
+                            className="bg-slate-700 hover:bg-slate-600 rounded-xl py-4 font-bold"
+                        >
+                            Falsch geraten
+                        </button>
                     </div>
-
-                    <button
-                        onClick={finishRound}
-                        className="w-full mt-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95"
-                    >
-                        Ergebnis anzeigen
-                    </button>
                 </div>
             </div>
         );
@@ -741,20 +722,32 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
     // RENDERING: ERGEBNIS
     // ---------------------------------------------------------
     if (step === 'RESULT') {
+        const heading = summary?.allImposters
+            ? 'Jeder war Imposter'
+            : (summary?.caught ? 'IMPOSTER GEFUNDEN' : 'IMPOSTER ENTKOMMEN');
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} />
 
                 <div className="max-w-md mx-auto mt-4 bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-2xl">
-                    <h2 className="text-4xl font-black text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
-                        AUFLÖSUNG
+                    <h2 className={`text-4xl font-black text-center mb-3 ${summary?.caught ? 'text-emerald-400' : 'text-red-500'}`}>
+                        {heading}
                     </h2>
+                    <p className="text-slate-400 text-center mb-6">
+                        Rausgewählt: <span className="font-bold text-white">{nameOf(summary?.votedOutKey)}</span>
+                    </p>
 
-                    <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 text-center">
-                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Das geheime Wort war</p>
-                        <p className="text-3xl font-black text-emerald-400 tracking-tight [overflow-wrap:anywhere]">{round.word}</p>
-                        <p className="text-xs text-slate-500 mt-2">{round.categoryName}</p>
-                    </div>
+                    {round.word ? (
+                        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 text-center">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Das geheime Wort war</p>
+                            <p className="text-3xl font-black text-emerald-400 tracking-tight [overflow-wrap:anywhere]">{round.word}</p>
+                            <p className="text-xs text-slate-500 mt-2">{round.categoryName}</p>
+                        </div>
+                    ) : (
+                        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 text-center">
+                            <p className="text-xl font-bold">Es gab kein Geheimwort.</p>
+                        </div>
+                    )}
 
                     <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 mt-4">
                         <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">
@@ -763,16 +756,21 @@ export default function ImposterSingleDevice({ lobby, user, isHost, db, updateLo
                         {round.imposterKeys.map(key => (
                             <div key={key} className="flex items-center justify-between gap-2 py-1">
                                 <span className="font-bold text-red-400 [overflow-wrap:anywhere]">{nameOf(key)}</span>
-                                <span className={`text-xs font-bold whitespace-nowrap ${guessed[key] ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                    {guessed[key] ? 'Wort erraten' : 'nicht erraten'}
-                                </span>
+                                {key === summary?.votedOutKey && (
+                                    <span className="text-xs text-slate-500">
+                                        rausgewählt{summary?.guessedCorrect ? ' · Wort erraten' : ''}
+                                    </span>
+                                )}
                             </div>
                         ))}
-                        <div className="border-t border-slate-700 mt-3 pt-3 text-sm">
-                            <span className="text-slate-400">Rausgewählt: </span>
-                            <span className="font-bold [overflow-wrap:anywhere]">{nameOf(votedOutKey)}</span>
-                            <span className={`ml-2 text-xs font-bold ${summary?.caught ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {summary?.caught ? 'richtig' : 'daneben'}
+                    </div>
+
+                    <div className="bg-slate-900 rounded-2xl p-5 border border-slate-700 mt-4">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Abstimmung</p>
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                            <span className="text-slate-300">{nameOf(summary?.votedOutKey)}</span>
+                            <span className={summary?.caught ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
+                                {summary?.caught ? 'Imposter' : 'unschuldig'}
                             </span>
                         </div>
                     </div>

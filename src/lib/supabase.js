@@ -18,6 +18,23 @@ if (!url || !anonKey) {
 export const SUPABASE_URL = url;
 export const SUPABASE_ANON_KEY = anonKey;
 
+/**
+ * Im Entwicklungs-Spielerlabor laeuft jede Spieleransicht in einem eigenen
+ * iframe. Normalerweise teilen Tabs und iframes derselben Origin die eine
+ * Supabase-Session aus localStorage und waeren damit alle derselbe Spieler.
+ * Ein eigener storageKey pro testSession trennt die Sitzungen, ohne das
+ * Produktionsverhalten anzufassen.
+ */
+function devAuthStorageKey() {
+    if (!import.meta.env.DEV) return null;
+
+    const session = new URLSearchParams(window.location.search).get('testSession');
+    if (!session || !/^[a-z0-9_-]{1,40}$/i.test(session)) return null;
+    return `partybox-dev-auth-${session}`;
+}
+
+const authStorageKey = devAuthStorageKey();
+
 // Singleton. Beide Werte sind per Design oeffentlich; die Absicherung leisten
 // die RLS-Policies, nicht die Geheimhaltung dieser Keys.
 export const supabase = createClient(url, anonKey, {
@@ -25,6 +42,7 @@ export const supabase = createClient(url, anonKey, {
         persistSession: true,      // anonyme Session ueberlebt den Reload (Plan §7)
         autoRefreshToken: true,
         detectSessionInUrl: true,  // noetig fuer den Passwort-Reset-Link
+        ...(authStorageKey && { storageKey: authStorageKey }),
     },
 });
 

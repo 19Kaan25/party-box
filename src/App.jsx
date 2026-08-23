@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import useAuth from './hooks/useAuth';
 import useLobby from './hooks/useLobby';
@@ -17,6 +17,37 @@ export default function App() {
 
   // Initiale Orchestrierung der ausgelagerten Kern-Logik
   const lobbyLogic = useLobby(user, userData, authLogic.updateUserProfile);
+
+  // Das Entwicklungslabor kann alle isolierten iframe-Sitzungen mit einem
+  // einzigen Befehl in dieselbe Lobby verschieben. join_lobby verlaesst eine
+  // bisherige Lobby serverseitig atomar, deshalb braucht das Labor keine
+  // Sonderrechte und verhaelt sich wie ein echter Lobby-Wechsel.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return undefined;
+    const params = new URLSearchParams(window.location.search);
+    const slot = params.get('testSession')?.match(/^spieler-(\d+)$/)?.[1];
+    if (!slot) return undefined;
+
+    const handleLabCommand = async (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== 'PARTYBOX_DEV_JOIN_LOBBY') return;
+
+      const code = String(event.data.lobbyCode || '').toUpperCase().trim();
+      const ok = lobbyLogic.lobbyCode === code
+        ? true
+        : await lobbyLogic.handleJoinLobby(null, code);
+
+      event.source?.postMessage({
+        type: 'PARTYBOX_DEV_JOIN_RESULT',
+        requestId: event.data.requestId,
+        slot: Number(slot),
+        ok,
+      }, event.origin);
+    };
+
+    window.addEventListener('message', handleLabCommand);
+    return () => window.removeEventListener('message', handleLabCommand);
+  }, [lobbyLogic]);
 
   // Globale UI-States
   const [copied, setCopied] = useState(false);

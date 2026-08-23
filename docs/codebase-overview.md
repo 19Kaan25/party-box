@@ -149,14 +149,16 @@ hunterShooting: uid | null   winningFaction: 'DORF'|'WERWOLFE'|'LIEBESPAAR'|'UNE
 *Ein Handy (`'SINGLE'`, `WerwolfSingleDevice.jsx`)* — Phasen `SETUP → SINGLE_RUNNING`,
 Fortschritt daneben in `sd`:
 ```
-sd: { step: 'SETUP'|'REVEAL'|'PLAY'|'RESULT',
+sd: { step: 'SETUP'|'REVEAL'|'NARRATOR_HANDOFF'|'PLAY'|'RESULT',
       roster: [{ key, name, userId }],  narratorKey,  roleCounts, rules,
       revealIndex, revealStage,
       game: { playerState: { [key]: { role, alive, inLove, deathReason } },
               dayNumber, isDay, stepIndex, witchState, wolfVictim, poisonVictim,
               healed, seerTarget, recentDeaths, pendingHunter, firstVictimKey, winner } }
 ```
-Der Erzähler steht im `roster`, bekommt aber keinen `playerState`-Eintrag. Nachtschritte
+Der Erzähler steht im `roster`, bekommt aber keinen `playerState`-Eintrag. Nach der
+letzten Rollenkarte verdeckt `NARRATOR_HANDOFF` das Dashboard, bis das Handy wieder beim
+Erzähler ist. Nachtschritte
 werden aus den lebenden Rollen berechnet (`buildNightSteps`), Liebespaar- und Jäger-Ketten
 löst `killPlayers` auf.
 
@@ -167,26 +169,28 @@ mode: 'POOL' | 'TARGETED'    assignments: { [schreiberUid]: zielUid } | null
 inputArray: [{ userId, words: string[] }]     (per arrayUnion befüllt)
 playerState: { [uid]: { word, guessed, rank } }
 nextRank: number             activeTurnId: uid
+guessHistory: [{ playerId, rank, previousActiveTurnId }]  (Host-Rückgängig-Stapel)
 ```
 
 **Imposter** (`ImposterEngine.jsx`)
 Zwei Modi, umgeschaltet über `settings.mode`. `ImposterEngine.jsx` ist nur noch die
 Weiche; `'SINGLE'` rendert `ImposterSingleDevice.jsx`.
 
-*Mehrgeräte (`mode: 'MULTI'`, Voreinstellung)* — Phasen `SETUP → ROLE_REVEAL → PLAYING → RESULT`
+*Mehrgeräte (`mode: 'MULTI'`, Voreinstellung)* — Phasen
+`SETUP → ROLE_REVEAL → DISCUSSION → VOTING → GUESS? → RESULT`
 ```
-settings: { imposterCount: 1–3, timerDuration: 180, selectedCategories: string[],
+settings: { imposterCount: 1–Spielerzahl, timerDuration: 180, selectedCategories: string[],
             mode: 'MULTI' | 'SINGLE', imposterHint: 'none' | 'category' }
-word: string                 imposters: uid[]        votes: { [uid]: uid }
-startTime: number
+word: string | null          imposters: uid[]        votes: { [uid]: uid }
+starterId: uid               votedOutId: uid         summary: object
 ```
 
 *Ein Handy (`mode: 'SINGLE'`)* — Phasen `SETUP → SINGLE_RUNNING`, der Rundenfortschritt
 liegt daneben in `sd`:
 ```
-sd: { step: 'SETUP' | 'REVEAL' | 'ORDER' | 'VOTE' | 'RESOLVE' | 'GUESS' | 'RESULT',
+sd: { step: 'SETUP' | 'REVEAL' | 'ORDER' | 'VOTE' | 'GUESS' | 'RESULT',
       roster: [{ key, name, userId }],   round: { word, categoryName, imposterKeys, startIndex },
-      revealIndex, revealStage, votedOutKey, guessed: { [key]: bool },
+      revealIndex, revealStage, votedOutKey,
       sessionUsed: string[], summary }
 ```
 Der Host führt lokal (kein Roundtrip pro Kartendreher) und spiegelt jeden Schritt nach

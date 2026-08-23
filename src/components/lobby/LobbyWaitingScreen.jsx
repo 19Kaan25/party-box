@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, LogOut, Check, Copy, Trophy, Crown, UserMinus, Play, Settings, ArrowRight, UserPlus } from 'lucide-react';
 import AuthMenu from '../auth/AuthMenu';
 import Avatar from '../friends/Avatar';
+import { createInitialGameState } from '../../constants/gameSetup';
 
 export default function LobbyWaitingScreen({
                                                authLogic,
@@ -175,53 +176,42 @@ export default function LobbyWaitingScreen({
                                     desc="Der Klassiker. Teste dein Wissen unter Zeitdruck!"
                                     color="purple"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'STADT_LAND_FLUSS', { gameState: { phase: 'SETUP', letter: '', answers: {}, readyPlayers: [], gameScores: {} } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'STADT_LAND_FLUSS', { gameState: createInitialGameState('STADT_LAND_FLUSS') })}
                                 />
                                 <GameCard
                                     title="Codenames"
                                     desc="Top-Secret! Finde alle deine Agenten."
                                     color="red"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'CODENAMES', { gameState: { phase: 'TEAM_SETUP', teams: { red: [], blue: [] }, spymasters: { red: null, blue: null } } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'CODENAMES', { gameState: createInitialGameState('CODENAMES') })}
                                 />
                                 <GameCard
                                     title="Werwolf"
                                     desc="Das Dorf schläft ein... Finde die Verräter!"
                                     color="indigo"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WERWOLF', { gameState: { phase: 'SETUP', settings: { mode: 'MULTI' } } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WERWOLF', { gameState: createInitialGameState('WERWOLF') })}
                                 />
                                 <GameCard
                                     title="Wer bin ich?"
                                     desc="Der Party-Klassiker. Finde heraus, wer du bist!"
                                     color="yellow"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WER_BIN_ICH', { gameState: { phase: 'SETUP' } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'WER_BIN_ICH', { gameState: createInitialGameState('WER_BIN_ICH') })}
                                 />
                                 <GameCard
                                     title="Imposter"
                                     desc="Entlarve den Verräter, bevor er dein Geheimnis erfährt!"
                                     color="emerald"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'IMPOSTER', {
-                                        gameState: {
-                                            phase: 'SETUP',
-                                            settings: {
-                                                imposterCount: 1,
-                                                timerDuration: 180,
-                                                selectedCategories: ['orte'],
-                                                mode: 'MULTI',
-                                                imposterHint: 'none'
-                                            }
-                                        }
-                                    })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'IMPOSTER', { gameState: createInitialGameState('IMPOSTER') })}
                                 />
                                 <GameCard
                                     title="Sprücheklopfer"
                                     desc="Füll die Lücke im Satz — der beste Spruch gewinnt."
                                     color="pink"
                                     isHost={isHost}
-                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'SPRUECHE_KLOPFER', { gameState: { phase: 'SETUP' } })}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'SPRUECHE_KLOPFER', { gameState: createInitialGameState('SPRUECHE_KLOPFER') })}
                                 />
                             </div>
                         </div>

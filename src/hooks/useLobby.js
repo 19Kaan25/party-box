@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, measureClockOffset } from '../lib/supabase';
 import { setActiveLobby, setPatchObserver } from '../lib/firestoreBridge';
 import { applyLegacyPatch, isSyncedMoment } from '../lib/legacyPatch';
-import { avatarUrl, isStaleSession } from './useAuth';
+import { avatarUrl, isStaleSession, MAX_DISPLAY_NAME } from './useAuth';
 import usePresence, { usePresenceHeartbeat } from './usePresence';
 
 // Neues Schema <-> alte Firestore-Form. Die Engines und LobbyWaitingScreen
@@ -16,6 +16,17 @@ const GAME_KEY_TO_OLD = {
     stadt_land_fluss: 'STADT_LAND_FLUSS',
     sprueche_klopfer: 'SPRUECHE_KLOPFER',
 };
+
+/** Vom Spielerlabor vorbelegter Nickname; ausserhalb des Dev-Modus wirkungslos. */
+function initialDevPlayerName() {
+    if (!import.meta.env.DEV) return null;
+
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('testSession')) return null;
+
+    const name = params.get('testName')?.trim();
+    return name ? name.slice(0, MAX_DISPLAY_NAME) : null;
+}
 
 /** RPC-Fehler-Tokens -> die bestehenden deutschen Meldungen. */
 function mapRpcError(err) {
@@ -55,7 +66,7 @@ export default function useLobby(user, userData, updateUserProfile) {
     const [pendingPatches, setPendingPatches] = useState([]);
     // null = der Nutzer hat noch nichts getippt -> Profilname gilt. Abgeleitet
     // statt per Effect gespiegelt, damit kein setState-im-Effect noetig ist.
-    const [typedName, setTypedName] = useState(null);
+    const [typedName, setTypedName] = useState(initialDevPlayerName);
     const [errorMsg, setErrorMsg] = useState('');
 
     const playerName = typedName ?? userData?.name ?? '';
@@ -315,16 +326,29 @@ export default function useLobby(user, userData, updateUserProfile) {
         const code = (joinCode || '').toUpperCase().trim();
         if (!user || !name || !code) { setErrorMsg('Bitte fülle alle Felder aus.'); return false; }
 
+        // Beim direkten Lobby-Wechsel erzeugt der Austritt aus der alten Lobby
+        // Realtime-Events. Solange die atomare join_lobby-RPC laeuft, darf der
+        // alte Refetch den gerade geladenen Zielzustand nicht wieder leeren.
+        const switchingLobby = !!lobbyId;
+        leavingRef.current = switchingLobby;
         const { data, error } = await supabase.rpc('join_lobby', {
             p_code: code, p_display_name: name,
         });
-        if (error) { setErrorMsg(mapRpcError(error)); return false; }
+        if (error) {
+            leavingRef.current = false;
+            setErrorMsg(mapRpcError(error));
+            return false;
+        }
 
-        if (name !== userData?.name) await updateUserProfile(name, null);
-        setErrorMsg('');
-        await fetchLobbyState(data.lobby_id);
-        measureClockOffset();
-        return true;
+        try {
+            if (name !== userData?.name) await updateUserProfile(name, null);
+            setErrorMsg('');
+            await fetchLobbyState(data.lobby_id);
+            measureClockOffset();
+            return true;
+        } finally {
+            if (switchingLobby) leavingRef.current = false;
+        }
     };
 
     const leaveLobby = async () => {

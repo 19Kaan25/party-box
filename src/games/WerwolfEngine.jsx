@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { doc, updateDoc } from '../lib/firestoreBridge';
 import { Sun, Moon, RefreshCw, Skull, List, Heart, HeartHandshake, Syringe, FlaskConical, Flag, Trophy, Users, Home, Target, Loader2, Smartphone } from 'lucide-react';
 
@@ -7,20 +7,34 @@ import WerwolfSingleDevice from './WerwolfSingleDevice';
 import { WERWOLF_ROLES } from '../constants/gameData';
 import { shuffleArray } from '../utils/helpers';
 
+const DEFAULT_SETUP_ROLES = { WERWOLF: 1, DORFBEWOHNER: 1, SEHERIN: 1, HEXE: 0, AMOR: 0, JAEGER: 0, KLEINES_MAEDCHEN: 0 };
+
 export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
     const { gameState, players, id: lobbyCode } = lobby;
 
     // ==========================================
     // WICHTIG: Alle Hooks müssen zwingend ganz oben stehen!
     // ==========================================
-    // SETUP Hooks
-    const [narratorId, setNarratorId] = useState(user?.uid || '');
-    const [roleCounts, setRoleCounts] = useState({ WERWOLF: 1, DORFBEWOHNER: 1, SEHERIN: 1, HEXE: 0, AMOR: 0, JAEGER: 0, KLEINES_MAEDCHEN: 0 });
+    const narratorId = players.some((player) => player.id === gameState.setupNarratorId)
+        ? gameState.setupNarratorId
+        : (players[0]?.id || user?.uid || '');
+    const roleCounts = gameState.setupRoleCounts || DEFAULT_SETUP_ROLES;
 
     // PLAYING Hooks
     const [hunterPrompt, setHunterPrompt] = useState(null);
     const [hunterTarget, setHunterTarget] = useState(null);
     const [isShooting, setIsShooting] = useState(false);
+
+    // Ein ausgeloester Jaegerschuss blockiert absichtlich jeden weiteren
+    // Nacht-Schritt. Geht der Jaeger in diesem Moment zur Lobbyansicht oder
+    // verlaesst sie ganz, muss der neue Host die Sperre aufheben koennen.
+    useEffect(() => {
+        if (gameState.phase !== 'PLAYING' || !isHost || !gameState.hunterShooting) return;
+        const hunterStillActive = players.some((player) => player.id === gameState.hunterShooting);
+        if (!hunterStillActive) {
+            updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.hunterShooting': null });
+        }
+    }, [gameState.phase, gameState.hunterShooting, isHost, players, db, lobbyCode]);
 
     // ==========================================
     // MODUS-WEICHE: alles auf einem Handy laeuft in einer eigenen Komponente.
@@ -30,6 +44,7 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
     if (gameState.settings?.mode === 'SINGLE' || gameState.phase === 'SINGLE_RUNNING') {
         return (
             <WerwolfSingleDevice
+                key={!isHost && gameState.phase === 'SETUP' ? JSON.stringify(gameState.sd || {}) : 'active'}
                 lobby={lobby}
                 user={user}
                 isHost={isHost}
@@ -48,11 +63,13 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
         const requiredRoles = Math.max(1, players.length - 1);
         const isReady = totalSelected === requiredRoles;
 
-        const updateRoleCount = (roleId, delta) => {
-            setRoleCounts(prev => {
-                const val = Math.max(0, (prev[roleId] || 0) + delta);
-                return { ...prev, [roleId]: val };
-            });
+        const updateRoleCount = async (roleId, delta) => {
+            if (!isHost) return;
+            const next = {
+                ...roleCounts,
+                [roleId]: Math.max(0, (roleCounts[roleId] || 0) + delta),
+            };
+            await updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.setupRoleCounts': next });
         };
 
         const startGame = async () => {
@@ -90,22 +107,12 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
             });
         };
 
-        if (!isHost) {
-            return (
-                <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8 relative">
-                    <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
-                    <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
-                        <span className="animate-pulse">Der Host konfiguriert die Rollen für das Dorf...</span>
-                    </div>
-                </div>
-            );
-        }
-
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col relative">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
 
-                <div className="max-w-4xl mx-auto w-full mt-6">
+                {!isHost && <p className="text-center text-sm text-slate-500 mt-6">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+                <div className={`max-w-4xl mx-auto w-full mt-6 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="text-center mb-8">
                         <h2 className="text-4xl font-black tracking-widest text-indigo-400 uppercase">Werwolf</h2>
                         <p className="text-slate-400 mt-2">Wähle einen Erzähler und konfiguriere die Rollen.</p>
@@ -119,8 +126,10 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                                 <span className="text-[10px] opacity-60">Alle in der Lobby spielen mit</span>
                             </button>
                             <button
+                                disabled={!isHost}
                                 onClick={() => updateDoc(doc(db, 'lobbies', lobbyCode), {
-                                    'gameState.settings': { ...(gameState.settings || {}), mode: 'SINGLE' }
+                                    'gameState.settings.mode': 'SINGLE',
+                                    'gameState.sd.step': 'SETUP',
                                 })}
                                 className="p-3 rounded-xl border-2 border-slate-700 bg-slate-900/50 text-slate-500 hover:border-slate-500 transition-all text-left"
                             >
@@ -136,7 +145,8 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                             <p className="text-sm text-slate-400 mb-4">Der Erzähler leitet das Spiel durch die App und bekommt keine eigene Rolle.</p>
                             <select
                                 value={narratorId}
-                                onChange={(e) => setNarratorId(e.target.value)}
+                                disabled={!isHost}
+                                onChange={(e) => updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.setupNarratorId': e.target.value })}
                                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             >
                                 {players.map(p => (
@@ -160,9 +170,9 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                                             <span className={`font-bold ${role.color}`}>{role.name}</span>
                                         </div>
                                         <div className="flex items-center bg-slate-800 border border-slate-600 rounded-lg overflow-hidden shrink-0 h-10">
-                                            <button onClick={() => updateRoleCount(role.id, -1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">-</button>
+                                            <button disabled={!isHost} onClick={() => updateRoleCount(role.id, -1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">-</button>
                                             <div className="w-8 font-bold text-white text-center text-sm">{roleCounts[role.id] || 0}</div>
-                                            <button onClick={() => updateRoleCount(role.id, 1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">+</button>
+                                            <button disabled={!isHost} onClick={() => updateRoleCount(role.id, 1)} className="w-10 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xl">+</button>
                                         </div>
                                     </div>
                                 ))}
@@ -191,7 +201,11 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
     // Phase: PLAYING (Narrator, Hunter, oder Normal Player)
     // ==========================================
     if (gameState.phase === 'PLAYING') {
-        const isNarrator = user.uid === gameState.narrator;
+        const narratorPresent = players.some((player) => player.id === gameState.narrator);
+        // Verlaesst der Erzähler, übernimmt der aktuelle Partyleiter dessen
+        // Dashboard. Die Partie bleibt dadurch ohne manuelle DB-Reparatur
+        // spielbar.
+        const isNarrator = user.uid === gameState.narrator || (isHost && !narratorPresent);
         const isDay = gameState.isDay;
 
         // --- 1. SPECIAL VIEW: Jäger schießt (auf dem Handy des toten Jägers) ---
@@ -252,11 +266,15 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                         </div>
 
                         <button
-                            onClick={submitHunterShot}
-                            disabled={!hunterTarget || isShooting}
+                            onClick={livingOthers.length === 0
+                                ? () => updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.hunterShooting': null })
+                                : submitHunterShot}
+                            disabled={(livingOthers.length > 0 && !hunterTarget) || isShooting}
                             className="w-full bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:border-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-xl uppercase tracking-wider flex justify-center items-center gap-2"
                         >
-                            {isShooting ? <Loader2 className="animate-spin" /> : 'Abschießen'}
+                            {isShooting
+                                ? <Loader2 className="animate-spin" />
+                                : (livingOthers.length === 0 ? 'Kein Ziel – fortfahren' : 'Abschießen')}
                         </button>
                     </div>
                 </div>
@@ -266,11 +284,14 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
         // --- 2. NARRATOR VIEW ---
         if (isNarrator) {
             const activePlayers = players.filter(p => p.id !== gameState.narrator);
+            const activePlayerIds = new Set(activePlayers.map((player) => player.id));
+            const activeStates = Object.entries(gameState.playerState || {})
+                .filter(([id]) => activePlayerIds.has(id))
+                .map(([, state]) => state);
             const witchState = gameState.witchState || { healUsed: false, poisonUsed: false };
 
             const toggleDayNight = async () => {
-                const states = Object.values(gameState.playerState);
-                const livingPlayers = states.filter(s => s.alive);
+                const livingPlayers = activeStates.filter(s => s.alive);
                 const livingWolves = livingPlayers.filter(s => s.role === 'WERWOLF').length;
                 const livingNonWolves = livingPlayers.filter(s => s.role !== 'WERWOLF').length;
 
@@ -391,8 +412,8 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                 }
             };
 
-            const rolesAlive = new Set(Object.values(gameState.playerState).filter(s => s.alive).map(s => s.role));
-            const rolesPresent = new Set(Object.values(gameState.playerState).map(s => s.role));
+            const rolesAlive = new Set(activeStates.filter(s => s.alive).map(s => s.role));
+            const rolesPresent = new Set(activeStates.map(s => s.role));
 
             const nightSteps = [];
             let stepCounter = 1;
@@ -453,7 +474,9 @@ export default function WerwolfEngine({ lobby, user, isHost, db, updateLobbyStat
                                 )}
                                 {isDay ? <Sun size={48} className="text-yellow-500 mb-2" /> : <Moon size={48} className="text-indigo-400 mb-2" />}
                                 <h2 className="text-2xl font-bold mb-1">{isDay ? 'Tag' : 'Nacht'} {gameState.dayNumber}</h2>
-                                <p className="text-sm text-slate-400 mb-6">Du bist der Erzähler.</p>
+                                <p className="text-sm text-slate-400 mb-6">
+                                    {narratorPresent ? 'Du bist der Erzähler.' : 'Der Erzähler ist gegangen – du übernimmst als Partyleiter.'}
+                                </p>
                                 <button
                                     onClick={toggleDayNight}
                                     className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isDay ? 'bg-indigo-900 hover:bg-indigo-800 text-indigo-200' : 'bg-orange-600 hover:bg-orange-500 text-white'}`}

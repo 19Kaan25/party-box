@@ -6,6 +6,8 @@ import GameHeader from '../components/GameHeader';
 import { CODENAMES_WORDS } from '../constants/gameData';
 import { shuffleArray } from '../utils/helpers';
 
+const randomStartingTeam = () => (Math.random() < 0.5 ? 'red' : 'blue');
+
 export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
   const { gameState, players, id: lobbyCode } = lobby;
   
@@ -13,13 +15,20 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
   const [clueCount, setClueCount] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [customWordInput, setCustomWordInput] = useState('');
-  const [pinnedWords, setPinnedWords] = useState([]);
-  const [customWords, setCustomWords] = useState([]);
+  const pinnedWords = gameState.pinnedWords || [];
+  const customWords = gameState.customWords || [];
 
   const joinTeam = async (teamColor, role) => {
     const lobbyRef = doc(db, 'lobbies', lobbyCode);
-    let newTeams = { red: [...(gameState.teams?.red || [])], blue: [...(gameState.teams?.blue || [])] };
+    const activeIds = new Set(players.map(p => p.id));
+    let newTeams = {
+      red: [...(gameState.teams?.red || [])].filter(id => activeIds.has(id)),
+      blue: [...(gameState.teams?.blue || [])].filter(id => activeIds.has(id))
+    };
     let newSpymasters = { red: gameState.spymasters?.red, blue: gameState.spymasters?.blue };
+
+    if (!activeIds.has(newSpymasters.red)) newSpymasters.red = null;
+    if (!activeIds.has(newSpymasters.blue)) newSpymasters.blue = null;
 
     newTeams.red = newTeams.red.filter(id => id !== user.uid);
     newTeams.blue = newTeams.blue.filter(id => id !== user.uid);
@@ -46,29 +55,29 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
     });
   };
 
-  const togglePin = (word) => {
-    if (pinnedWords.includes(word)) {
-      setPinnedWords(pinnedWords.filter(w => w !== word));
-    } else {
-      if (pinnedWords.length >= 25) return;
-      setPinnedWords([...pinnedWords, word]);
-    }
+  const togglePin = async (word) => {
+    if (!isHost) return;
+    const next = pinnedWords.includes(word)
+      ? pinnedWords.filter(w => w !== word)
+      : (pinnedWords.length >= 25 ? pinnedWords : [...pinnedWords, word]);
+    await updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.pinnedWords': next });
   };
 
-  const addCustomWord = (e) => {
+  const addCustomWord = async (e) => {
     e.preventDefault();
+    if (!isHost) return;
     const w = customWordInput.trim().toUpperCase();
     if (w && !customWords.includes(w) && !CODENAMES_WORDS.map(x=>x.toUpperCase()).includes(w)) {
-      setCustomWords([...customWords, w]);
-      if (pinnedWords.length < 25) {
-        setPinnedWords([...pinnedWords, w]);
-      }
+      await updateDoc(doc(db, 'lobbies', lobbyCode), {
+        'gameState.customWords': [...customWords, w],
+        ...(pinnedWords.length < 25 && { 'gameState.pinnedWords': [...pinnedWords, w] })
+      });
     }
     setCustomWordInput('');
   };
 
   const generateBoard = async () => {
-    const startingTeam = Math.random() < 0.5 ? 'red' : 'blue';
+    const startingTeam = randomStartingTeam();
     const otherTeam = startingTeam === 'red' ? 'blue' : 'red';
     
     const colors = [
@@ -180,13 +189,32 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
 
   const myTeam = gameState.teams?.red.includes(user.uid) ? 'red' : (gameState.teams?.blue.includes(user.uid) ? 'blue' : null);
   const myRole = (gameState.spymasters?.red === user.uid || gameState.spymasters?.blue === user.uid) ? 'SPYMASTER' : 'OPERATIVE';
-  const isMyTurn = gameState.turn?.startsWith(myTeam?.toUpperCase()) && gameState.turn?.endsWith(myRole);
+  const turnTeam = gameState.turn?.split('_')[0]?.toLowerCase();
+  const turnRole = gameState.turn?.split('_')[1];
+  const activeIds = new Set(players.map((player) => player.id));
+  const activeTurnTeam = (gameState.teams?.[turnTeam] || []).filter((id) => activeIds.has(id));
+  const activeTurnSpymaster = activeIds.has(gameState.spymasters?.[turnTeam])
+    ? gameState.spymasters?.[turnTeam]
+    : null;
+  const activeTurnActors = turnRole === 'SPYMASTER'
+    ? (activeTurnSpymaster ? [activeTurnSpymaster] : [])
+    : activeTurnTeam.filter((id) => id !== activeTurnSpymaster);
+  // Verlaesst der einzige zustaendige Spieler die Partie, darf der neue bzw.
+  // verbleibende Host den Zug retten. Ohne diesen Notweg waere Codenames bis
+  // zu einem kompletten Abbruch blockiert.
+  const isRecoveryController = isHost && !!gameState.turn && activeTurnActors.length === 0;
+  const isMyTurn = (
+    gameState.turn?.startsWith(myTeam?.toUpperCase()) && gameState.turn?.endsWith(myRole)
+  ) || isRecoveryController;
+  const canActAsSpymaster = myRole === 'SPYMASTER' || (isRecoveryController && turnRole === 'SPYMASTER');
+  const canActAsOperative = myRole === 'OPERATIVE' || (isRecoveryController && turnRole === 'OPERATIVE');
 
   if (gameState.phase === 'TEAM_SETUP') {
-    const redTeamIds = gameState.teams?.red || [];
-    const blueTeamIds = gameState.teams?.blue || [];
-    const redSpy = gameState.spymasters?.red;
-    const blueSpy = gameState.spymasters?.blue;
+    const setupActiveIds = new Set(players.map((player) => player.id));
+    const redTeamIds = (gameState.teams?.red || []).filter((id) => setupActiveIds.has(id));
+    const blueTeamIds = (gameState.teams?.blue || []).filter((id) => setupActiveIds.has(id));
+    const redSpy = setupActiveIds.has(gameState.spymasters?.red) ? gameState.spymasters.red : null;
+    const blueSpy = setupActiveIds.has(gameState.spymasters?.blue) ? gameState.spymasters.blue : null;
     const unassignedPlayers = players.filter(p => !redTeamIds.includes(p.id) && !blueTeamIds.includes(p.id));
 
     return (
@@ -299,23 +327,14 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
   }
 
   if (gameState.phase === 'BOARD_SETUP') {
-    if (!isHost) {
-      return (
-        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8 relative">
-           <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
-           <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
-              <span className="animate-pulse">Der Host konfiguriert das Spielfeld...</span>
-           </div>
-        </div>
-      );
-    }
-
     const allCombinedWords = [...CODENAMES_WORDS.map(w => w.toUpperCase()), ...customWords];
     const filteredWords = allCombinedWords.filter(w => w.includes(searchTerm.toUpperCase()) && !pinnedWords.includes(w));
 
     return (
       <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col items-center relative">
         <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={false} maxWidthClass="max-w-5xl" />
+        {!isHost && <p className="text-sm text-slate-500 mb-3">Live-Ansicht – der Host bereitet das Spielfeld vor.</p>}
+        <fieldset disabled={!isHost} className={`w-full flex flex-col items-center ${!isHost ? 'opacity-60' : ''}`}>
         <h2 className="text-3xl font-bold text-slate-200 mb-6">Spielfeld vorbereiten</h2>
         
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow mb-8">
@@ -369,6 +388,7 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
             Spielfeld generieren
           </button>
         </div>
+        </fieldset>
       </div>
     );
   }
@@ -399,6 +419,12 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
           </div>
         </div>
 
+        {isRecoveryController && (
+          <p className="w-full max-w-5xl mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-300">
+            Der zuständige Spieler ist nicht mehr im Spiel. Du übernimmst diesen Zug als Partyleiter.
+          </p>
+        )}
+
         <div className="w-full max-w-5xl mb-6 bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
           {gameState.currentClue ? (
             <div className="flex flex-wrap items-center gap-4 w-full">
@@ -406,7 +432,7 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
               <span className="text-xl sm:text-2xl font-black tracking-widest uppercase bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">{gameState.currentClue.word}</span>
               <span className="text-xl sm:text-2xl font-black bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">{gameState.currentClue.count}</span>
               <span className="ml-auto text-sm text-slate-400">Verbleibende Tipps: <b className="text-white">{gameState.currentClue.guessesLeft}</b></span>
-              {isMyTurn && myRole === 'OPERATIVE' && (
+              {isMyTurn && canActAsOperative && (
                 <button onClick={endTurn} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg sm:ml-4 transition-colors font-medium">Zug beenden</button>
               )}
             </div>
@@ -416,7 +442,7 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
             </div>
           )}
 
-          {isMyTurn && myRole === 'SPYMASTER' && !gameState.currentClue && (
+          {isMyTurn && canActAsSpymaster && !gameState.currentClue && (
              <div className="flex flex-col gap-3 w-full sm:w-80 mt-4 sm:mt-0">
                <input type="text" value={clueWord} onChange={(e) => setClueWord(e.target.value)} placeholder="Dein Hinweiswort" className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-slate-500 w-full"/>
                <div className="flex items-center gap-3">
@@ -433,8 +459,8 @@ export default function CodenamesEngine({ lobby, user, isHost, db, updateLobbySt
 
         <div className="w-full max-w-5xl grid grid-cols-5 gap-2 sm:gap-4 flex-grow">
           {(gameState.board || []).map((card, idx) => {
-            const isSpymaster = myRole === 'SPYMASTER';
-            const isInteractive = isMyTurn && myRole === 'OPERATIVE' && !card.isRevealed && gameState.currentClue;
+            const isSpymaster = canActAsSpymaster;
+            const isInteractive = isMyTurn && canActAsOperative && !card.isRevealed && gameState.currentClue;
             let cardBg = 'bg-slate-700 hover:bg-slate-600 border-slate-600';
             let textColor = 'text-white';
             

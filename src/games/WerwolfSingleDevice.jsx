@@ -144,11 +144,12 @@ export default function WerwolfSingleDevice({ lobby, user, isHost, db, updateLob
     // ---------------------------------------------------------
     // NICHT-HOST: das Spiel laeuft woanders
     // ---------------------------------------------------------
-    if (!isHost) {
+    if (!isHost && !(gameState.phase === 'SETUP' && step === 'SETUP')) {
         const list = saved.roster || [];
         const running = gameState.phase === 'SINGLE_RUNNING';
         const statusText = {
             REVEAL: 'Die Rollen werden verteilt',
+            NARRATOR_HANDOFF: 'Das Handy wird an den Erzähler übergeben',
             PLAY: saved.game?.isDay ? `Tag ${saved.game?.dayNumber}` : `Nacht ${saved.game?.dayNumber}`,
             RESULT: 'Das Spiel ist vorbei'
         }[saved.step];
@@ -329,7 +330,8 @@ export default function WerwolfSingleDevice({ lobby, user, isHost, db, updateLob
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} />
 
-                <div className="max-w-4xl mx-auto mt-8">
+                {!isHost && <p className="text-center text-sm text-slate-500 mt-8">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+                <div className={`max-w-4xl mx-auto mt-8 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="text-center mb-8">
                         <h2 className="text-4xl font-black tracking-widest text-indigo-400 uppercase">Werwolf</h2>
                         <p className="text-slate-400 mt-2">Ein Handy für alle – der Erzähler führt durch die Nacht</p>
@@ -488,10 +490,10 @@ export default function WerwolfSingleDevice({ lobby, user, isHost, db, updateLob
             return (
                 <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6">
                     <button
-                        onClick={() => { setStep('PLAY'); persist({ step: 'PLAY' }); }}
+                        onClick={() => { setStep('NARRATOR_HANDOFF'); persist({ step: 'NARRATOR_HANDOFF' }); }}
                         className="bg-white text-slate-900 font-bold px-6 py-3 rounded-xl"
                     >
-                        Weiter
+                        Handy an den Erzähler
                     </button>
                 </div>
             );
@@ -550,8 +552,8 @@ export default function WerwolfSingleDevice({ lobby, user, isHost, db, updateLob
                     <button
                         onClick={() => {
                             const nextIndex = isLast ? revealIndex : revealIndex + 1;
-                            const nextStep = isLast ? 'PLAY' : 'REVEAL';
-                            if (isLast) setStep('PLAY'); else setRevealIndex(nextIndex);
+                            const nextStep = isLast ? 'NARRATOR_HANDOFF' : 'REVEAL';
+                            if (isLast) setStep('NARRATOR_HANDOFF'); else setRevealIndex(nextIndex);
                             setRevealStage('HANDOFF');
                             persist({ step: nextStep, revealIndex: nextIndex, revealStage: 'HANDOFF' });
                         }}
@@ -559,6 +561,27 @@ export default function WerwolfSingleDevice({ lobby, user, isHost, db, updateLob
                         className="w-full mt-8 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold transition-all active:scale-95"
                     >
                         {isLast ? `Verstanden – Handy an ${nameOf(narratorKey)}` : 'Verstanden – weitergeben'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Nach der letzten Rollenkarte bleibt das Dashboard verdeckt, bis das
+    // Handy sicher beim Erzähler angekommen ist.
+    if (step === 'NARRATOR_HANDOFF') {
+        return (
+            <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+                <div className="max-w-md w-full bg-slate-900 rounded-3xl p-8 border border-slate-700 shadow-2xl text-center">
+                    <Smartphone size={64} className="mx-auto text-yellow-400 mb-5 animate-bounce" />
+                    <p className="text-slate-400">Gib das Handy an den Erzähler</p>
+                    <h2 className="text-4xl font-black mt-2 [overflow-wrap:anywhere]">{nameOf(narratorKey)}</h2>
+                    <p className="text-sm text-slate-500 mt-5">Das Erzähler-Dashboard wird erst nach der Bestätigung geöffnet.</p>
+                    <button
+                        onClick={() => { setStep('PLAY'); persist({ step: 'PLAY' }); }}
+                        className="w-full mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95"
+                    >
+                        Ich bin {nameOf(narratorKey)}
                     </button>
                 </div>
             </div>

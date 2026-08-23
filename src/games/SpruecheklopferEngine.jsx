@@ -39,8 +39,6 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
     // beim Rundenwechsel von selbst, ohne setState in einem Effect (das ist
     // der Lint-Verstoss, der in den alten Engines noch drinsteckt).
     const [draft, setDraft] = useState({ round: -1, text: '' });
-    const [setupRounds, setSetupRounds] = useState('5');
-    const [setupCats, setSetupCats] = useState([CATEGORY_KEYS[0]]);
     // Verhindert doppelte RPCs: Phasenwechsel werden bewusst NICHT
     // optimistisch angezeigt, `gameState.phase` bleibt hier also noch einen
     // Moment auf dem alten Wert, während der Effect erneut läuft.
@@ -52,8 +50,15 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
     const answers = useMemo(() => gameState.answers || {}, [gameState.answers]);
     const votes = useMemo(() => gameState.votes || {}, [gameState.votes]);
     const scores = gameState.scores || {};
+    const setupRounds = String(gameState.setup?.rounds ?? 5);
+    const setupCats = gameState.setup?.categories || [CATEGORY_KEYS[0]];
 
     const lobbyRef = () => doc(db, 'lobbies', lobbyCode);
+
+    const updateSetup = async (key, value) => {
+        if (!isHost) return;
+        await updateDoc(lobbyRef(), { [`gameState.setup.${key}`]: value });
+    };
 
     // Nur Antworten von Leuten zählen, die noch in der Lobby sind — wer
     // mitten in der Runde geht, darf die Abstimmung nicht blockieren.
@@ -170,8 +175,8 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
 
     if (gameState.phase === 'SETUP') {
         const poolSize = setupCats.reduce((n, k) => n + (CATEGORIES[k]?.statements.length || 0), 0);
-        const toggleCat = (key) => setSetupCats((prev) => (
-            prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+        const toggleCat = (key) => updateSetup('categories', (
+            setupCats.includes(key) ? setupCats.filter((item) => item !== key) : [...setupCats, key]
         ));
 
         return (
@@ -183,10 +188,9 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
                     Füllt die Lücke im Satz — anschließend wird anonym über den besten Spruch abgestimmt.
                 </p>
 
-                {!isHost ? (
-                    <p className="text-slate-400 animate-pulse">Der Partyleiter stellt gerade ein…</p>
-                ) : (
-                    <div className="w-full max-w-2xl bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+                {!isHost && <p className="text-slate-500 text-sm mb-4">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+                <fieldset disabled={!isHost} className={`w-full max-w-2xl ${!isHost ? 'opacity-60' : ''}`}>
+                    <div className="w-full bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
                         <h3 className="text-xl font-bold mb-5 flex items-center gap-2">
                             <Settings size={20} className="text-indigo-400" /> Spieleinstellungen
                         </h3>
@@ -197,7 +201,7 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
                                 type="text"
                                 inputMode="numeric"
                                 value={setupRounds}
-                                onChange={(e) => setSetupRounds(e.target.value.replace(/\D/g, ''))}
+                                onChange={(e) => updateSetup('rounds', e.target.value.replace(/\D/g, ''))}
                                 className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
                                 placeholder="5"
                             />
@@ -236,7 +240,7 @@ export default function SpruecheklopferEngine({ lobby, user, isHost, db, updateL
                             <ArrowRight size={18} /> Spiel starten
                         </button>
                     </div>
-                )}
+                </fieldset>
             </div>
         );
     }
@@ -513,9 +517,11 @@ function VotingScreen({
                 </p>
 
                 {isHost && (
+                    /* Mit nur noch einer aktiven Person ist keine fremde
+                       Antwort waehbar. Aufloesen muss trotzdem moeglich sein. */
                     <button
                         onClick={onReveal}
-                        disabled={!everyoneVoted && votedCount === 0}
+                        disabled={activeAnswers.length >= 2 && !everyoneVoted && votedCount === 0}
                         className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
                     >
                         {everyoneVoted ? 'Auflösen' : 'Ohne die Fehlenden auflösen'}

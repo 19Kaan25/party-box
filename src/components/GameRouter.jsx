@@ -1,8 +1,11 @@
 import React from 'react';
 import { db } from '../lib/firestoreBridge';
+import { createRestartGameState } from '../constants/gameSetup';
 
 import WelcomeScreen from './lobby/WelcomeScreen';
 import LobbyWaitingScreen from './lobby/LobbyWaitingScreen';
+import GamePausedScreen from './lobby/GamePausedScreen';
+import GameHeader, { GlobalGameHeaderProvider } from './GameHeader';
 
 import CodenamesEngine from '../games/CodenamesEngine';
 import StadtLandFlussEngine from '../games/StadtLandFlussEngine';
@@ -69,8 +72,36 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
         );
     }
 
+    const optedOut = currentLobby.gameState?.optedOut || {};
+    const paused = !!optedOut[user.uid] && !isHost;
+
+    const setOwnParticipation = async (playing) => {
+        await updateLobbyStatus(null, null, {
+            [`gameState.optedOut.${user.uid}`]: !playing,
+        });
+    };
+
+    if (paused) {
+        return (
+            <GamePausedScreen
+                lobby={currentLobby}
+                user={user}
+                onResume={() => setOwnParticipation(true)}
+                onLeaveLobby={leaveLobby}
+            />
+        );
+    }
+
+    // Spieler in der Lobbyansicht bleiben Lobby-Mitglieder, zaehlen aber fuer
+    // laufende Runden nicht mit. Der Host gilt nach einer Uebernahme immer als
+    // aktiv, selbst wenn er vorher pausiert hatte.
+    const activePlayers = currentLobby.players.filter(
+        (player) => !optedOut[player.id] || player.id === currentLobby.hostId
+    );
+    const engineLobby = { ...currentLobby, players: activePlayers };
+
     const engineProps = {
-        lobby: currentLobby,
+        lobby: engineLobby,
         user,
         isHost,
         db,
@@ -78,13 +109,38 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
         leaveLobby
     };
 
+    let engine;
     switch(currentLobby.currentGame) {
-        case 'STADT_LAND_FLUSS': return <StadtLandFlussEngine {...engineProps} />;
-        case 'CODENAMES': return <CodenamesEngine {...engineProps} />;
-        case 'WERWOLF': return <WerwolfEngine {...engineProps} />;
-        case 'WER_BIN_ICH': return <WerBinIchEngine {...engineProps} />;
-        case 'IMPOSTER': return <ImposterEngine {...engineProps} />;
-        case 'SPRUECHE_KLOPFER': return <SpruecheklopferEngine {...engineProps} />;
-        default: return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Spiel...</div>;
+        case 'STADT_LAND_FLUSS': engine = <StadtLandFlussEngine {...engineProps} />; break;
+        case 'CODENAMES': engine = <CodenamesEngine {...engineProps} />; break;
+        case 'WERWOLF': engine = <WerwolfEngine {...engineProps} />; break;
+        case 'WER_BIN_ICH': engine = <WerBinIchEngine {...engineProps} />; break;
+        case 'IMPOSTER': engine = <ImposterEngine {...engineProps} />; break;
+        case 'SPRUECHE_KLOPFER': engine = <SpruecheklopferEngine {...engineProps} />; break;
+        default: engine = <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Spiel...</div>;
     }
+
+    const returnToLobby = () => isHost
+        ? updateLobbyStatus('LOBBY_WAITING', null, { gameState: {} })
+        : setOwnParticipation(false);
+
+    const restartGame = () => updateLobbyStatus('GAME_IN_PROGRESS', currentLobby.currentGame, {
+        gameState: createRestartGameState(currentLobby.currentGame, currentLobby.gameState),
+    });
+
+    return (
+        <GlobalGameHeaderProvider>
+            <GameHeader
+                global
+                isHost={isHost}
+                leaveLobby={leaveLobby}
+                updateLobbyStatus={updateLobbyStatus}
+                onReturnToLobby={returnToLobby}
+                onRestart={restartGame}
+            />
+            <React.Fragment key={`${currentLobby.currentGame}-${currentLobby.gameState?.restartVersion || 0}`}>
+                {engine}
+            </React.Fragment>
+        </GlobalGameHeaderProvider>
+    );
 }

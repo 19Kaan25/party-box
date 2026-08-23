@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc, arrayUnion } from '../lib/firestoreBridge';
-import { Settings, Dices, Users, Play, CheckCircle, Skull, Trophy, Home, Search, Edit3, BookOpen, User, Crown, PartyPopper, ArrowRight } from 'lucide-react';
+import { Settings, Dices, Users, Play, CheckCircle, Skull, Trophy, Home, Search, Edit3, BookOpen, Crown, PartyPopper, ArrowRight, RotateCcw } from 'lucide-react';
 
 import GameHeader from '../components/GameHeader';
 import { shuffleArray } from '../utils/helpers';
 
-// Die VIP-Datenbank für schnelle Ideen
-const VIP_LIST = [
+// Breite Mischung aus realen Personen und bekannten fiktiven Figuren.
+const SUGGESTIONS = [
     "Angela Merkel", "Albert Einstein", "Cristiano Ronaldo", "Harry Potter",
     "Spongebob", "Leonardo DiCaprio", "Taylor Swift", "Michael Jackson",
     "Barack Obama", "Donald Trump", "Elon Musk", "Mickey Mouse", "Batman",
@@ -16,7 +16,17 @@ const VIP_LIST = [
     "Zendaya", "Tom Holland", "Angela Bassett", "Dieter Bohlen", "Otto Waalkes",
     "Mark Forster", "Manuel Neuer", "Jürgen Klopp", "Götz George", "Chuck Norris",
     "Shakira", "Rihanna", "Eminem", "Snoop Dogg", "Gordon Ramsay", "Mr. Bean",
-    "Sherlock Holmes", "James Bond", "Indiana Jones", "Lara Croft", "Pippi Langstrumpf"
+    "Sherlock Holmes", "James Bond", "Indiana Jones", "Lara Croft", "Pippi Langstrumpf",
+    "Jamal Musiala", "Florian Wirtz", "Lamine Yamal", "Giulia Gwinn", "Aitana Bonmatí",
+    "Kylian Mbappé", "LeBron James", "Simone Biles", "Rory McIlroy", "Terence Crawford",
+    "Sabrina Carpenter", "Chappell Roan", "Billie Eilish", "Doechii", "Bad Bunny",
+    "Alex Warren", "Miley Cyrus", "Lady Gaga", "Apache 207", "Ayliva", "Nina Chuba",
+    "Mikey Madison", "Jenna Ortega", "Pedro Pascal", "Timothée Chalamet", "Sydney Sweeney",
+    "David Corenswet", "Jack Black", "MrBeast", "Kai Cenat", "IShowSpeed", "Rezo",
+    "Julien Bam", "Papaplatte", "MontanaBlack", "Knossi", "Trymacs", "HandOfBlood",
+    "Wednesday Addams", "Steve aus Minecraft", "Deadpool", "Wolverine", "Stitch",
+    "Bluey", "Rumi aus KPop Demon Hunters", "Jinu aus KPop Demon Hunters", "Elsa",
+    "Vaiana", "Miles Morales", "Grogu", "Superman", "Sonic"
 ];
 
 export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbyStatus, leaveLobby }) {
@@ -26,8 +36,8 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
     // HOOKS (Müssen zwingend GANZ OBEN stehen!)
     // ==========================================
 
-    const [setupMode, setSetupMode] = useState('POOL');
-    const [assignments, setAssignments] = useState({});
+    const setupMode = gameState.setupMode || 'POOL';
+    const assignments = useMemo(() => gameState.setupAssignments || {}, [gameState.setupAssignments]);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [inputOne, setInputOne] = useState('');
@@ -46,20 +56,49 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
     }, [gameState.phase]);
 
     useEffect(() => {
-        if (gameState.phase === 'SETUP' && players.length > 1 && Object.keys(assignments).length === 0) {
+        if (gameState.phase === 'SETUP' && players.length > 1) {
+            const playerIds = players.map((player) => player.id).sort();
+            const writerIds = Object.keys(assignments).sort();
+            const targetIds = Object.values(assignments).sort();
+            const assignmentsStillValid = playerIds.length === writerIds.length
+                && playerIds.every((id, index) => id === writerIds[index])
+                && playerIds.every((id, index) => id === targetIds[index]);
+            if (assignmentsStillValid) return;
+
             const shuffled = shuffleArray([...players]);
             const newAssignments = {};
             for (let i = 0; i < shuffled.length; i++) {
                 newAssignments[shuffled[i].id] = shuffled[(i + 1) % shuffled.length].id;
             }
-            setAssignments(newAssignments);
+            if (isHost) {
+                updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.setupAssignments': newAssignments });
+            }
         }
-    }, [players, assignments, gameState.phase]);
+    }, [players, assignments, gameState.phase, isHost, db, lobbyCode]);
 
-    const filteredVIPs = useMemo(() => {
-        if (!searchTerm) return VIP_LIST;
-        return VIP_LIST.filter(vip => vip.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredSuggestions = useMemo(() => {
+        if (!searchTerm) return SUGGESTIONS;
+        return SUGGESTIONS.filter(suggestion => suggestion.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [searchTerm]);
+
+    // Wenn der Spieler am aktiven Zug pausiert oder die Lobby verlaesst,
+    // uebernimmt der Host automatisch mit dem naechsten verbleibenden Zug.
+    // Sonst zeigt jeder dauerhaft auf eine nicht mehr vorhandene Person.
+    useEffect(() => {
+        if (!isHost || gameState.phase !== 'PLAYING' || players.length === 0) return;
+        const playerState = gameState.playerState || {};
+        const activeStillValid = players.some(
+            (player) => player.id === gameState.activeTurnId && !playerState[player.id]?.guessed
+        );
+        if (activeStillValid) return;
+
+        const nextPlayer = players.find((player) => playerState[player.id] && !playerState[player.id].guessed);
+        if (nextPlayer) {
+            updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.activeTurnId': nextPlayer.id });
+        } else {
+            updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.phase': 'FINAL_RESULTS' });
+        }
+    }, [isHost, gameState.phase, gameState.activeTurnId, gameState.playerState, players, db, lobbyCode]);
 
     // ==========================================
     // GLOBALE VARIABLEN & FUNKTIONEN
@@ -69,22 +108,29 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
     const myTargetName = myTargetId ? players.find(p => p.id === myTargetId)?.name : '';
 
     const inputArray = gameState.inputArray || [];
-    const hasSubmitted = localSubmitted || inputArray.some(item => item.userId === user.uid);
-    const readyCount = inputArray.length;
-    const allReady = readyCount > 0 && readyCount === players.length;
+    const activeInputArray = inputArray.filter((item) => players.some((player) => player.id === item.userId));
+    const hasSubmitted = localSubmitted || activeInputArray.some(item => item.userId === user.uid);
+    const readyCount = activeInputArray.length;
+    const allReady = readyCount > 0 && readyCount >= players.length;
 
-    const handleSwapTarget = (writerId, newTargetId) => {
+    const updateSetupMode = async (nextMode) => {
+        if (!isHost) return;
+        await updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.setupMode': nextMode });
+    };
+
+    const handleSwapTarget = async (writerId, newTargetId) => {
+        if (!isHost) return;
         if (writerId === newTargetId) return;
         const currentTargetOfWriter = assignments[writerId];
         if (newTargetId === currentTargetOfWriter) return;
 
         const otherWriterId = Object.keys(assignments).find(k => assignments[k] === newTargetId);
 
-        setAssignments(prev => ({
-            ...prev,
+        await updateDoc(doc(db, 'lobbies', lobbyCode), { 'gameState.setupAssignments': {
+            ...assignments,
             [writerId]: newTargetId,
             [otherWriterId]: currentTargetOfWriter
-        }));
+        } });
     };
 
     const startInputPhase = async () => {
@@ -123,7 +169,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
         const playerState = {};
 
         const inputsMap = {};
-        (gameState.inputArray || []).forEach(item => {
+        activeInputArray.forEach(item => {
             inputsMap[item.userId] = item.words;
         });
 
@@ -147,13 +193,14 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
             'gameState.phase': 'PLAYING',
             'gameState.playerState': playerState,
             'gameState.nextRank': 1,
-            'gameState.activeTurnId': players[0].id // Erster Spieler ist automatisch dran
+            'gameState.activeTurnId': players[0].id, // Erster Spieler ist automatisch dran
+            'gameState.guessHistory': []
         });
     };
 
     // Nächsten Spieler ermitteln
     const nextTurn = async () => {
-        if (!isHost) return;
+        if (!isHost || players.length === 0) return;
 
         const currentIdx = players.findIndex(p => p.id === gameState.activeTurnId);
         let nextIdx = (currentIdx + 1) % players.length;
@@ -172,18 +219,33 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
 
     const handleGuessed = async (targetId) => {
         if (!isHost) return;
+        if (!gameState.playerState?.[targetId] || gameState.playerState[targetId].guessed) return;
+        const targetName = players.find((player) => player.id === targetId)?.name || 'Dieser Spieler';
+        if (!window.confirm(`${targetName} wirklich als „erraten“ markieren?`)) return;
 
-        const newPlayerState = { ...gameState.playerState };
+        const newPlayerState = Object.fromEntries(
+            Object.entries(gameState.playerState || {}).map(([id, state]) => [id, { ...state }])
+        );
         newPlayerState[targetId].guessed = true;
         newPlayerState[targetId].rank = gameState.nextRank;
+        const guessHistory = [
+            ...(gameState.guessHistory || []),
+            {
+                playerId: targetId,
+                rank: gameState.nextRank,
+                previousActiveTurnId: gameState.activeTurnId,
+            },
+        ];
 
         const lobbyRef = doc(db, 'lobbies', lobbyCode);
-        const remainingUnGuessed = Object.values(newPlayerState).filter(s => !s.guessed).length;
+        const remainingUnGuessed = players.filter((player) => !newPlayerState[player.id]?.guessed).length;
 
         if (remainingUnGuessed <= 1) {
             await updateDoc(lobbyRef, {
                 'gameState.playerState': newPlayerState,
-                'gameState.phase': 'FINAL_RESULTS'
+                'gameState.phase': 'FINAL_RESULTS',
+                'gameState.guessHistory': guessHistory,
+                'gameState.nextRank': gameState.nextRank + 1
             });
         } else {
             // Falls derjenige erraten wurde, der gerade dran war, springt der Zug automatisch weiter
@@ -202,9 +264,38 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
             await updateDoc(lobbyRef, {
                 'gameState.playerState': newPlayerState,
                 'gameState.nextRank': gameState.nextRank + 1,
-                'gameState.activeTurnId': nextActiveId
+                'gameState.activeTurnId': nextActiveId,
+                'gameState.guessHistory': guessHistory
             });
         }
+    };
+
+    const undoLastGuess = async () => {
+        if (!isHost) return;
+        const history = gameState.guessHistory || [];
+        const lastGuess = history.at(-1);
+        if (!lastGuess) return;
+
+        const playerState = Object.fromEntries(
+            Object.entries(gameState.playerState || {}).map(([id, state]) => [id, { ...state }])
+        );
+        if (!playerState[lastGuess.playerId]) return;
+
+        playerState[lastGuess.playerId].guessed = false;
+        playerState[lastGuess.playerId].rank = null;
+        const previousActiveStillAvailable = players.some(
+            (player) => player.id === lastGuess.previousActiveTurnId && !playerState[player.id]?.guessed
+        );
+
+        await updateDoc(doc(db, 'lobbies', lobbyCode), {
+            'gameState.phase': 'PLAYING',
+            'gameState.playerState': playerState,
+            'gameState.nextRank': lastGuess.rank,
+            'gameState.activeTurnId': previousActiveStillAvailable
+                ? lastGuess.previousActiveTurnId
+                : lastGuess.playerId,
+            'gameState.guessHistory': history.slice(0, -1),
+        });
     };
 
     const distributePointsAndReturnToLobby = async () => {
@@ -238,24 +329,12 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
     // PHASE 1: SETUP RENDER
     // ==========================================
     if (gameState.phase === 'SETUP') {
-        if (!isHost) {
-            return (
-                <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8 relative">
-                    <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
-                    <div className="flex flex-col items-center gap-4 text-center">
-                        <User size={64} className="text-purple-500 animate-pulse" />
-                        <h2 className="text-2xl font-bold text-slate-300">Warten auf Host...</h2>
-                        <p className="text-slate-500">Der Host wählt gerade den Spielmodus aus.</p>
-                    </div>
-                </div>
-            );
-        }
-
         return (
             <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col relative">
                 <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
 
-                <div className="max-w-4xl mx-auto w-full mt-6">
+                {!isHost && <p className="text-center text-sm text-slate-500 mt-6">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+                <div className={`max-w-4xl mx-auto w-full mt-6 ${!isHost ? 'opacity-60 pointer-events-none' : ''}`}>
                     <div className="text-center mb-8">
                         <h2 className="text-4xl font-black tracking-widest text-purple-400 uppercase">Wer bin ich?</h2>
                         <p className="text-slate-400 mt-2">Wähle, wie die Zettel auf die Stirn kommen.</p>
@@ -263,7 +342,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         <div
-                            onClick={() => setSetupMode('POOL')}
+                            onClick={() => updateSetupMode('POOL')}
                             className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${setupMode === 'POOL' ? 'bg-purple-900/20 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}
                         >
                             <div className="flex items-center gap-3 mb-3">
@@ -274,7 +353,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                         </div>
 
                         <div
-                            onClick={() => setSetupMode('TARGETED')}
+                            onClick={() => updateSetupMode('TARGETED')}
                             className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${setupMode === 'TARGETED' ? 'bg-indigo-900/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}
                         >
                             <div className="flex items-center gap-3 mb-3">
@@ -287,7 +366,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
 
                     {setupMode === 'TARGETED' && (
                         <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mb-8 animate-in slide-in-from-top-4">
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Edit3 size={20} className="text-indigo-400" /> Wichtel-Übersicht (Nur für dich sichtbar)</h3>
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Edit3 size={20} className="text-indigo-400" /> Zuweisungsübersicht</h3>
                             <div className="space-y-3">
                                 {players.map(p => (
                                     <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-700">
@@ -378,7 +457,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                         <div className="flex flex-col gap-6">
                             {!hasSubmitted && (
                                 <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl flex-grow flex flex-col max-h-[40vh] lg:max-h-full">
-                                    <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><BookOpen size={18}/> VIP Datenbank</h3>
+                                    <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><BookOpen size={18}/> Vorschläge</h3>
                                     <div className="relative mb-4">
                                         <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" />
                                         <input
@@ -387,19 +466,21 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                                         />
                                     </div>
                                     <div className="flex flex-wrap gap-2 overflow-y-auto pr-2 flex-grow content-start">
-                                        {filteredVIPs.slice(0, 30).map(vip => (
+                                        {filteredSuggestions.map(suggestion => (
                                             <button
-                                                key={vip}
+                                                key={suggestion}
                                                 onClick={() => {
-                                                    if (!inputOne) setInputOne(vip);
-                                                    else if (mode === 'POOL' && !inputTwo) setInputTwo(vip);
+                                                    if (!inputOne) setInputOne(suggestion);
+                                                    else if (mode === 'POOL' && !inputTwo) setInputTwo(suggestion);
                                                 }}
                                                 className="bg-slate-900 border border-slate-700 hover:border-purple-500 hover:text-purple-300 px-3 py-1.5 rounded-lg text-sm text-slate-300 transition-colors"
                                             >
-                                                {vip}
+                                                {suggestion}
                                             </button>
                                         ))}
-                                        {filteredVIPs.length > 30 && <span className="text-xs text-slate-500 self-center">...und weitere</span>}
+                                        {filteredSuggestions.length === 0 && (
+                                            <span className="text-sm text-slate-500">Kein passender Vorschlag gefunden.</span>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -408,7 +489,7 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                                 <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2"><Users size={18}/> Status ({readyCount}/{players.length})</h3>
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     {players.map(p => {
-                                        const ready = inputArray.some(item => item.userId === p.id);
+                                        const ready = activeInputArray.some(item => item.userId === p.id);
                                         return (
                                             <span key={p.id} className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${ready ? 'bg-green-900/30 border-green-500/50 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>
                                             {p.name} {ready && '✓'}
@@ -494,7 +575,15 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
 
                             {/* Host Controls: Nächster & Abbrechen */}
                             {isHost && (
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                    {(gameState.guessHistory || []).length > 0 && (
+                                        <button
+                                            onClick={undoLastGuess}
+                                            className="flex-1 sm:flex-none bg-amber-900/30 hover:bg-amber-800/50 text-amber-300 px-4 py-2 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-amber-500/30"
+                                        >
+                                            <RotateCcw size={17} /> Rückgängig
+                                        </button>
+                                    )}
                                     <button onClick={nextTurn} className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-95 border border-green-500">
                                         Nächster <ArrowRight size={18} />
                                     </button>
@@ -622,9 +711,19 @@ export default function WerBinIchEngine({ lobby, user, isHost, db, updateLobbySt
                     </div>
 
                     {isHost ? (
-                        <button onClick={distributePointsAndReturnToLobby} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 mx-auto">
-                            <Home size={24} /> Punkte verteilen & Zurück zur Lobby
-                        </button>
+                        <div className="flex flex-col sm:flex-row justify-center gap-3">
+                            {(gameState.guessHistory || []).length > 0 && (
+                                <button
+                                    onClick={undoLastGuess}
+                                    className="bg-amber-900/30 hover:bg-amber-800/50 text-amber-300 px-7 py-4 rounded-2xl font-bold shadow-xl transition-all flex items-center justify-center gap-2 border border-amber-500/30"
+                                >
+                                    <RotateCcw size={21} /> Letztes „Erraten“ rückgängig
+                                </button>
+                            )}
+                            <button onClick={distributePointsAndReturnToLobby} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <Home size={24} /> Punkte verteilen & Zurück zur Lobby
+                            </button>
+                        </div>
                     ) : (
                         <p className="text-slate-500 italic text-lg text-center bg-slate-900 p-4 rounded-xl border border-slate-800">
                             Warte auf den Host für die Rückkehr zur Lobby...

@@ -9,17 +9,43 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
   const { gameState, players, id: lobbyCode } = lobby;
   const [localAnswers, setLocalAnswers] = useState({});
 
-  // Use strings to allow empty inputs in settings
-  const [setupRounds, setSetupRounds] = useState('3');
-  const [setupTimer, setSetupTimer] = useState('90');
-
-  const [setupCategories, setSetupCategories] = useState(['Stadt', 'Land', 'Fluss']);
   const [newCatInput, setNewCatInput] = useState('');
-  const [excludedLetters, setExcludedLetters] = useState([]);
   const [showCatModal, setShowCatModal] = useState(false);
   const [modalSelectedCats, setModalSelectedCats] = useState([]);
 
-  const randomCategories = ['Marke', 'Automarke', 'Beruf', 'Tiere', 'Promi', 'Sänger', 'Fußballer', 'Schauspieler', 'Film', 'Serie', 'Film/Serie', 'Vorname', 'Nachname', 'Lebensmittel', 'Getränke', 'Grund für Verspätung'];
+  // Setup-Werte liegen schon vor dem Spielstart im gemeinsamen Zustand. So
+  // sehen alle Geraete live dieselbe Konfiguration; nur der Host darf sie
+  // veraendern.
+  const setupDraft = gameState.setup || {};
+  const setupRounds = String(setupDraft.rounds ?? gameState.maxRounds ?? 3);
+  const setupTimer = String(setupDraft.timer ?? gameState.timerLimit ?? 90);
+  const setupCategories = setupDraft.categories || gameState.categories || ['Stadt', 'Land', 'Fluss'];
+  const excludedLetters = setupDraft.excludedLetters || gameState.excludedLetters || [];
+
+  const randomCategories = [
+    // Klassiker
+    'Stadt', 'Land', 'Fluss', 'Vorname', 'Nachname', 'Tier', 'Pflanze', 'Beruf',
+    'Farbe', 'Körperteil', 'Kleidungsstück', 'Hobby', 'Sportart', 'Instrument',
+    'Band oder Musiker', 'Promi', 'Film', 'Serie', 'Buch', 'Marke', 'Automarke',
+    'Lebensmittel', 'Obst', 'Gemüse', 'Gericht', 'Getränk', 'Süßigkeit',
+
+    // Popkultur, Internet und Gegenwart
+    'App oder Website', 'Videospiel', 'Streamingserie', 'Podcast', 'Content Creator',
+    'Internet-Meme', 'Jugendwort', 'KI-Tool', 'Superheld', 'Bösewicht',
+    'Fiktive Figur', 'Festival', 'Fußballer', 'Schauspieler', 'Sänger',
+
+    // Reisen und Alltag
+    'Reiseziel', 'Sehenswürdigkeit', 'Insel', 'Gebirge', 'Sprache', 'Währung',
+    'Schulfach', 'Haushaltsgegenstand', 'Küchenutensil', 'Pizzabelag', 'Eissorte',
+    'Cocktail', 'Geschenkidee', 'Date-Idee', 'Party-Motto',
+
+    // Kreative Party-Kategorien
+    'Grund für Verspätung', 'Ausrede', 'Grund für eine Kündigung', 'Red Flag',
+    'Green Flag', 'Etwas Peinliches', 'Was im Kühlschrank liegt',
+    'Was man nachts macht', 'Ding im Urlaub', 'Schlechte Geschenkidee',
+    'Was man auf keiner Hochzeit sagen sollte', 'Name einer Garagenband',
+    'Tatwaffe', 'Tatort', 'Mordmotiv', 'Fluchtfahrzeug'
+  ];
 
   useEffect(() => {
     if (gameState.phase === 'STARTING') setLocalAnswers({});
@@ -90,22 +116,28 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
     }
   }, [gameState.phase, isHost, lobbyCode, db, user.uid]);
 
+  const updateSetup = (key, value) => {
+    if (!isHost) return;
+    updateDoc(doc(db, 'lobbies', lobbyCode), { [`gameState.setup.${key}`]: value });
+  };
+
   const addRandomCategory = () => {
+    if (!isHost) return;
     const available = randomCategories.filter(c => !setupCategories.includes(c));
     if (available.length === 0) return;
-    setSetupCategories([...setupCategories, available[Math.floor(Math.random() * available.length)]]);
+    updateSetup('categories', [...setupCategories, available[Math.floor(Math.random() * available.length)]]);
   };
 
   const addCategory = (e) => {
     e.preventDefault();
     const cat = newCatInput.trim();
     if (cat && !setupCategories.includes(cat)) {
-      setSetupCategories([...setupCategories, cat]);
+      updateSetup('categories', [...setupCategories, cat]);
       setNewCatInput('');
     }
   };
 
-  const removeCategory = (cat) => setSetupCategories(setupCategories.filter(c => c !== cat));
+  const removeCategory = (cat) => updateSetup('categories', setupCategories.filter(c => c !== cat));
 
   const toggleModalCat = (cat) => {
     if (modalSelectedCats.includes(cat)) setModalSelectedCats(modalSelectedCats.filter(c => c !== cat));
@@ -114,14 +146,14 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
 
   const confirmModalCats = () => {
     const newCats = modalSelectedCats.filter(c => !setupCategories.includes(c));
-    setSetupCategories([...setupCategories, ...newCats]);
+    updateSetup('categories', [...setupCategories, ...newCats]);
     setShowCatModal(false);
     setModalSelectedCats([]);
   };
 
   const toggleLetter = (letter) => {
-    if (excludedLetters.includes(letter)) setExcludedLetters(excludedLetters.filter(l => l !== letter));
-    else setExcludedLetters([...excludedLetters, letter]);
+    if (excludedLetters.includes(letter)) updateSetup('excludedLetters', excludedLetters.filter(l => l !== letter));
+    else updateSetup('excludedLetters', [...excludedLetters, letter]);
   };
 
   const getValidLetter = (excluded) => {
@@ -258,7 +290,7 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
         <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 relative">
           <GameHeader isHost={isHost} leaveLobby={leaveLobby} updateLobbyStatus={updateLobbyStatus} absolute={true} />
 
-          {showCatModal && (
+          {isHost && showCatModal && (
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                 <div className="bg-slate-800 p-6 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl">
                   <div className="flex justify-between items-center mb-6">
@@ -280,19 +312,20 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
 
           <h2 className="text-4xl font-bold mb-2 text-purple-400 mt-8">Stadt Land Fluss</h2>
 
-          {isHost ? (
-              <div className="w-full max-w-3xl bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl mt-6">
+          {!isHost && <p className="mt-4 text-sm text-slate-500">Live-Ansicht – der Host nimmt die Einstellungen vor.</p>}
+          <fieldset disabled={!isHost} className={`w-full max-w-3xl mt-6 ${!isHost ? 'opacity-60' : ''}`}>
+              <div className="w-full bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Settings size={20} className="text-indigo-400" /> Spieleinstellungen</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <label className="block text-sm font-medium text-slate-400 mb-2">Anzahl der Runden</label>
-                    <input type="text" inputMode="numeric" value={setupRounds} onChange={(e) => setSetupRounds(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
+                    <input type="text" inputMode="numeric" value={setupRounds} onChange={(e) => updateSetup('rounds', e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="3"/>
                   </div>
 
                   <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                     <label className="block text-sm font-medium text-slate-400 mb-2">Timer (Sekunden)</label>
-                    <input type="text" inputMode="numeric" value={setupTimer} onChange={(e) => setSetupTimer(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
+                    <input type="text" inputMode="numeric" value={setupTimer} onChange={(e) => updateSetup('timer', e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="90"/>
                     <p className="text-xs text-slate-500 mt-1">Zwischen 30s und 240s</p>
                   </div>
 
@@ -335,13 +368,7 @@ export default function StadtLandFlussEngine({ lobby, user, isHost, db, updateLo
                   <button onClick={startGame} className="w-2/3 bg-purple-600 hover:bg-purple-500 text-white px-4 py-4 rounded-2xl font-bold text-xl shadow-lg transition-all active:scale-95">Spiel starten</button>
                 </div>
               </div>
-          ) : (
-              <div className="flex flex-col items-center gap-4 mt-8">
-                <div className="flex items-center gap-3 text-slate-400 bg-slate-800 px-6 py-4 rounded-xl border border-slate-700">
-                  <span className="animate-pulse">Der Host konfiguriert das Spiel...</span>
-                </div>
-              </div>
-          )}
+          </fieldset>
         </div>
     );
   }

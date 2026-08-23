@@ -61,6 +61,7 @@ export function CustomWordManager({ lobbyCode, words = [], isHost }) {
     const [customInput, setCustomInput] = useState('');
 
     const addCustomWord = async () => {
+        if (!isHost) return;
         const value = customInput.trim();
         if (!value) return;
         if (words.includes(value)) {
@@ -81,9 +82,9 @@ export function CustomWordManager({ lobbyCode, words = [], isHost }) {
 
     return (
         <>
-            {isHost && (
-                <div className="flex gap-2 mb-4">
+            <div className={`flex gap-2 mb-4 ${!isHost ? 'opacity-50' : ''}`}>
                     <input
+                        disabled={!isHost}
                         type="text"
                         value={customInput}
                         maxLength={40}
@@ -92,16 +93,19 @@ export function CustomWordManager({ lobbyCode, words = [], isHost }) {
                         placeholder="Wort hinzufügen..."
                         className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
                     />
-                    <button onClick={addCustomWord} className="bg-purple-600 p-2 rounded-lg hover:bg-purple-500 transition-colors">
+                    <button disabled={!isHost} onClick={addCustomWord} className="bg-purple-600 p-2 rounded-lg hover:bg-purple-500 transition-colors disabled:cursor-default">
                         <Plus size={20} />
                     </button>
-                </div>
-            )}
+            </div>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
                 {words.map((word, idx) => (
                     <span key={idx} className="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-xs flex items-center gap-2">
                         {word}
-                        {isHost && <Trash2 size={12} className="text-red-400 cursor-pointer hover:text-red-300" onClick={() => removeCustomWord(word)} />}
+                        <Trash2
+                            size={12}
+                            className={isHost ? 'text-red-400 cursor-pointer hover:text-red-300' : 'text-slate-600'}
+                            onClick={() => removeCustomWord(word)}
+                        />
                     </span>
                 ))}
                 {words.length === 0 && <p className="text-xs text-slate-500 italic">Noch keine eigenen Wörter hinterlegt.</p>}

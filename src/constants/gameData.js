@@ -2,7 +2,7 @@ export const CODENAMES_WORDS = [
   "Apfel", "Bank", "Berlin", "Brücke", "Ball", "Berg", "Box", "Brille", "Deckel", "Drache", 
   "Eis", "Erde", "Feder", "Feuer", "Film", "Flügel", "Geist", "Gericht", "Glocke", "Hund", 
   "Jet", "Kater", "Kette", "Kiefer", "Knopf", "Krone", "Leiter", "Licht", "Luft", "Mars", 
-  "Maske", "Maus", "Mine", "Mond", "Nagel", "Note", "Nuß", "Pfeffer", "Ring", "Ritter", 
+  "Maske", "Maus", "Mine", "Mond", "Nagel", "Note", "Nuss", "Pfeffer", "Ring", "Ritter",
   "Satz", "Schalter", "Schiff", "Schloss", "Schule", "Stern", "Strom", "Tafel", "Taucher", "Zug", 
   "Anker", "Arzt", "Auge", "Auto", "Baum", "Bogen", "Brief", "Burg", "Dame", "Daumen", 
   "Diamant", "Dieb", "Dose", "Fackel", "Flasche", "Fuß", "Garten", "Gift", "Gold", "Gras", 
@@ -23,7 +23,47 @@ export const CODENAMES_WORDS = [
   "Uhr", "Vampir", "Vogel", "Vulkan", "Waage", "Wagen", "Wand", "Wasser", "Würfel", "Wüste", 
   "Schatten", "Schlamm", "Schlange", "Schirm", "Schnecke", "Schnee", "Schnur", "Schuh", "Schwamm", "Schwein", 
   "See", "Seife", "Seil", "Senf", "Sonne", "Spiel", "Spinne", "Spritze", "Stadt", "Stein", 
-  "Stock", "Strand", "Stroh", "Superheld", "Suppe", "Tabak", "Tasche", "Taxi", "Tee", "Telefon"
+  "Stock", "Strand", "Stroh", "Superheld", "Suppe", "Tabak", "Tasche", "Taxi", "Tee", "Telefon",
+
+  // Mehrdeutige und stark verknuepfbare Begriffe
+  "Absatz", "Blatt", "Bulle", "Decke", "Gang", "Lager", "Schuppen", "Stamm", "Steuer", "Tau",
+  "Ton", "Tor", "Welle", "Zelle", "Schlüssel", "Pass", "Spitze", "Fall", "Rolle", "Zeichen",
+
+  // Natur und Landschaft
+  "Bach", "Bucht", "Düne", "Fjord", "Gletscher", "Höhle", "Klippe", "Quelle", "Riff", "Sumpf",
+  "Tal", "Wiese", "Wurzel", "Rinde", "Moos", "Nebel", "Sturm", "Donner", "Regenbogen", "Horizont",
+
+  // Wissenschaft, Weltraum und Technik
+  "Komet", "Planet", "Galaxie", "Orbit", "Satellit", "Atom", "Energie", "Säure", "Vakuum", "Prisma",
+  "Kristall", "Radar", "Sonar", "Signal", "Sensor", "Roboter", "Drohne", "Virus", "Code", "Portal",
+
+  // Zuhause, Werkzeuge und Dinge
+  "Balkon", "Keller", "Kamin", "Sofa", "Matratze", "Regal", "Vorhang", "Teppich", "Kerze", "Steckdose",
+  "Kabel", "Schraube", "Zange", "Bohrer", "Pinsel", "Schaufel", "Kalender", "Zeitung", "Stempel", "Paket",
+
+  // Menschen, Rollen und Geschichte
+  "Bote", "Wache", "Zeuge", "Held", "Gegner", "Chef", "Gast", "Nachbar", "Zwilling", "Riese",
+  "Narr", "Pirat", "Cowboy", "Samurai", "Ninja", "Mönch", "Diplomat", "Kaiser", "Pharao", "Wikinger",
+
+  // Kultur, Sprache und Musik
+  "Bühne", "Kulisse", "Szene", "Regisseur", "Oper", "Ballett", "Gedicht", "Roman", "Kapitel", "Titel",
+  "Rhythmus", "Takt", "Akkord", "Trommel", "Geige", "Trompete", "Mikrofon", "Galerie", "Porträt", "Statue",
+
+  // Essen und Geschmack
+  "Zitrone", "Orange", "Mango", "Kirsche", "Reis", "Nudel", "Bohne", "Zwiebel", "Knoblauch", "Salz",
+  "Mehl", "Butter", "Marmelade", "Wurst", "Speck", "Pizza", "Burger", "Sushi", "Torte", "Vanille",
+
+  // Orte, Wege und Reisen
+  "Grenze", "Zoll", "Botschaft", "Tempel", "Turm", "Brunnen", "Markt", "Platz", "Gasse", "Allee",
+  "Straße", "Kreuzung", "Gleis", "Kabine", "Cockpit", "Kajüte", "Werft", "Leuchtturm", "Ruine", "Pyramide",
+
+  // Sport, Wettbewerb und Spiel
+  "Schläger", "Pfeil", "Pokal", "Medaille", "Trikot", "Stadion", "Arena", "Rennen", "Sprung", "Wurf",
+  "Match", "Joker", "Trumpf", "Bauer", "Läufer", "Ass", "Puzzle", "Domino", "Schachbrett", "Start",
+
+  // Abstrakte Begriffe fuer kreative Hinweise
+  "Glück", "Pech", "Mut", "Angst", "Traum", "Zeit", "Chaos", "Ordnung", "Wahrheit", "Lüge",
+  "Geheimnis", "Schuld", "Zufall", "Plan", "Idee", "Witz", "Regel", "Anfang", "Ende", "Mitte"
 ];
 
 export const WERWOLF_ROLES = {
@@ -148,6 +188,24 @@ export const IMPOSTER_CATEGORIES = {
       "Stranger Things", "Mickey Mouse", "Super Mario", "Pokémon", "Pikachu", "Barbie",
       "Lego", "Minecraft", "Disney", "Netflix", "YouTube", "TikTok", "Instagram",
       "Oscar", "Grammy", "Super Bowl", "Olympische Spiele", "Halloween", "Weihnachten"
+    ]
+  },
+  internet: {
+    id: 'internet',
+    name: 'Internet & Memes',
+    color: 'text-lime-400',
+    bg: 'bg-lime-500/20',
+    words: [
+      "Meme", "Reaction-Meme", "Viral Video", "Hashtag", "Influencer", "Content Creator",
+      "Livestream", "Podcast", "Selfie", "Filter", "For You Page",
+      "Kommentarspalte", "Follower", "Like", "Screenshot", "Sprachnachricht", "Emoji",
+      "GIF", "Unboxing", "Tutorial", "Storytime", "Challenge", "Duett", "Green Screen",
+      "Face Swap", "Rickroll", "Drake-Meme",
+      "This Is Fine", "NPC", "Main Character", "Cringe", "Glow-up", "Brainrot", "Slay",
+      "Sus", "Ragebait", "Clickbait", "FOMO", "Doomscrolling", "Meme-Coin", "AI-Bild",
+      "Deepfake", "Chatbot", "CapCut", "Discord", "Twitch", "Reddit", "TikTok",
+      "Instagram", "YouTube", "Snapchat", "BeReal", "Spotify Wrapped", "Speedrun",
+      "Reaction-Video", "Prank", "Lifehack", "Online-Dating", "Gaming-Setup", "Fan-Edit"
     ]
   }
 };
