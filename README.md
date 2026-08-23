@@ -9,6 +9,8 @@ gespeicherte Supabase-Sitzung und verhält sich damit wie ein separates Handy.
 ```bash
 npm run dev
 ```
+## Firebase-Seite deployen
+npm run build && firebase deploy --only hosting --project party-box-45d2b
 
 Danach `http://localhost:5173/?devLab=1` öffnen. Spieler 1 erstellt die Lobby.
 Den angezeigten Code oben ins Labor eintragen und „Alle Spieler zur Lobby“
