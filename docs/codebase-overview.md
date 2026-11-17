@@ -207,11 +207,13 @@ Phasen: `SETUP → PLAYING → RESULTS`; ein Versuch liegt in `turn` mit eigenen
 ```
 setup: Rohwerte des Setups (überleben "Spiel neu starten")   cfg: effektive Werte der Partie
 three: bool (Drei-Spieler-Modus)   teams: { red|blue|green|yellow: uid[] }   order: teamKey[]
-goal: number (Felder + 1)   positions: { [team]: number }   skipsLeft: { [team]: number, -1 = ∞ }
+goal: number (Felder + 1)   positions: { [team]: number }   skipsLeft: { [team]: number, -1 = ∞ } (nur cfg.skipScope 'GAME')
 decks: { [TYPE+Stufe]: { order: index[], ptr } }   actorCount / watchCount / teamWatchCount
 falseReports: { [uid]: number }   history: [≤20 Einträge]   appliedN: number   proposal: object|null
 turn: { n, team, actor, type, open, difficulty, card (Index), watchers, guesser, stage,
-        startAt, endsAt, remainingMs, hold, report, reporters, reportLog, result: { n, kind, winner } }
+        startAt, endsAt, remainingMs, hold, report, reporters, reportLog, result: { n, kind, winner },
+        skipsUsed (nur cfg.skipScope 'TURN': Budget cfg.skips pro Zug) }
+Der Begriff ist erst nach "Los" + Countdown sichtbar, Tauschen auch erst dann.
 ```
 Die Zeichnung steht NICHT im gameState (Broadcast-Kanal `activity:{code}`).
 

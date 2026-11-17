@@ -164,8 +164,8 @@ export function RefereePanel({
                                 <button disabled={busy} onClick={() => onCorrection('pos', { team: k, value: (positions[k] || 0) - 1 }, `${teamName(k)} ein Feld zurück`)} className={btn}><Minus size={14} /></button>
                                 <span className="font-mono w-14 text-center text-sm">{positions[k] || 0}/{goal}</span>
                                 <button disabled={busy} onClick={() => onCorrection('pos', { team: k, value: (positions[k] || 0) + 1 }, `${teamName(k)} ein Feld vor`)} className={btn}><Plus size={14} /></button>
-                                <span className="text-xs text-slate-400 ml-2">Tausche {skipsLeft[k] < 0 ? '∞' : skipsLeft[k]}</span>
-                                {skipsLeft[k] >= 0 && (
+                                {skipsLeft && <span className="text-xs text-slate-400 ml-2">Tausche {skipsLeft[k] < 0 ? '∞' : skipsLeft[k]}</span>}
+                                {skipsLeft?.[k] >= 0 && (
                                     <>
                                         <button disabled={busy} onClick={() => onCorrection('skips', { team: k, delta: -1 }, `${teamName(k)}: ein Tausch weniger`)} className={btn}><Minus size={12} /></button>
                                         <button disabled={busy} onClick={() => onCorrection('skips', { team: k, delta: 1 }, `${teamName(k)}: ein Tausch mehr`)} className={btn}><Plus size={12} /></button>

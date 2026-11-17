@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Shuffle, ArrowRight, Users } from 'lucide-react';
+import { Settings, Shuffle, ArrowRight, Users, Minus, Plus } from 'lucide-react';
 import { TEAM_KEYS, MIN_PLAYERS, FIELDS_PER_AREA, dealTeams } from './activityLogic';
 import { TEAM_INFO, CATEGORY_NAMES, effectiveSetup } from './activityUi';
 import { TeamToken } from './ActivityBoard';
@@ -19,7 +19,11 @@ const REFEREE_OPTIONS = [
     ['VOTE', 'Gruppe stimmt ab', 'Korrekturen und Einsprüche gelten erst mit Mehrheit.'],
     ['OFF', 'Kein Schiedsrichter', 'Der Darsteller entscheidet Meldungen endgültig.'],
 ];
-const SKIP_OPTIONS = [[0, '0'], [2, '2'], [5, '5'], [-1, '∞']];
+const SKIP_SCOPE_OPTIONS = [
+    ['GAME', 'Ganze Partie', 'Jedes Team hat dieses Budget für die ganze Partie.'],
+    ['TURN', 'Pro Zug', 'Wer dran ist, darf in jedem Zug so oft tauschen.'],
+];
+const MAX_SKIPS = 99;
 const LENGTH_OPTIONS = [[3, 'Kurz'], [4, 'Mittel'], [6, 'Lang']];
 const SECOND_OPTIONS = [45, 60, 90];
 
@@ -179,8 +183,35 @@ export default function ActivitySetup({ players, setup: rawSetup, isHost, update
                         <Chips options={watcherOptions} value={watcherValue} onChange={(v) => updateSetup('watcher', v)} />
                     </Section>
 
-                    <Section title="Begriff tauschen (pro Team, ganze Partie)">
-                        <Chips options={SKIP_OPTIONS} value={setup.skips} onChange={(v) => updateSetup('skips', v)} />
+                    <Section title="Begriff tauschen" hint={`${SKIP_SCOPE_OPTIONS.find(([k]) => k === setup.skipScope)?.[2]} Getauscht wird erst nach „Los", die Zeit läuft dabei weiter.`}>
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <button
+                                onClick={() => updateSetup('skips', Math.max(0, setup.skips - 1))}
+                                disabled={setup.skips <= 0}
+                                aria-label="Ein Tausch weniger"
+                                className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center disabled:opacity-40"
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <span className="w-12 text-center text-xl font-bold tabular-nums">{setup.skips < 0 ? '∞' : setup.skips}</span>
+                            <button
+                                onClick={() => updateSetup('skips', Math.min(MAX_SKIPS, setup.skips + 1))}
+                                disabled={setup.skips < 0 || setup.skips >= MAX_SKIPS}
+                                aria-label="Ein Tausch mehr"
+                                className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center disabled:opacity-40"
+                            >
+                                <Plus size={16} />
+                            </button>
+                            <button
+                                onClick={() => updateSetup('skips', setup.skips < 0 ? 2 : -1)}
+                                className={`px-4 py-2 rounded-xl border text-sm ${setup.skips < 0
+                                    ? 'bg-orange-600 border-orange-500 text-white'
+                                    : 'bg-slate-900 border-slate-700 text-slate-300'}`}
+                            >
+                                ∞ Unbegrenzt
+                            </button>
+                        </div>
+                        <Chips options={SKIP_SCOPE_OPTIONS} value={setup.skipScope} onChange={(v) => updateSetup('skipScope', v)} />
                     </Section>
 
                     <Section title="Schiedsrichter" hint={REFEREE_OPTIONS.find(([k]) => k === setup.referee)?.[2]}>

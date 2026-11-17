@@ -24,7 +24,7 @@ import { RulesDialog, RefereePanel, ProposalBanner } from './ActivityPanels';
  *
  * Phasen: SETUP -> PLAYING -> RESULTS. Innerhalb von PLAYING trägt
  * `gameState.turn` einen Versuch mit eigener laufender Nummer `n` und den
- * Stufen CHOOSE (Schwierigkeit wählen) -> READY (Begriff lesen) -> RUNNING
+ * Stufen CHOOSE (Schwierigkeit wählen) -> READY (bereit? Begriff noch verdeckt) -> RUNNING
  * (Timer, ggf. PAUSED bei Meldung) -> REVEAL (Auflösung).
  *
  * Gleichzeitigkeit ohne Transaktionen: Wer den Versuch beenden will
@@ -73,7 +73,6 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
 
     // ---- Alle Hooks ganz oben, vor jedem phasenabhängigen return ----
     const [now, setNow] = useState(() => serverNowMs());
-    const [revealedN, setRevealedN] = useState(-1);   // Darsteller hat "Begriff anzeigen" getippt
     const [rulesOpen, setRulesOpen] = useState(false);
     const [refereeOpen, setRefereeOpen] = useState(false);
     const [reportOpen, setReportOpen] = useState(false);
@@ -337,9 +336,14 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         });
     };
 
-    const skipsLeft = turn ? gameState.skipsLeft?.[turn.team] ?? 0 : 0;
+    // TURN: Budget gilt pro Zug (turn.skipsUsed), GAME: pro Team für die ganze Partie.
+    const perTurn = cfg.skipScope === 'TURN';
+    const skipsLeft = !turn ? 0
+        : perTurn ? (cfg.skips < 0 ? -1 : Math.max(0, cfg.skips - (turn.skipsUsed || 0)))
+            : gameState.skipsLeft?.[turn.team] ?? 0;
     const skipCard = () => {
-        if (turn?.actor !== me || skipsLeft === 0 || turn.result || !['READY', 'RUNNING'].includes(turn.stage)) return;
+        // Erst nach dem Countdown: vorher ist der Begriff noch verdeckt.
+        if (turn?.actor !== me || skipsLeft === 0 || turn.result || turn.stage !== 'RUNNING' || serverNowMs() < turn.startAt) return;
         const pool = poolFor(turn.type, turn.difficulty, cfg.categories || []);
         const key = `${turn.type}${turn.difficulty}`;
         const { index, deck } = drawFromDeck(gameState.decks?.[key], pool.length);
@@ -347,7 +351,9 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         write({
             'gameState.turn.card': index,
             [`gameState.decks.${key}`]: deck,
-            ...(skipsLeft > 0 && { [`gameState.skipsLeft.${turn.team}`]: skipsLeft - 1 }),
+            ...(perTurn
+                ? { 'gameState.turn.skipsUsed': (turn.skipsUsed || 0) + 1 }
+                : skipsLeft > 0 && { [`gameState.skipsLeft.${turn.team}`]: skipsLeft - 1 }),
         });
     };
 
@@ -587,7 +593,8 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
     // ---- PLAYING ----
     const typeInfo = TYPE_INFO[turn.type];
     const isSpectator = !myTeam;
-    const seesCard = (isActor || isWatcher) && ['READY', 'RUNNING', 'PAUSED'].includes(turn.stage) && card;
+    // Begriff erst nach "Los" + Countdown — sonst ließe er sich vorab aussuchen und durchdenken.
+    const seesCard = (isActor || isWatcher) && ((running && !countdown) || turn.stage === 'PAUSED') && card;
     const actorName = nameOf(turn.actor);
     const seconds = Math.ceil(remainingMs / 1000);
     const lastTen = running && !countdown && seconds <= 10;
@@ -688,7 +695,7 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
                     <p className="text-center text-slate-400 py-6 flex items-center justify-center gap-2"><Hourglass size={16} /> {actorName} wählt die Schwierigkeit…</p>
                 )}
 
-                {seesCard && (isActor ? (revealedN === turn.n || turn.stage !== 'READY') : true) && (
+                {seesCard && (
                     <div className={`bg-slate-800 rounded-3xl border-2 border-orange-500/50 text-center ${turn.type === 'DRAW' ? 'p-3' : 'p-5'}`}>
                         {isWatcher && three && !shieldHintSeen && (
                             <button onClick={() => setShieldHintSeen(true)} className="w-full mb-3 rounded-xl bg-purple-600/30 border border-purple-500/50 px-3 py-2 text-sm text-purple-100">
@@ -719,19 +726,15 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
 
                 {isActor && turn.stage === 'READY' && (
                     <div className="space-y-3">
-                        {revealedN !== turn.n && (
-                            <button onClick={() => setRevealedN(turn.n)} className="w-full py-6 rounded-3xl bg-slate-800 border-2 border-dashed border-orange-500/60 text-xl font-bold flex items-center justify-center gap-2">
-                                <Eye size={22} /> Begriff anzeigen
-                            </button>
-                        )}
+                        <p className="text-center text-slate-300">Bereit? Der Begriff erscheint erst nach „Los" — und dann läuft auch schon die Zeit.</p>
                         <p className="text-xs text-center text-slate-400">{TYPE_RULES[turn.type]}{turn.type === 'DRAW' && ' Neu laden löscht die Zeichnung.'}</p>
-                        <button onClick={go} disabled={revealedN !== turn.n} className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-2xl font-black flex items-center justify-center gap-2 shadow-lg">
+                        <button onClick={go} className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-2xl font-black flex items-center justify-center gap-2 shadow-lg">
                             <Play size={24} /> Los
                         </button>
                     </div>
                 )}
                 {!isActor && turn.stage === 'READY' && (
-                    <p className="text-center text-slate-400 py-4 flex items-center justify-center gap-2"><Hourglass size={16} /> {actorName} liest den Begriff…</p>
+                    <p className="text-center text-slate-400 py-4 flex items-center justify-center gap-2"><Hourglass size={16} /> {actorName} macht sich bereit…</p>
                 )}
 
                 {/* Zeichenfläche: Darsteller malt, alle anderen sehen live zu */}
@@ -774,23 +777,21 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
                     )
                 )}
 
-                {isActor && (turn.stage === 'READY' || (running && !turn.result)) && (
+                {isActor && running && !countdown && !turn.result && (
                     <div className="grid grid-cols-2 gap-2">
                         <button onClick={skipCard} disabled={skipsLeft === 0} className="py-3 rounded-xl bg-slate-800 border border-slate-600 font-bold flex items-center justify-center gap-2 disabled:opacity-40">
                             <SkipForward size={16} /> Tauschen ({skipsLeft < 0 ? '∞' : skipsLeft})
                         </button>
-                        {running && (
-                            <button onClick={() => window.confirm('Versuch aufgeben? Ihr rückt nicht vor.') && finish('aufgegeben')} className="py-3 rounded-xl bg-slate-800 border border-slate-600 font-bold flex items-center justify-center gap-2">
-                                <Flag size={16} /> Aufgeben
-                            </button>
-                        )}
+                        <button onClick={() => window.confirm('Versuch aufgeben? Ihr rückt nicht vor.') && finish('aufgegeben')} className="py-3 rounded-xl bg-slate-800 border border-slate-600 font-bold flex items-center justify-center gap-2">
+                            <Flag size={16} /> Aufgeben
+                        </button>
                     </div>
                 )}
-                {isActor && skipsLeft === 0 && ['READY', 'RUNNING'].includes(turn.stage) && (
-                    <p className="text-[11px] text-center text-slate-500">Tauschen nicht mehr möglich — euer Budget für diese Partie ist aufgebraucht.</p>
+                {isActor && skipsLeft === 0 && running && !countdown && (
+                    <p className="text-[11px] text-center text-slate-500">Tauschen nicht mehr möglich — {perTurn ? 'dein Budget für diesen Zug' : 'euer Budget für diese Partie'} ist aufgebraucht.</p>
                 )}
                 {!isActor && turn.stage !== 'REVEAL' && (
-                    <p className="text-xs text-center text-slate-500">Tausche übrig für {teamName(turn.team)}: {skipsLeft < 0 ? '∞' : skipsLeft}</p>
+                    <p className="text-xs text-center text-slate-500">Tausche übrig {perTurn ? 'in diesem Zug' : `für ${teamName(turn.team)}`}: {skipsLeft < 0 ? '∞' : skipsLeft}</p>
                 )}
 
                 {/* Regelverstoß melden (alle Gegner) */}
@@ -870,7 +871,7 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
                     order={order}
                     positions={positions}
                     goal={goal}
-                    skipsLeft={gameState.skipsLeft || {}}
+                    skipsLeft={perTurn ? null : gameState.skipsLeft || {}}
                     falseReports={falseReports}
                     history={gameState.history || []}
                     appliedN={gameState.appliedN}

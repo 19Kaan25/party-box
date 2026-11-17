@@ -31,6 +31,7 @@ export function effectiveSetup(setup = {}, three) {
         categories: setup.categories ?? Object.keys(CATEGORY_NAMES),
         watcher: setup.watcher ?? (three ? 'ONE_PLAYER' : 'OPPONENTS'),
         skips: setup.skips ?? 2,
+        skipScope: setup.skipScope ?? 'GAME',   // 'GAME' = pro Team & Partie, 'TURN' = pro Zug
         referee: setup.referee ?? 'HOST',
         seconds: setup.seconds ?? 60,
         length: setup.length ?? (three ? 4 : 6),

@@ -247,6 +247,12 @@ die reine Logik prüft `node scripts/verify-activity-logic.mjs`.
   Patch löste bei allen einen Refetch aus. Striche alle 100 ms gebündelt, Koordinaten 0–1
   auf fester 3:4-Fläche. Wer neu lädt, fragt mit `need` nach, der Darsteller antwortet mit
   `full`. Lädt der Darsteller selbst neu, ist die Zeichnung weg (akzeptiert).
+  Feste interne Auflösung 750×1000 auf jedem Gerät (CSS skaliert) — sonst liefe der
+  Füll-Eimer je nach Gerät unterschiedlich aus. Füllungen sind Einträge `{f:1, p:[Punkt]}`
+  in derselben Strichliste, Radierer = weißer Strich, Rückgängig zeichnet alles neu.
+- **Begriff erst nach „Los" + Countdown sichtbar**, Tauschen auch erst dann (Zeit läuft
+  weiter) — sonst ließe sich vorab das leichteste Wort heraussuchen. Tausch-Budget
+  `cfg.skipScope`: `'GAME'` pro Team (`skipsLeft`), `'TURN'` pro Zug (`turn.skipsUsed`).
 - **Ein Ergebnisfeld, ein Verrechner:** Erraten/Zeit/Regelverstoß/Aufgeben/Abbruch schreiben
   nur `turn.result` mit Versuchsnummer `n`; nur der Host verrechnet es, genau einmal
   (`appliedN`), und verwirft Ergebnisse mit falscher Nummer. Zeitablauf dürfen Host **und**
