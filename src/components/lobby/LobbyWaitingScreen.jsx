@@ -213,6 +213,13 @@ export default function LobbyWaitingScreen({
                                     isHost={isHost}
                                     onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'SPRUECHE_KLOPFER', { gameState: createInitialGameState('SPRUECHE_KLOPFER') })}
                                 />
+                                <GameCard
+                                    title="Activity"
+                                    desc="Zeichnen, Pantomime, Erklären — im Team zum Ziel."
+                                    color="orange"
+                                    isHost={isHost}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'ACTIVITY', { gameState: createInitialGameState('ACTIVITY') })}
+                                />
                             </div>
                         </div>
                     </div>
@@ -230,7 +237,8 @@ function GameCard({ title, desc, color, isHost, onClick }) {
         indigo: 'text-indigo-400 hover:border-indigo-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         yellow: 'text-yellow-400 hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         emerald: 'text-emerald-400 hover:border-emerald-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
-        pink: 'text-pink-400 hover:border-pink-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
+        pink: 'text-pink-400 hover:border-pink-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
+        orange: 'text-orange-400 hover:border-orange-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
     };
 
     return (

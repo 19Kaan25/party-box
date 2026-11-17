@@ -26,6 +26,8 @@ export function createInitialGameState(gameKey) {
             };
         case 'SPRUECHE_KLOPFER':
             return { phase: 'SETUP' };
+        case 'ACTIVITY':
+            return { phase: 'SETUP' };
         default:
             return { phase: 'SETUP' };
     }
@@ -86,6 +88,11 @@ export function createRestartGameState(gameKey, previousState = {}) {
             timerLimit: previousState.timerLimit,
             excludedLetters: previousState.excludedLetters,
         });
+    }
+
+    if (gameKey === 'ACTIVITY') {
+        // Teams und Einstellungen bleiben, Stapel/Positionen/Versuche nicht.
+        return defined({ ...initial, restartVersion, setup: previousState.setup });
     }
 
     return { ...initial, restartVersion };

@@ -13,6 +13,7 @@ import WerwolfEngine from '../games/WerwolfEngine';
 import WerBinIchEngine from '../games/WerBinIchEngine';
 import ImposterEngine from '../games/ImposterEngine';
 import SpruecheklopferEngine from '../games/SpruecheklopferEngine';
+import ActivityEngine from '../games/ActivityEngine';
 
 export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProps }) {
     const { user } = authLogic;
@@ -117,6 +118,9 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
         case 'WER_BIN_ICH': engine = <WerBinIchEngine {...engineProps} />; break;
         case 'IMPOSTER': engine = <ImposterEngine {...engineProps} />; break;
         case 'SPRUECHE_KLOPFER': engine = <SpruecheklopferEngine {...engineProps} />; break;
+        // Activity braucht zusaetzlich den Online-Status: ein weggebrochener
+        // Darsteller darf den Versuch nicht blockieren.
+        case 'ACTIVITY': engine = <ActivityEngine {...engineProps} onlineIds={lobbyLogic.onlineIds} />; break;
         default: engine = <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Spiel...</div>;
     }
 

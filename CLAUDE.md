@@ -1,6 +1,6 @@
 # PartyBox — CLAUDE.md
 
-Multiplayer-Partyspiel-App (6 Minispiele) für Freundesgruppen im selben Raum.
+Multiplayer-Partyspiel-App (7 Minispiele) für Freundesgruppen im selben Raum.
 React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 [docs/codebase-overview.md](docs/codebase-overview.md).
 
@@ -125,7 +125,7 @@ Es gibt **kein** `npm test`; stattdessen die Verifikationsskripte in `scripts/`
 `verify-phase0*.mjs` über `node`). Supabase-Projekt `wlgvwpkqtiymlpctgufb` wird direkt
 angesprochen — kein Emulator-Setup, lokale Entwicklung schreibt in die Produktions-DB.
 
-> **Lint-Baseline:** `npm run lint` meldet 10 Probleme (8 Fehler, 2 Warnungen), alle
+> **Lint-Baseline:** `npm run lint` meldet 9 Probleme (7 Fehler, 2 Warnungen), alle
 > vorbestehend in `StadtLandFlussEngine.jsx` und `WerBinIchEngine.jsx`. Neue Arbeit
 > muss diese Zahl halten, nicht auf null bringen — die Engines werden in den
 > Phasen 1–5 ohnehin neu geschrieben.
@@ -158,8 +158,9 @@ src/
                               AvatarCropModal (Zuschneiden vor dem Hochladen)
   components/friends/         FriendsPanel, InviteToasts, Avatar (mit Klick-Vorschau, überall wiederverwendet)
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
-  games/*Engine.jsx           6 Engines: StadtLandFluss, Codenames, Werwolf,
-                              WerBinIch, Imposter, Sprücheklopfer (je 400–770 Zeilen)
+  games/*Engine.jsx           7 Engines: StadtLandFluss, Codenames, Werwolf,
+                              WerBinIch, Imposter, Sprücheklopfer, Activity (je 400–770 Zeilen)
+  games/Activity*.jsx, activityLogic.js, activityUi.js  Activity: Brett, Zeichenfläche, Setup, Panels, reine Logik
   games/ImposterSingleDevice.jsx  Imposter auf EINEM Handy (pass the phone)
   games/WerwolfSingleDevice.jsx   Werwolf auf EINEM Handy (Erzähler-Dashboard)
   components/RosterPanel.jsx      Mitspielerliste der Einzelgerät-Modi (Drag, Gäste)
@@ -232,6 +233,32 @@ Plätze 1–3 (Gleichstand teilt sich den Platz — `rankOf()`).
   dem alten Wert, während der Effect erneut läuft).
 - Antworten stehen wie überall im Klartext in `gameState` — vor der Abstimmung
   technisch einsehbar, dieselbe bewusste Abwägung wie beim Imposter-Wort.
+
+## Activity
+
+Zeichnen / Pantomime / Erklären im Team, Figur zieht über ein Brett aus 3/4/6
+Bereichen à 8 Feldern. Feldart = `typeAt(position)`, im festen Wechsel.
+Regelwerte stehen als Konstanten oben in [activityLogic.js](src/games/activityLogic.js)
+(offene Runde 6 / 4 / 2 aus einer **Sekundärquelle**, Drei-Spieler-Malus, `WATCHER_BONUS`) —
+die reine Logik prüft `node scripts/verify-activity-logic.mjs`.
+
+- **Zeichnen läuft per Broadcast, nicht über `gameState`**
+  ([ActivityCanvas.jsx](src/games/ActivityCanvas.jsx), Kanal `activity:{code}`): jeder
+  Patch löste bei allen einen Refetch aus. Striche alle 100 ms gebündelt, Koordinaten 0–1
+  auf fester 3:4-Fläche. Wer neu lädt, fragt mit `need` nach, der Darsteller antwortet mit
+  `full`. Lädt der Darsteller selbst neu, ist die Zeichnung weg (akzeptiert).
+- **Ein Ergebnisfeld, ein Verrechner:** Erraten/Zeit/Regelverstoß/Aufgeben/Abbruch schreiben
+  nur `turn.result` mit Versuchsnummer `n`; nur der Host verrechnet es, genau einmal
+  (`appliedN`), und verwirft Ergebnisse mit falscher Nummer. Zeitablauf dürfen Host **und**
+  Darsteller auslösen.
+- **Gemeinsame Momente** (Los, Auflösung, nächster Versuch) schreiben zusätzlich
+  `gameState.phase: 'PLAYING'` mit — nur damit `isSyncedMoment` sie nicht optimistisch zeigt.
+- **Timer:** `startAt`/`endsAt` in Serverzeit (`serverNowMs()`), Pause speichert die
+  Restzeit, nicht die Endzeit.
+- **Karten:** `src/constants/activity{Tabu,Malen,Pantomime}.json`, oberste Ebene =
+  Kategorie-Schlüssel, Einträge `{ word, difficulty: 3|4|5, forbidden?: [5 Wörter] }`.
+  Im `gameState` liegen nur Stapel-Indizes, nie Karten. Neue Karten mit
+  `node scripts/validate-activity-cards.mjs` prüfen.
 
 ## Spielzustand: `games.state` (Kurzform)
 

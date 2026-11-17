@@ -8,6 +8,7 @@ const GAME_NAMES = {
     WER_BIN_ICH: 'Wer bin ich?',
     IMPOSTER: 'Imposter',
     SPRUECHE_KLOPFER: 'Sprücheklopfer',
+    ACTIVITY: 'Activity',
 };
 
 export default function GamePausedScreen({ lobby, user, onResume, onLeaveLobby }) {

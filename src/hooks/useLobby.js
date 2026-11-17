@@ -15,6 +15,7 @@ const GAME_KEY_TO_OLD = {
     wer_bin_ich: 'WER_BIN_ICH',
     stadt_land_fluss: 'STADT_LAND_FLUSS',
     sprueche_klopfer: 'SPRUECHE_KLOPFER',
+    activity: 'ACTIVITY',
 };
 
 /** Vom Spielerlabor vorbelegter Nickname; ausserhalb des Dev-Modus wirkungslos. */

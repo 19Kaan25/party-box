@@ -1,0 +1,548 @@
+{
+  "alltag": [
+    {
+      "word": "Zähneputzen",
+      "difficulty": 3
+    },
+    {
+      "word": "Duschen",
+      "difficulty": 3
+    },
+    {
+      "word": "Kochen",
+      "difficulty": 3
+    },
+    {
+      "word": "Abwaschen",
+      "difficulty": 3
+    },
+    {
+      "word": "Staubsaugen",
+      "difficulty": 3
+    },
+    {
+      "word": "Schlafen",
+      "difficulty": 3
+    },
+    {
+      "word": "Essen",
+      "difficulty": 3
+    },
+    {
+      "word": "Wäsche aufhängen",
+      "difficulty": 3
+    },
+    {
+      "word": "Bügeln",
+      "difficulty": 3
+    },
+    {
+      "word": "Einkaufen",
+      "difficulty": 3
+    },
+    {
+      "word": "Bus fahren",
+      "difficulty": 3
+    },
+    {
+      "word": "Autofahren",
+      "difficulty": 3
+    },
+    {
+      "word": "Bäcker",
+      "difficulty": 3
+    },
+    {
+      "word": "Kellner",
+      "difficulty": 3
+    },
+    {
+      "word": "Frühstücken",
+      "difficulty": 3
+    },
+    {
+      "word": "Pizza backen",
+      "difficulty": 4
+    },
+    {
+      "word": "Spaghetti essen",
+      "difficulty": 4
+    },
+    {
+      "word": "Tisch decken",
+      "difficulty": 4
+    },
+    {
+      "word": "Fenster putzen",
+      "difficulty": 4
+    },
+    {
+      "word": "Koch",
+      "difficulty": 4
+    },
+    {
+      "word": "Friseur",
+      "difficulty": 4
+    },
+    {
+      "word": "Zahnarzt",
+      "difficulty": 4
+    },
+    {
+      "word": "Busfahrer",
+      "difficulty": 4
+    },
+    {
+      "word": "Fahrrad fahren",
+      "difficulty": 4
+    },
+    {
+      "word": "Bett machen",
+      "difficulty": 4
+    },
+    {
+      "word": "Rasen mähen",
+      "difficulty": 4
+    },
+    {
+      "word": "Spiegelei braten",
+      "difficulty": 4
+    },
+    {
+      "word": "Suppe löffeln",
+      "difficulty": 4
+    },
+    {
+      "word": "Kaffee kochen",
+      "difficulty": 4
+    },
+    {
+      "word": "Müll rausbringen",
+      "difficulty": 4
+    },
+    {
+      "word": "Flughafenkontrolle",
+      "difficulty": 5
+    },
+    {
+      "word": "Stau",
+      "difficulty": 5
+    },
+    {
+      "word": "Rolltreppe fahren",
+      "difficulty": 5
+    },
+    {
+      "word": "Fahrstuhl",
+      "difficulty": 5
+    },
+    {
+      "word": "Barista",
+      "difficulty": 5
+    },
+    {
+      "word": "Pilot",
+      "difficulty": 5
+    },
+    {
+      "word": "Möbel aufbauen",
+      "difficulty": 5
+    },
+    {
+      "word": "Teig kneten",
+      "difficulty": 5
+    },
+    {
+      "word": "Zwiebeln schneiden",
+      "difficulty": 5
+    },
+    {
+      "word": "Umziehen",
+      "difficulty": 5
+    },
+    {
+      "word": "Parkplatz suchen",
+      "difficulty": 5
+    },
+    {
+      "word": "Bewerbungsgespräch",
+      "difficulty": 5
+    },
+    {
+      "word": "Fensterputzer",
+      "difficulty": 5
+    },
+    {
+      "word": "Schornsteinfeger",
+      "difficulty": 5
+    },
+    {
+      "word": "Taschendieb",
+      "difficulty": 5
+    }
+  ],
+  "tiere_natur": [
+    {
+      "word": "Hund",
+      "difficulty": 3
+    },
+    {
+      "word": "Katze",
+      "difficulty": 3
+    },
+    {
+      "word": "Vogel",
+      "difficulty": 3
+    },
+    {
+      "word": "Fisch",
+      "difficulty": 3
+    },
+    {
+      "word": "Affe",
+      "difficulty": 3
+    },
+    {
+      "word": "Elefant",
+      "difficulty": 3
+    },
+    {
+      "word": "Schlange",
+      "difficulty": 3
+    },
+    {
+      "word": "Frosch",
+      "difficulty": 3
+    },
+    {
+      "word": "Hase",
+      "difficulty": 3
+    },
+    {
+      "word": "Regen",
+      "difficulty": 3
+    },
+    {
+      "word": "Schnee",
+      "difficulty": 3
+    },
+    {
+      "word": "Wind",
+      "difficulty": 3
+    },
+    {
+      "word": "Sonnenschein",
+      "difficulty": 3
+    },
+    {
+      "word": "Blume gießen",
+      "difficulty": 3
+    },
+    {
+      "word": "Baum fällen",
+      "difficulty": 3
+    },
+    {
+      "word": "Pinguin",
+      "difficulty": 4
+    },
+    {
+      "word": "Känguru",
+      "difficulty": 4
+    },
+    {
+      "word": "Giraffe",
+      "difficulty": 4
+    },
+    {
+      "word": "Krokodil",
+      "difficulty": 4
+    },
+    {
+      "word": "Schmetterling",
+      "difficulty": 4
+    },
+    {
+      "word": "Gewitter",
+      "difficulty": 4
+    },
+    {
+      "word": "Sturm",
+      "difficulty": 4
+    },
+    {
+      "word": "Eisbär",
+      "difficulty": 4
+    },
+    {
+      "word": "Bär",
+      "difficulty": 4
+    },
+    {
+      "word": "Spinne",
+      "difficulty": 4
+    },
+    {
+      "word": "Pferd",
+      "difficulty": 4
+    },
+    {
+      "word": "Hahn",
+      "difficulty": 4
+    },
+    {
+      "word": "Biene",
+      "difficulty": 4
+    },
+    {
+      "word": "Wasserfall",
+      "difficulty": 4
+    },
+    {
+      "word": "Nebel",
+      "difficulty": 4
+    },
+    {
+      "word": "Faultier",
+      "difficulty": 5
+    },
+    {
+      "word": "Chamäleon",
+      "difficulty": 5
+    },
+    {
+      "word": "Seepferdchen",
+      "difficulty": 5
+    },
+    {
+      "word": "Gorilla",
+      "difficulty": 5
+    },
+    {
+      "word": "Flamingo",
+      "difficulty": 5
+    },
+    {
+      "word": "Delfin",
+      "difficulty": 5
+    },
+    {
+      "word": "Tintenfisch",
+      "difficulty": 5
+    },
+    {
+      "word": "Lawine",
+      "difficulty": 5
+    },
+    {
+      "word": "Erdbeben",
+      "difficulty": 5
+    },
+    {
+      "word": "Wüste",
+      "difficulty": 5
+    },
+    {
+      "word": "Vulkanausbruch",
+      "difficulty": 5
+    },
+    {
+      "word": "Raupe",
+      "difficulty": 5
+    },
+    {
+      "word": "Tornado",
+      "difficulty": 5
+    },
+    {
+      "word": "Ebbe und Flut",
+      "difficulty": 5
+    },
+    {
+      "word": "Kolibri",
+      "difficulty": 5
+    }
+  ],
+  "freizeit_kultur": [
+    {
+      "word": "Fußball spielen",
+      "difficulty": 3
+    },
+    {
+      "word": "Schwimmen",
+      "difficulty": 3
+    },
+    {
+      "word": "Tanzen",
+      "difficulty": 3
+    },
+    {
+      "word": "Singen",
+      "difficulty": 3
+    },
+    {
+      "word": "Angeln",
+      "difficulty": 3
+    },
+    {
+      "word": "Geburtstag feiern",
+      "difficulty": 3
+    },
+    {
+      "word": "Gitarre spielen",
+      "difficulty": 3
+    },
+    {
+      "word": "Skifahren",
+      "difficulty": 3
+    },
+    {
+      "word": "Lesen",
+      "difficulty": 3
+    },
+    {
+      "word": "Klettern",
+      "difficulty": 3
+    },
+    {
+      "word": "Joggen",
+      "difficulty": 3
+    },
+    {
+      "word": "Boxen",
+      "difficulty": 3
+    },
+    {
+      "word": "Yoga",
+      "difficulty": 3
+    },
+    {
+      "word": "Fotografieren",
+      "difficulty": 3
+    },
+    {
+      "word": "Malen",
+      "difficulty": 3
+    },
+    {
+      "word": "Tennis",
+      "difficulty": 4
+    },
+    {
+      "word": "Golf",
+      "difficulty": 4
+    },
+    {
+      "word": "Bowling",
+      "difficulty": 4
+    },
+    {
+      "word": "Trampolinspringen",
+      "difficulty": 4
+    },
+    {
+      "word": "Schlittschuhlaufen",
+      "difficulty": 4
+    },
+    {
+      "word": "Dirigent",
+      "difficulty": 4
+    },
+    {
+      "word": "Zauberer",
+      "difficulty": 4
+    },
+    {
+      "word": "Karaoke",
+      "difficulty": 4
+    },
+    {
+      "word": "Schach spielen",
+      "difficulty": 4
+    },
+    {
+      "word": "Seilspringen",
+      "difficulty": 4
+    },
+    {
+      "word": "Surfen",
+      "difficulty": 4
+    },
+    {
+      "word": "Fallschirmspringen",
+      "difficulty": 4
+    },
+    {
+      "word": "Jonglieren",
+      "difficulty": 4
+    },
+    {
+      "word": "Pokern",
+      "difficulty": 4
+    },
+    {
+      "word": "Karneval feiern",
+      "difficulty": 4
+    },
+    {
+      "word": "Synchronschwimmen",
+      "difficulty": 5
+    },
+    {
+      "word": "Bogenschießen",
+      "difficulty": 5
+    },
+    {
+      "word": "Fechten",
+      "difficulty": 5
+    },
+    {
+      "word": "Ballett",
+      "difficulty": 5
+    },
+    {
+      "word": "Kung-Fu-Film",
+      "difficulty": 5
+    },
+    {
+      "word": "Bungeejumping",
+      "difficulty": 5
+    },
+    {
+      "word": "Eiskunstlauf",
+      "difficulty": 5
+    },
+    {
+      "word": "Zirkusdirektor",
+      "difficulty": 5
+    },
+    {
+      "word": "Breakdance",
+      "difficulty": 5
+    },
+    {
+      "word": "Rockstar",
+      "difficulty": 5
+    },
+    {
+      "word": "Stabhochsprung",
+      "difficulty": 5
+    },
+    {
+      "word": "Tauziehen",
+      "difficulty": 5
+    },
+    {
+      "word": "Hochzeitstanz",
+      "difficulty": 5
+    },
+    {
+      "word": "Feuerwerk",
+      "difficulty": 5
+    },
+    {
+      "word": "Schattenboxen",
+      "difficulty": 5
+    }
+  ]
+}

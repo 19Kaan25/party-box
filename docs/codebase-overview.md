@@ -201,6 +201,20 @@ mit Statuszeile aus `sd.step`. Details im Kopfkommentar von `ImposterSingleDevic
 `settings.timerDuration` wird gesetzt, aber nirgends ausgewertet — es gibt in Imposter
 keinen laufenden Timer.
 
+**Activity** (`ActivityEngine.jsx`, nachgetragen 17.11.2026)
+Phasen: `SETUP → PLAYING → RESULTS`; ein Versuch liegt in `turn` mit eigenen Stufen
+`CHOOSE → READY → RUNNING (⇄ PAUSED) → REVEAL`.
+```
+setup: Rohwerte des Setups (überleben "Spiel neu starten")   cfg: effektive Werte der Partie
+three: bool (Drei-Spieler-Modus)   teams: { red|blue|green|yellow: uid[] }   order: teamKey[]
+goal: number (Felder + 1)   positions: { [team]: number }   skipsLeft: { [team]: number, -1 = ∞ }
+decks: { [TYPE+Stufe]: { order: index[], ptr } }   actorCount / watchCount / teamWatchCount
+falseReports: { [uid]: number }   history: [≤20 Einträge]   appliedN: number   proposal: object|null
+turn: { n, team, actor, type, open, difficulty, card (Index), watchers, guesser, stage,
+        startAt, endsAt, remainingMs, hold, report, reporters, reportLog, result: { n, kind, winner } }
+```
+Die Zeichnung steht NICHT im gameState (Broadcast-Kanal `activity:{code}`).
+
 ### 2.3 Wo gelesen und geschrieben wird
 
 | Ort | Operation | Ziel |

@@ -1,0 +1,548 @@
+{
+  "alltag": [
+    {
+      "word": "Zahnbürste",
+      "difficulty": 3
+    },
+    {
+      "word": "Regenschirm",
+      "difficulty": 3
+    },
+    {
+      "word": "Brille",
+      "difficulty": 3
+    },
+    {
+      "word": "Schlüssel",
+      "difficulty": 3
+    },
+    {
+      "word": "Apfel",
+      "difficulty": 3
+    },
+    {
+      "word": "Banane",
+      "difficulty": 3
+    },
+    {
+      "word": "Pizza",
+      "difficulty": 3
+    },
+    {
+      "word": "Stuhl",
+      "difficulty": 3
+    },
+    {
+      "word": "Tisch",
+      "difficulty": 3
+    },
+    {
+      "word": "Bett",
+      "difficulty": 3
+    },
+    {
+      "word": "Uhr",
+      "difficulty": 3
+    },
+    {
+      "word": "Auto",
+      "difficulty": 3
+    },
+    {
+      "word": "Fahrrad",
+      "difficulty": 3
+    },
+    {
+      "word": "Haus",
+      "difficulty": 3
+    },
+    {
+      "word": "Tasse",
+      "difficulty": 3
+    },
+    {
+      "word": "Kühlschrank",
+      "difficulty": 4
+    },
+    {
+      "word": "Staubsauger",
+      "difficulty": 4
+    },
+    {
+      "word": "Waschmaschine",
+      "difficulty": 4
+    },
+    {
+      "word": "Spiegelei",
+      "difficulty": 4
+    },
+    {
+      "word": "Hamburger",
+      "difficulty": 4
+    },
+    {
+      "word": "Eistüte",
+      "difficulty": 4
+    },
+    {
+      "word": "Bus",
+      "difficulty": 4
+    },
+    {
+      "word": "Zug",
+      "difficulty": 4
+    },
+    {
+      "word": "Feuerwehrmann",
+      "difficulty": 4
+    },
+    {
+      "word": "Kochtopf",
+      "difficulty": 4
+    },
+    {
+      "word": "Supermarkt",
+      "difficulty": 4
+    },
+    {
+      "word": "Bäckerei",
+      "difficulty": 4
+    },
+    {
+      "word": "Ampel",
+      "difficulty": 4
+    },
+    {
+      "word": "Toaster",
+      "difficulty": 4
+    },
+    {
+      "word": "Kaffeemaschine",
+      "difficulty": 4
+    },
+    {
+      "word": "Zahnarztbesuch",
+      "difficulty": 5
+    },
+    {
+      "word": "Autobahnstau",
+      "difficulty": 5
+    },
+    {
+      "word": "Picknick im Park",
+      "difficulty": 5
+    },
+    {
+      "word": "Bahnhof",
+      "difficulty": 5
+    },
+    {
+      "word": "Flughafen",
+      "difficulty": 5
+    },
+    {
+      "word": "Schulbus",
+      "difficulty": 5
+    },
+    {
+      "word": "Restaurantbesuch",
+      "difficulty": 5
+    },
+    {
+      "word": "Wochenmarkt",
+      "difficulty": 5
+    },
+    {
+      "word": "Umzugskarton",
+      "difficulty": 5
+    },
+    {
+      "word": "Spaghetti mit Soße",
+      "difficulty": 5
+    },
+    {
+      "word": "Polizist bei Kontrolle",
+      "difficulty": 5
+    },
+    {
+      "word": "Baustelle",
+      "difficulty": 5
+    },
+    {
+      "word": "Tankstelle",
+      "difficulty": 5
+    },
+    {
+      "word": "Friseursalon",
+      "difficulty": 5
+    },
+    {
+      "word": "Geburtstagstorte",
+      "difficulty": 5
+    }
+  ],
+  "tiere_natur": [
+    {
+      "word": "Maus",
+      "difficulty": 3
+    },
+    {
+      "word": "Ente",
+      "difficulty": 3
+    },
+    {
+      "word": "Krabbe",
+      "difficulty": 3
+    },
+    {
+      "word": "Igel",
+      "difficulty": 3
+    },
+    {
+      "word": "Baum",
+      "difficulty": 3
+    },
+    {
+      "word": "Blume",
+      "difficulty": 3
+    },
+    {
+      "word": "Sonne",
+      "difficulty": 3
+    },
+    {
+      "word": "Mond",
+      "difficulty": 3
+    },
+    {
+      "word": "Wolke",
+      "difficulty": 3
+    },
+    {
+      "word": "Schneeflocke",
+      "difficulty": 3
+    },
+    {
+      "word": "Schnecke",
+      "difficulty": 3
+    },
+    {
+      "word": "Huhn",
+      "difficulty": 3
+    },
+    {
+      "word": "Kuh",
+      "difficulty": 3
+    },
+    {
+      "word": "Schwein",
+      "difficulty": 3
+    },
+    {
+      "word": "Marienkäfer",
+      "difficulty": 3
+    },
+    {
+      "word": "Wal",
+      "difficulty": 4
+    },
+    {
+      "word": "Zebra",
+      "difficulty": 4
+    },
+    {
+      "word": "Biber",
+      "difficulty": 4
+    },
+    {
+      "word": "Hirsch",
+      "difficulty": 4
+    },
+    {
+      "word": "Palme",
+      "difficulty": 4
+    },
+    {
+      "word": "Regenbogen",
+      "difficulty": 4
+    },
+    {
+      "word": "Schneemann",
+      "difficulty": 4
+    },
+    {
+      "word": "Vulkan",
+      "difficulty": 4
+    },
+    {
+      "word": "Kaktus",
+      "difficulty": 4
+    },
+    {
+      "word": "Sonnenblume",
+      "difficulty": 4
+    },
+    {
+      "word": "Tulpe",
+      "difficulty": 4
+    },
+    {
+      "word": "Eule",
+      "difficulty": 4
+    },
+    {
+      "word": "Hai",
+      "difficulty": 4
+    },
+    {
+      "word": "Berg",
+      "difficulty": 4
+    },
+    {
+      "word": "Blitz",
+      "difficulty": 4
+    },
+    {
+      "word": "Dschungel",
+      "difficulty": 5
+    },
+    {
+      "word": "Sternschnuppe",
+      "difficulty": 5
+    },
+    {
+      "word": "Qualle",
+      "difficulty": 5
+    },
+    {
+      "word": "Pfau",
+      "difficulty": 5
+    },
+    {
+      "word": "Walross",
+      "difficulty": 5
+    },
+    {
+      "word": "Stachelschwein",
+      "difficulty": 5
+    },
+    {
+      "word": "Insel mit Palme",
+      "difficulty": 5
+    },
+    {
+      "word": "Bienenstock",
+      "difficulty": 5
+    },
+    {
+      "word": "Nashorn",
+      "difficulty": 5
+    },
+    {
+      "word": "Gletscher",
+      "difficulty": 5
+    },
+    {
+      "word": "Waldbrand",
+      "difficulty": 5
+    },
+    {
+      "word": "Sonnenuntergang am Meer",
+      "difficulty": 5
+    },
+    {
+      "word": "Eisberg",
+      "difficulty": 5
+    },
+    {
+      "word": "Schildkröte",
+      "difficulty": 5
+    },
+    {
+      "word": "Fliegenpilz",
+      "difficulty": 5
+    }
+  ],
+  "freizeit_kultur": [
+    {
+      "word": "Fußball",
+      "difficulty": 3
+    },
+    {
+      "word": "Gitarre",
+      "difficulty": 3
+    },
+    {
+      "word": "Ball",
+      "difficulty": 3
+    },
+    {
+      "word": "Zelt",
+      "difficulty": 3
+    },
+    {
+      "word": "Luftballon",
+      "difficulty": 3
+    },
+    {
+      "word": "Geschenk",
+      "difficulty": 3
+    },
+    {
+      "word": "Kamera",
+      "difficulty": 3
+    },
+    {
+      "word": "Buch",
+      "difficulty": 3
+    },
+    {
+      "word": "Tennisschläger",
+      "difficulty": 3
+    },
+    {
+      "word": "Pokal",
+      "difficulty": 3
+    },
+    {
+      "word": "Kino",
+      "difficulty": 3
+    },
+    {
+      "word": "Klavier",
+      "difficulty": 3
+    },
+    {
+      "word": "Schlitten",
+      "difficulty": 3
+    },
+    {
+      "word": "Drachen",
+      "difficulty": 3
+    },
+    {
+      "word": "Schaukel",
+      "difficulty": 3
+    },
+    {
+      "word": "Skateboard",
+      "difficulty": 4
+    },
+    {
+      "word": "Lagerfeuer",
+      "difficulty": 4
+    },
+    {
+      "word": "Weihnachtsbaum",
+      "difficulty": 4
+    },
+    {
+      "word": "Achterbahn",
+      "difficulty": 4
+    },
+    {
+      "word": "Riesenrad",
+      "difficulty": 4
+    },
+    {
+      "word": "Schach",
+      "difficulty": 4
+    },
+    {
+      "word": "Angel",
+      "difficulty": 4
+    },
+    {
+      "word": "Trompete",
+      "difficulty": 4
+    },
+    {
+      "word": "Schwimmbad",
+      "difficulty": 4
+    },
+    {
+      "word": "Trommel",
+      "difficulty": 4
+    },
+    {
+      "word": "Karussell",
+      "difficulty": 4
+    },
+    {
+      "word": "Dartscheibe",
+      "difficulty": 4
+    },
+    {
+      "word": "Mikrofon",
+      "difficulty": 4
+    },
+    {
+      "word": "Skifahrer",
+      "difficulty": 4
+    },
+    {
+      "word": "Wunderkerze",
+      "difficulty": 4
+    },
+    {
+      "word": "Konzert",
+      "difficulty": 5
+    },
+    {
+      "word": "Zirkusclown",
+      "difficulty": 5
+    },
+    {
+      "word": "Karaoke-Abend",
+      "difficulty": 5
+    },
+    {
+      "word": "Weihnachtsmann mit Schlitten",
+      "difficulty": 5
+    },
+    {
+      "word": "Fußballstadion",
+      "difficulty": 5
+    },
+    {
+      "word": "Piratenschiff",
+      "difficulty": 5
+    },
+    {
+      "word": "Campingplatz",
+      "difficulty": 5
+    },
+    {
+      "word": "Segelboot",
+      "difficulty": 5
+    },
+    {
+      "word": "Zauberer mit Hase",
+      "difficulty": 5
+    },
+    {
+      "word": "Bergsteiger",
+      "difficulty": 5
+    },
+    {
+      "word": "Halloween-Party",
+      "difficulty": 5
+    },
+    {
+      "word": "Eishockeyspiel",
+      "difficulty": 5
+    },
+    {
+      "word": "Kinovorstellung",
+      "difficulty": 5
+    },
+    {
+      "word": "Geburtstagsfeier",
+      "difficulty": 5
+    },
+    {
+      "word": "Sandburg am Strand",
+      "difficulty": 5
+    }
+  ]
+}

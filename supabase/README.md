@@ -42,6 +42,8 @@ Ausführung siehe „Verifizieren" unten.
 | `20260806110000_push_subscriptions.sql` | Neue Tabelle `push_subscriptions` + zwei RPCs für Web-Push-Abos |
 | `20260807090000_go_offline_keeps_last_seen.sql` | Bugfix: `go_offline()` datiert `last_seen_at` zurück statt die Zeile zu löschen — sonst zeigte die Freundesliste „unbekannt" statt „vor 1 Min." |
 | `20260808090000_avatar_bucket_size_limit.sql` | `avatars`-Bucket-Limit 256 KB → 1 MB, für die neue 512-px-Avatar-Auflösung |
+| `20260809090000_game_key_activity.sql` | Enum-Wert `activity` für `lobbies.current_game` — wie bei Sprücheklopfer allein in einer eigenen Datei |
+| `20260809090100_legacy_patch_activity.sql` | `legacy_apply_patch()` mappt `'ACTIVITY'` auf den neuen Enum-Wert |
 
 ## RPCs
 
@@ -131,8 +133,12 @@ npx supabase link --project-ref <projekt-ref>
 ```
 
 ```bash
-npx supabase db push
+npx supabase db push --remote
 ```
+
+Ohne `--remote` zielt die aktuelle CLI auf einen lokalen Docker-Stack (127.0.0.1:54322), den
+dieses Projekt nicht nutzt — der Befehl scheitert dann mit `ECONNREFUSED`. Prüfen danach mit
+`npx supabase migration list --remote`.
 
 ## Verifizieren
 
