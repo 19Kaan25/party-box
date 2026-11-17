@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 
 const CATS = ['alltag', 'tiere_natur', 'freizeit_kultur'];
 const FILES = [
-    { file: 'src/constants/activityTabu.json', perLevel: 12, tabu: true },
-    { file: 'src/constants/activityMalen.json', perLevel: 15, tabu: false },
-    { file: 'src/constants/activityPantomime.json', perLevel: 15, tabu: false },
+    { file: 'src/constants/activityTabu.json', perLevel: 24, tabu: true },
+    { file: 'src/constants/activityMalen.json', perLevel: 30, tabu: false },
+    { file: 'src/constants/activityPantomime.json', perLevel: 30, tabu: false },
 ];
 
 const errors = [];

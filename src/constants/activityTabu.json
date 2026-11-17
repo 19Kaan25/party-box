@@ -395,6 +395,402 @@
         "Bewegung",
         "Fahrstuhl"
       ]
+    },
+    {
+      "word": "Zahnpasta",
+      "difficulty": 3,
+      "forbidden": [
+        "Tube",
+        "Minze",
+        "Bürste",
+        "Putzen",
+        "Mund"
+      ]
+    },
+    {
+      "word": "Handy",
+      "difficulty": 3,
+      "forbidden": [
+        "Telefon",
+        "Anruf",
+        "Display",
+        "Nachricht",
+        "Smartphone"
+      ]
+    },
+    {
+      "word": "Waschbecken",
+      "difficulty": 3,
+      "forbidden": [
+        "Hahn",
+        "Wasser",
+        "Bad",
+        "Spülen",
+        "Abfluss"
+      ]
+    },
+    {
+      "word": "Topflappen",
+      "difficulty": 3,
+      "forbidden": [
+        "Heiß",
+        "Ofen",
+        "Küche",
+        "Greifen",
+        "Stoff"
+      ]
+    },
+    {
+      "word": "Kehrschaufel",
+      "difficulty": 3,
+      "forbidden": [
+        "Besen",
+        "Müll",
+        "Fegen",
+        "Staub",
+        "Boden"
+      ]
+    },
+    {
+      "word": "Pfanne",
+      "difficulty": 3,
+      "forbidden": [
+        "Braten",
+        "Herd",
+        "Kochen",
+        "Stiel",
+        "Spiegelei"
+      ]
+    },
+    {
+      "word": "Honig",
+      "difficulty": 3,
+      "forbidden": [
+        "Biene",
+        "Süß",
+        "Glas",
+        "Brot",
+        "Bär"
+      ]
+    },
+    {
+      "word": "Schokolade",
+      "difficulty": 3,
+      "forbidden": [
+        "Süßigkeit",
+        "Kakao",
+        "Tafel",
+        "Braun",
+        "Naschen"
+      ]
+    },
+    {
+      "word": "Teppich",
+      "difficulty": 3,
+      "forbidden": [
+        "Boden",
+        "Läufer",
+        "Staubsauger",
+        "Wohnzimmer",
+        "Fransen"
+      ]
+    },
+    {
+      "word": "Regal",
+      "difficulty": 3,
+      "forbidden": [
+        "Bücher",
+        "Fächer",
+        "Brett",
+        "Wand",
+        "Stellen"
+      ]
+    },
+    {
+      "word": "Toilette",
+      "difficulty": 3,
+      "forbidden": [
+        "Klo",
+        "Spülung",
+        "Sitzen",
+        "Bad",
+        "Papier"
+      ]
+    },
+    {
+      "word": "Geschirrtuch",
+      "difficulty": 3,
+      "forbidden": [
+        "Abtrocknen",
+        "Küche",
+        "Teller",
+        "Spülen",
+        "Stoff"
+      ]
+    },
+    {
+      "word": "Bahnsteig",
+      "difficulty": 4,
+      "forbidden": [
+        "Zug",
+        "Gleis",
+        "Warten",
+        "Bahnhof",
+        "Ansage"
+      ]
+    },
+    {
+      "word": "Kreisverkehr",
+      "difficulty": 4,
+      "forbidden": [
+        "Auto",
+        "Abbiegen",
+        "Ausfahrt",
+        "Rund",
+        "Straße"
+      ]
+    },
+    {
+      "word": "Bibliothek",
+      "difficulty": 4,
+      "forbidden": [
+        "Bücher",
+        "Ausleihen",
+        "Lesen",
+        "Leise",
+        "Regal"
+      ]
+    },
+    {
+      "word": "Maurer",
+      "difficulty": 4,
+      "forbidden": [
+        "Stein",
+        "Mörtel",
+        "Kelle",
+        "Wand",
+        "Ziegel"
+      ]
+    },
+    {
+      "word": "Elektriker",
+      "difficulty": 4,
+      "forbidden": [
+        "Strom",
+        "Kabel",
+        "Steckdose",
+        "Sicherung",
+        "Licht"
+      ]
+    },
+    {
+      "word": "Klempner",
+      "difficulty": 4,
+      "forbidden": [
+        "Rohr",
+        "Wasser",
+        "Installateur",
+        "Abfluss",
+        "Werkzeug"
+      ]
+    },
+    {
+      "word": "Hausarzt",
+      "difficulty": 4,
+      "forbidden": [
+        "Praxis",
+        "Doktor",
+        "Krank",
+        "Rezept",
+        "Überweisung"
+      ]
+    },
+    {
+      "word": "Kassierer",
+      "difficulty": 4,
+      "forbidden": [
+        "Supermarkt",
+        "Band",
+        "Bezahlen",
+        "Scanner",
+        "Bon"
+      ]
+    },
+    {
+      "word": "Reisepass",
+      "difficulty": 4,
+      "forbidden": [
+        "Ausweis",
+        "Urlaub",
+        "Grenze",
+        "Ausland",
+        "Foto"
+      ]
+    },
+    {
+      "word": "Kartoffelschäler",
+      "difficulty": 4,
+      "forbidden": [
+        "Kartoffeln",
+        "Küche",
+        "Klinge",
+        "Schale",
+        "Dünn"
+      ]
+    },
+    {
+      "word": "Schneebesen",
+      "difficulty": 4,
+      "forbidden": [
+        "Eier",
+        "Schlagen",
+        "Sahne",
+        "Rühren",
+        "Küche"
+      ]
+    },
+    {
+      "word": "Aufzug",
+      "difficulty": 4,
+      "forbidden": [
+        "Fahrstuhl",
+        "Knopf",
+        "Etage",
+        "Stockwerk",
+        "Fahren"
+      ]
+    },
+    {
+      "word": "Wäscheklammer",
+      "difficulty": 5,
+      "forbidden": [
+        "Leine",
+        "Aufhängen",
+        "Holz",
+        "Klemmen",
+        "Trocknen"
+      ]
+    },
+    {
+      "word": "Pförtner",
+      "difficulty": 5,
+      "forbidden": [
+        "Eingang",
+        "Schranke",
+        "Tor",
+        "Wache",
+        "Empfang"
+      ]
+    },
+    {
+      "word": "Standesamt",
+      "difficulty": 5,
+      "forbidden": [
+        "Hochzeit",
+        "Heiraten",
+        "Trauung",
+        "Ehe",
+        "Ringe"
+      ]
+    },
+    {
+      "word": "Reißverschluss",
+      "difficulty": 5,
+      "forbidden": [
+        "Jacke",
+        "Hose",
+        "Zippen",
+        "Schieber",
+        "Zuziehen"
+      ]
+    },
+    {
+      "word": "Gerichtsvollzieher",
+      "difficulty": 5,
+      "forbidden": [
+        "Schulden",
+        "Pfänden",
+        "Mahnung",
+        "Beamter",
+        "Geld"
+      ]
+    },
+    {
+      "word": "Zollbeamter",
+      "difficulty": 5,
+      "forbidden": [
+        "Grenze",
+        "Flughafen",
+        "Koffer",
+        "Kontrolle",
+        "Schmuggel"
+      ]
+    },
+    {
+      "word": "Fußgängerzone",
+      "difficulty": 5,
+      "forbidden": [
+        "Innenstadt",
+        "Geschäfte",
+        "Bummeln",
+        "Einkaufen",
+        "Autofrei"
+      ]
+    },
+    {
+      "word": "Wertstoffhof",
+      "difficulty": 5,
+      "forbidden": [
+        "Müll",
+        "Recycling",
+        "Entsorgen",
+        "Abgeben",
+        "Container"
+      ]
+    },
+    {
+      "word": "Schnellkochtopf",
+      "difficulty": 5,
+      "forbidden": [
+        "Druck",
+        "Dampf",
+        "Deckel",
+        "Ventil",
+        "Eintopf"
+      ]
+    },
+    {
+      "word": "Gartenzwerg",
+      "difficulty": 5,
+      "forbidden": [
+        "Rasen",
+        "Rot",
+        "Mütze",
+        "Bart",
+        "Figur"
+      ]
+    },
+    {
+      "word": "Trinkgeld",
+      "difficulty": 5,
+      "forbidden": [
+        "Kellner",
+        "Restaurant",
+        "Bezahlen",
+        "Extra",
+        "Münzen"
+      ]
+    },
+    {
+      "word": "Lieferdienst",
+      "difficulty": 5,
+      "forbidden": [
+        "Pizza",
+        "Bestellen",
+        "Bote",
+        "Essen",
+        "Klingeln"
+      ]
     }
   ],
   "tiere_natur": [
@@ -793,6 +1189,402 @@
         "Kamel",
         "Sand"
       ]
+    },
+    {
+      "word": "Kranich",
+      "difficulty": 3,
+      "forbidden": [
+        "Zugvogel",
+        "Grau",
+        "Stelzen",
+        "Hals",
+        "Glück"
+      ]
+    },
+    {
+      "word": "Jaguar",
+      "difficulty": 3,
+      "forbidden": [
+        "Flecken",
+        "Raubkatze",
+        "Südamerika",
+        "Auto",
+        "Dschungel"
+      ]
+    },
+    {
+      "word": "Alpaka",
+      "difficulty": 3,
+      "forbidden": [
+        "Lama",
+        "Wolle",
+        "Peru",
+        "Spucken",
+        "Flauschig"
+      ]
+    },
+    {
+      "word": "Yak",
+      "difficulty": 3,
+      "forbidden": [
+        "Tibet",
+        "Himalaya",
+        "Fell",
+        "Hörner",
+        "Rind"
+      ]
+    },
+    {
+      "word": "Narzisse",
+      "difficulty": 3,
+      "forbidden": [
+        "Gelb",
+        "Frühling",
+        "Osterglocke",
+        "Zwiebel",
+        "Blume"
+      ]
+    },
+    {
+      "word": "Wald",
+      "difficulty": 3,
+      "forbidden": [
+        "Bäume",
+        "Pilze",
+        "Förster",
+        "Spaziergang",
+        "Holz"
+      ]
+    },
+    {
+      "word": "Wiesel",
+      "difficulty": 3,
+      "forbidden": [
+        "Klein",
+        "Flink",
+        "Raubtier",
+        "Hermelin",
+        "Hühnerstall"
+      ]
+    },
+    {
+      "word": "Marder",
+      "difficulty": 3,
+      "forbidden": [
+        "Auto",
+        "Kabel",
+        "Beißen",
+        "Nachts",
+        "Motorhaube"
+      ]
+    },
+    {
+      "word": "Wiedehopf",
+      "difficulty": 3,
+      "forbidden": [
+        "Haube",
+        "Vogel",
+        "Schnabel",
+        "Bunt",
+        "Süden"
+      ]
+    },
+    {
+      "word": "Kormoran",
+      "difficulty": 3,
+      "forbidden": [
+        "Schwarz",
+        "Fisch",
+        "Tauchen",
+        "Küste",
+        "Vogel"
+      ]
+    },
+    {
+      "word": "Rotkehlchen",
+      "difficulty": 3,
+      "forbidden": [
+        "Orange",
+        "Brust",
+        "Vogel",
+        "Winter",
+        "Singen"
+      ]
+    },
+    {
+      "word": "Morgentau",
+      "difficulty": 3,
+      "forbidden": [
+        "Gras",
+        "Tropfen",
+        "Früh",
+        "Nass",
+        "Spinnennetz"
+      ]
+    },
+    {
+      "word": "Puma",
+      "difficulty": 4,
+      "forbidden": [
+        "Raubkatze",
+        "Amerika",
+        "Berglöwe",
+        "Schleichen",
+        "Gebirge"
+      ]
+    },
+    {
+      "word": "Bussard",
+      "difficulty": 4,
+      "forbidden": [
+        "Greifvogel",
+        "Kreisen",
+        "Mäuse",
+        "Krallen",
+        "Himmel"
+      ]
+    },
+    {
+      "word": "Otter",
+      "difficulty": 4,
+      "forbidden": [
+        "Fluss",
+        "Wasser",
+        "Fisch",
+        "Pelz",
+        "Schwimmen"
+      ]
+    },
+    {
+      "word": "Luchs",
+      "difficulty": 4,
+      "forbidden": [
+        "Pinselohren",
+        "Wildkatze",
+        "Wald",
+        "Raubtier",
+        "Fell"
+      ]
+    },
+    {
+      "word": "Regenwald",
+      "difficulty": 4,
+      "forbidden": [
+        "Tropen",
+        "Amazonas",
+        "Urwald",
+        "Feucht",
+        "Abholzung"
+      ]
+    },
+    {
+      "word": "Klatschmohn",
+      "difficulty": 4,
+      "forbidden": [
+        "Rot",
+        "Feld",
+        "Blume",
+        "Sommer",
+        "Samen"
+      ]
+    },
+    {
+      "word": "Brennnessel",
+      "difficulty": 4,
+      "forbidden": [
+        "Quaddeln",
+        "Jucken",
+        "Pflanze",
+        "Tee",
+        "Berühren"
+      ]
+    },
+    {
+      "word": "Glühwürmchen",
+      "difficulty": 4,
+      "forbidden": [
+        "Leuchten",
+        "Nacht",
+        "Käfer",
+        "Licht",
+        "Sommer"
+      ]
+    },
+    {
+      "word": "Eichel",
+      "difficulty": 4,
+      "forbidden": [
+        "Nuss",
+        "Wildschwein",
+        "Baum",
+        "Herbst",
+        "Hütchen"
+      ]
+    },
+    {
+      "word": "Sonnenfinsternis",
+      "difficulty": 4,
+      "forbidden": [
+        "Mond",
+        "Dunkel",
+        "Himmel",
+        "Schatten",
+        "Brille"
+      ]
+    },
+    {
+      "word": "Treibsand",
+      "difficulty": 4,
+      "forbidden": [
+        "Versinken",
+        "Moor",
+        "Gefahr",
+        "Wüste",
+        "Einsinken"
+      ]
+    },
+    {
+      "word": "Schneeglöckchen",
+      "difficulty": 4,
+      "forbidden": [
+        "Frühling",
+        "Weiß",
+        "Blume",
+        "Winter",
+        "Zwiebel"
+      ]
+    },
+    {
+      "word": "Quokka",
+      "difficulty": 5,
+      "forbidden": [
+        "Lächeln",
+        "Australien",
+        "Selfie",
+        "Beutel",
+        "Insel"
+      ]
+    },
+    {
+      "word": "Ameisenbär",
+      "difficulty": 5,
+      "forbidden": [
+        "Rüssel",
+        "Termiten",
+        "Zunge",
+        "Südamerika",
+        "Insekten"
+      ]
+    },
+    {
+      "word": "Narwal",
+      "difficulty": 5,
+      "forbidden": [
+        "Horn",
+        "Stoßzahn",
+        "Arktis",
+        "Meer",
+        "Eis"
+      ]
+    },
+    {
+      "word": "Siebenschläfer",
+      "difficulty": 5,
+      "forbidden": [
+        "Winterschlaf",
+        "Nagetier",
+        "Müde",
+        "Nuss",
+        "Baum"
+      ]
+    },
+    {
+      "word": "Fjord",
+      "difficulty": 5,
+      "forbidden": [
+        "Norwegen",
+        "Bucht",
+        "Fels",
+        "Meer",
+        "Schiff"
+      ]
+    },
+    {
+      "word": "Savanne",
+      "difficulty": 5,
+      "forbidden": [
+        "Afrika",
+        "Gras",
+        "Löwe",
+        "Steppe",
+        "Trocken"
+      ]
+    },
+    {
+      "word": "Tundra",
+      "difficulty": 5,
+      "forbidden": [
+        "Kalt",
+        "Permafrost",
+        "Rentier",
+        "Moos",
+        "Eis"
+      ]
+    },
+    {
+      "word": "Monsun",
+      "difficulty": 5,
+      "forbidden": [
+        "Regen",
+        "Indien",
+        "Wind",
+        "Asien",
+        "Überschwemmung"
+      ]
+    },
+    {
+      "word": "Schlucht",
+      "difficulty": 5,
+      "forbidden": [
+        "Felsen",
+        "Tief",
+        "Canyon",
+        "Wandern",
+        "Brücke"
+      ]
+    },
+    {
+      "word": "Eisvogel",
+      "difficulty": 5,
+      "forbidden": [
+        "Blau",
+        "Fisch",
+        "Tauchen",
+        "Fluss",
+        "Schnabel"
+      ]
+    },
+    {
+      "word": "Okapi",
+      "difficulty": 5,
+      "forbidden": [
+        "Zebra",
+        "Giraffe",
+        "Streifen",
+        "Kongo",
+        "Afrika"
+      ]
+    },
+    {
+      "word": "Wattenmeer",
+      "difficulty": 5,
+      "forbidden": [
+        "Nordsee",
+        "Ebbe",
+        "Schlick",
+        "Küste",
+        "Wandern"
+      ]
     }
   ],
   "freizeit_kultur": [
@@ -1190,6 +1982,402 @@
         "Klappen",
         "Instrument",
         "Mundstück"
+      ]
+    },
+    {
+      "word": "Handball",
+      "difficulty": 3,
+      "forbidden": [
+        "Tor",
+        "Werfen",
+        "Halle",
+        "Team",
+        "Harz"
+      ]
+    },
+    {
+      "word": "Weihnachten",
+      "difficulty": 3,
+      "forbidden": [
+        "Geschenke",
+        "Tannenbaum",
+        "Dezember",
+        "Nikolaus",
+        "Plätzchen"
+      ]
+    },
+    {
+      "word": "Ostern",
+      "difficulty": 3,
+      "forbidden": [
+        "Hase",
+        "Eier",
+        "Suchen",
+        "Frühling",
+        "Nest"
+      ]
+    },
+    {
+      "word": "Hochzeit",
+      "difficulty": 3,
+      "forbidden": [
+        "Braut",
+        "Bräutigam",
+        "Ringe",
+        "Heiraten",
+        "Kleid"
+      ]
+    },
+    {
+      "word": "Disco",
+      "difficulty": 3,
+      "forbidden": [
+        "Tanzen",
+        "Musik",
+        "Club",
+        "Nacht",
+        "Lichter"
+      ]
+    },
+    {
+      "word": "Monopoly",
+      "difficulty": 3,
+      "forbidden": [
+        "Brettspiel",
+        "Straßen",
+        "Geld",
+        "Hotel",
+        "Würfeln"
+      ]
+    },
+    {
+      "word": "Frisbee",
+      "difficulty": 3,
+      "forbidden": [
+        "Scheibe",
+        "Werfen",
+        "Fangen",
+        "Hund",
+        "Wurf"
+      ]
+    },
+    {
+      "word": "Squash",
+      "difficulty": 3,
+      "forbidden": [
+        "Schläger",
+        "Wand",
+        "Ball",
+        "Halle",
+        "Gummi"
+      ]
+    },
+    {
+      "word": "Dart",
+      "difficulty": 3,
+      "forbidden": [
+        "Pfeile",
+        "Scheibe",
+        "Pub",
+        "Treffen",
+        "Bullseye"
+      ]
+    },
+    {
+      "word": "Konfetti",
+      "difficulty": 3,
+      "forbidden": [
+        "Papier",
+        "Bunt",
+        "Werfen",
+        "Party",
+        "Karneval"
+      ]
+    },
+    {
+      "word": "Seifenblasen",
+      "difficulty": 3,
+      "forbidden": [
+        "Pusten",
+        "Schweben",
+        "Platzen",
+        "Kinder",
+        "Wasser"
+      ]
+    },
+    {
+      "word": "Murmeln",
+      "difficulty": 3,
+      "forbidden": [
+        "Kugeln",
+        "Glas",
+        "Kinder",
+        "Rollen",
+        "Bunt"
+      ]
+    },
+    {
+      "word": "Orchester",
+      "difficulty": 4,
+      "forbidden": [
+        "Dirigent",
+        "Musik",
+        "Geigen",
+        "Instrumente",
+        "Konzert"
+      ]
+    },
+    {
+      "word": "Musical",
+      "difficulty": 4,
+      "forbidden": [
+        "Singen",
+        "Bühne",
+        "Tanzen",
+        "Theater",
+        "Broadway"
+      ]
+    },
+    {
+      "word": "Trickfilm",
+      "difficulty": 4,
+      "forbidden": [
+        "Zeichnen",
+        "Cartoon",
+        "Animation",
+        "Kino",
+        "Figuren"
+      ]
+    },
+    {
+      "word": "Kreuzworträtsel",
+      "difficulty": 4,
+      "forbidden": [
+        "Kästchen",
+        "Lösen",
+        "Zeitung",
+        "Buchstaben",
+        "Raten"
+      ]
+    },
+    {
+      "word": "Tauchen",
+      "difficulty": 4,
+      "forbidden": [
+        "Unterwasser",
+        "Meer",
+        "Flasche",
+        "Flossen",
+        "Atmen"
+      ]
+    },
+    {
+      "word": "Segeln",
+      "difficulty": 4,
+      "forbidden": [
+        "Boot",
+        "Wind",
+        "Mast",
+        "Wasser",
+        "Kapitän"
+      ]
+    },
+    {
+      "word": "Kajak",
+      "difficulty": 4,
+      "forbidden": [
+        "Paddel",
+        "Boot",
+        "Fluss",
+        "Wildwasser",
+        "Sitzen"
+      ]
+    },
+    {
+      "word": "Kartenspiel",
+      "difficulty": 4,
+      "forbidden": [
+        "Skat",
+        "Poker",
+        "Mischen",
+        "Blatt",
+        "Ass"
+      ]
+    },
+    {
+      "word": "Lampenfieber",
+      "difficulty": 4,
+      "forbidden": [
+        "Bühne",
+        "Aufregung",
+        "Nervös",
+        "Auftritt",
+        "Publikum"
+      ]
+    },
+    {
+      "word": "Kasperltheater",
+      "difficulty": 4,
+      "forbidden": [
+        "Puppen",
+        "Krokodil",
+        "Seppel",
+        "Bühne",
+        "Kinder"
+      ]
+    },
+    {
+      "word": "Freibad",
+      "difficulty": 4,
+      "forbidden": [
+        "Schwimmen",
+        "Sommer",
+        "Rutsche",
+        "Pommes",
+        "Becken"
+      ]
+    },
+    {
+      "word": "Hörbuch",
+      "difficulty": 4,
+      "forbidden": [
+        "Vorlesen",
+        "Ohren",
+        "Sprecher",
+        "Geschichte",
+        "Audio"
+      ]
+    },
+    {
+      "word": "Stummfilm",
+      "difficulty": 5,
+      "forbidden": [
+        "Chaplin",
+        "Ton",
+        "Schwarzweiß",
+        "Kino",
+        "Sprechen"
+      ]
+    },
+    {
+      "word": "Statist",
+      "difficulty": 5,
+      "forbidden": [
+        "Komparse",
+        "Film",
+        "Hintergrund",
+        "Nebenrolle",
+        "Schauspieler"
+      ]
+    },
+    {
+      "word": "Maskenball",
+      "difficulty": 5,
+      "forbidden": [
+        "Verkleidet",
+        "Venedig",
+        "Tanzen",
+        "Kostüm",
+        "Gesicht"
+      ]
+    },
+    {
+      "word": "Triathlon",
+      "difficulty": 5,
+      "forbidden": [
+        "Schwimmen",
+        "Radfahren",
+        "Laufen",
+        "Ausdauer",
+        "Ironman"
+      ]
+    },
+    {
+      "word": "Biathlon",
+      "difficulty": 5,
+      "forbidden": [
+        "Schießen",
+        "Langlauf",
+        "Gewehr",
+        "Winter",
+        "Ski"
+      ]
+    },
+    {
+      "word": "Bouldern",
+      "difficulty": 5,
+      "forbidden": [
+        "Klettern",
+        "Wand",
+        "Griffe",
+        "Halle",
+        "Matte"
+      ]
+    },
+    {
+      "word": "Schnorcheln",
+      "difficulty": 5,
+      "forbidden": [
+        "Maske",
+        "Flossen",
+        "Tauchen",
+        "Meer",
+        "Röhrchen"
+      ]
+    },
+    {
+      "word": "Elfmeterschießen",
+      "difficulty": 5,
+      "forbidden": [
+        "Fußball",
+        "Torwart",
+        "Punkt",
+        "Unentschieden",
+        "Schuss"
+      ]
+    },
+    {
+      "word": "Abspann",
+      "difficulty": 5,
+      "forbidden": [
+        "Film",
+        "Namen",
+        "Ende",
+        "Kino",
+        "Credits"
+      ]
+    },
+    {
+      "word": "Plattenspieler",
+      "difficulty": 5,
+      "forbidden": [
+        "Vinyl",
+        "Nadel",
+        "Drehen",
+        "Musik",
+        "Retro"
+      ]
+    },
+    {
+      "word": "Metronom",
+      "difficulty": 5,
+      "forbidden": [
+        "Takt",
+        "Tempo",
+        "Klavier",
+        "Ticken",
+        "Musik"
+      ]
+    },
+    {
+      "word": "Luftgitarre",
+      "difficulty": 5,
+      "forbidden": [
+        "Rock",
+        "Saiten",
+        "Spielen",
+        "Unsichtbar",
+        "Konzert"
       ]
     }
   ]

@@ -179,6 +179,186 @@
     {
       "word": "Taschendieb",
       "difficulty": 5
+    },
+    {
+      "word": "Haare kämmen",
+      "difficulty": 3
+    },
+    {
+      "word": "Hände waschen",
+      "difficulty": 3
+    },
+    {
+      "word": "Tür öffnen",
+      "difficulty": 3
+    },
+    {
+      "word": "Treppensteigen",
+      "difficulty": 3
+    },
+    {
+      "word": "Telefonieren",
+      "difficulty": 3
+    },
+    {
+      "word": "Zeitung lesen",
+      "difficulty": 3
+    },
+    {
+      "word": "Gärtner",
+      "difficulty": 3
+    },
+    {
+      "word": "Fernsehen",
+      "difficulty": 3
+    },
+    {
+      "word": "Kuchen backen",
+      "difficulty": 3
+    },
+    {
+      "word": "Brot schneiden",
+      "difficulty": 3
+    },
+    {
+      "word": "Geschirr spülen",
+      "difficulty": 3
+    },
+    {
+      "word": "Betten beziehen",
+      "difficulty": 3
+    },
+    {
+      "word": "Lehrer",
+      "difficulty": 3
+    },
+    {
+      "word": "Krankenschwester",
+      "difficulty": 3
+    },
+    {
+      "word": "Wäsche falten",
+      "difficulty": 3
+    },
+    {
+      "word": "Schuhe binden",
+      "difficulty": 4
+    },
+    {
+      "word": "Tasche packen",
+      "difficulty": 4
+    },
+    {
+      "word": "Spaghetti kochen",
+      "difficulty": 4
+    },
+    {
+      "word": "Müsli essen",
+      "difficulty": 4
+    },
+    {
+      "word": "Kassiererin",
+      "difficulty": 4
+    },
+    {
+      "word": "Maler",
+      "difficulty": 4
+    },
+    {
+      "word": "Schreiner",
+      "difficulty": 4
+    },
+    {
+      "word": "Paketbote",
+      "difficulty": 4
+    },
+    {
+      "word": "Taxifahrer",
+      "difficulty": 4
+    },
+    {
+      "word": "Straßenbahn fahren",
+      "difficulty": 4
+    },
+    {
+      "word": "Reisebüro",
+      "difficulty": 4
+    },
+    {
+      "word": "Arzt",
+      "difficulty": 4
+    },
+    {
+      "word": "Wohnung putzen",
+      "difficulty": 4
+    },
+    {
+      "word": "Bücherregal einräumen",
+      "difficulty": 4
+    },
+    {
+      "word": "Salat schneiden",
+      "difficulty": 4
+    },
+    {
+      "word": "Reifen wechseln",
+      "difficulty": 5
+    },
+    {
+      "word": "Tapezieren",
+      "difficulty": 5
+    },
+    {
+      "word": "Steuererklärung",
+      "difficulty": 5
+    },
+    {
+      "word": "Schlüssel vergessen",
+      "difficulty": 5
+    },
+    {
+      "word": "Geldautomat",
+      "difficulty": 5
+    },
+    {
+      "word": "Verkehrspolizist",
+      "difficulty": 5
+    },
+    {
+      "word": "Bauarbeiter",
+      "difficulty": 5
+    },
+    {
+      "word": "Gepäck aufgeben",
+      "difficulty": 5
+    },
+    {
+      "word": "Bankräuber",
+      "difficulty": 5
+    },
+    {
+      "word": "Kfz-Mechaniker",
+      "difficulty": 5
+    },
+    {
+      "word": "Rettungssanitäter",
+      "difficulty": 5
+    },
+    {
+      "word": "Autowaschanlage",
+      "difficulty": 5
+    },
+    {
+      "word": "Müllmann",
+      "difficulty": 5
+    },
+    {
+      "word": "Hausmeister",
+      "difficulty": 5
+    },
+    {
+      "word": "Wohnungsbesichtigung",
+      "difficulty": 5
     }
   ],
   "tiere_natur": [
@@ -361,6 +541,186 @@
     {
       "word": "Kolibri",
       "difficulty": 5
+    },
+    {
+      "word": "Schaf",
+      "difficulty": 3
+    },
+    {
+      "word": "Löwe",
+      "difficulty": 3
+    },
+    {
+      "word": "Tiger",
+      "difficulty": 3
+    },
+    {
+      "word": "Esel",
+      "difficulty": 3
+    },
+    {
+      "word": "Wolf",
+      "difficulty": 3
+    },
+    {
+      "word": "Fuchs",
+      "difficulty": 3
+    },
+    {
+      "word": "Ziege",
+      "difficulty": 3
+    },
+    {
+      "word": "Gans",
+      "difficulty": 3
+    },
+    {
+      "word": "Taube",
+      "difficulty": 3
+    },
+    {
+      "word": "Krebs",
+      "difficulty": 3
+    },
+    {
+      "word": "Kamel",
+      "difficulty": 3
+    },
+    {
+      "word": "Nilpferd",
+      "difficulty": 3
+    },
+    {
+      "word": "Papagei",
+      "difficulty": 3
+    },
+    {
+      "word": "Möwe",
+      "difficulty": 3
+    },
+    {
+      "word": "Rabe",
+      "difficulty": 3
+    },
+    {
+      "word": "Adler",
+      "difficulty": 4
+    },
+    {
+      "word": "Seelöwe",
+      "difficulty": 4
+    },
+    {
+      "word": "Gepard",
+      "difficulty": 4
+    },
+    {
+      "word": "Orang-Utan",
+      "difficulty": 4
+    },
+    {
+      "word": "Strauß",
+      "difficulty": 4
+    },
+    {
+      "word": "Kuckuck",
+      "difficulty": 4
+    },
+    {
+      "word": "Hirschkäfer",
+      "difficulty": 4
+    },
+    {
+      "word": "Mücke",
+      "difficulty": 4
+    },
+    {
+      "word": "Kaninchen",
+      "difficulty": 4
+    },
+    {
+      "word": "Kobra",
+      "difficulty": 4
+    },
+    {
+      "word": "Hummer",
+      "difficulty": 4
+    },
+    {
+      "word": "Schwan",
+      "difficulty": 4
+    },
+    {
+      "word": "Erdmännchen",
+      "difficulty": 4
+    },
+    {
+      "word": "Panda",
+      "difficulty": 4
+    },
+    {
+      "word": "Wellensittich",
+      "difficulty": 4
+    },
+    {
+      "word": "Dürre",
+      "difficulty": 5
+    },
+    {
+      "word": "Hochwasser",
+      "difficulty": 5
+    },
+    {
+      "word": "Schneesturm",
+      "difficulty": 5
+    },
+    {
+      "word": "Hagel",
+      "difficulty": 5
+    },
+    {
+      "word": "Sandsturm",
+      "difficulty": 5
+    },
+    {
+      "word": "Gürteltier",
+      "difficulty": 5
+    },
+    {
+      "word": "Stinktier",
+      "difficulty": 5
+    },
+    {
+      "word": "Wasserschwein",
+      "difficulty": 5
+    },
+    {
+      "word": "Pelikan",
+      "difficulty": 5
+    },
+    {
+      "word": "Seekuh",
+      "difficulty": 5
+    },
+    {
+      "word": "Skorpion",
+      "difficulty": 5
+    },
+    {
+      "word": "Gottesanbeterin",
+      "difficulty": 5
+    },
+    {
+      "word": "Stier",
+      "difficulty": 5
+    },
+    {
+      "word": "Herbststurm",
+      "difficulty": 5
+    },
+    {
+      "word": "Blätter fallen",
+      "difficulty": 5
     }
   ],
   "freizeit_kultur": [
@@ -542,6 +902,186 @@
     },
     {
       "word": "Schattenboxen",
+      "difficulty": 5
+    },
+    {
+      "word": "Basketball spielen",
+      "difficulty": 3
+    },
+    {
+      "word": "Volleyball",
+      "difficulty": 3
+    },
+    {
+      "word": "Tischtennis",
+      "difficulty": 3
+    },
+    {
+      "word": "Reiten",
+      "difficulty": 3
+    },
+    {
+      "word": "Wandern",
+      "difficulty": 3
+    },
+    {
+      "word": "Zelten",
+      "difficulty": 3
+    },
+    {
+      "word": "Geige spielen",
+      "difficulty": 3
+    },
+    {
+      "word": "Gewichte heben",
+      "difficulty": 3
+    },
+    {
+      "word": "Snowboarden",
+      "difficulty": 3
+    },
+    {
+      "word": "Schlitten fahren",
+      "difficulty": 3
+    },
+    {
+      "word": "Eishockey spielen",
+      "difficulty": 3
+    },
+    {
+      "word": "Rennen",
+      "difficulty": 3
+    },
+    {
+      "word": "Turnen",
+      "difficulty": 3
+    },
+    {
+      "word": "Ostereier suchen",
+      "difficulty": 3
+    },
+    {
+      "word": "Kegeln",
+      "difficulty": 3
+    },
+    {
+      "word": "Rudern",
+      "difficulty": 4
+    },
+    {
+      "word": "Kanufahren",
+      "difficulty": 4
+    },
+    {
+      "word": "Badminton",
+      "difficulty": 4
+    },
+    {
+      "word": "Rugby",
+      "difficulty": 4
+    },
+    {
+      "word": "Dudelsack spielen",
+      "difficulty": 4
+    },
+    {
+      "word": "Cheerleader",
+      "difficulty": 4
+    },
+    {
+      "word": "Turmspringen",
+      "difficulty": 4
+    },
+    {
+      "word": "Wasserball",
+      "difficulty": 4
+    },
+    {
+      "word": "Hürdenlauf",
+      "difficulty": 4
+    },
+    {
+      "word": "Speerwerfen",
+      "difficulty": 4
+    },
+    {
+      "word": "Kugelstoßen",
+      "difficulty": 4
+    },
+    {
+      "word": "Marathonlauf",
+      "difficulty": 4
+    },
+    {
+      "word": "Flamenco tanzen",
+      "difficulty": 4
+    },
+    {
+      "word": "Walzer tanzen",
+      "difficulty": 4
+    },
+    {
+      "word": "Kartentrick zeigen",
+      "difficulty": 4
+    },
+    {
+      "word": "Stuntman",
+      "difficulty": 5
+    },
+    {
+      "word": "Opernsänger",
+      "difficulty": 5
+    },
+    {
+      "word": "Torwart",
+      "difficulty": 5
+    },
+    {
+      "word": "Sumo-Ringer",
+      "difficulty": 5
+    },
+    {
+      "word": "Curling",
+      "difficulty": 5
+    },
+    {
+      "word": "Skispringen",
+      "difficulty": 5
+    },
+    {
+      "word": "Taucher",
+      "difficulty": 5
+    },
+    {
+      "word": "Hammerwerfen",
+      "difficulty": 5
+    },
+    {
+      "word": "Bodybuilder",
+      "difficulty": 5
+    },
+    {
+      "word": "Straßenmusiker",
+      "difficulty": 5
+    },
+    {
+      "word": "Eisklettern",
+      "difficulty": 5
+    },
+    {
+      "word": "Bergsteigen",
+      "difficulty": 5
+    },
+    {
+      "word": "Drachenfliegen",
+      "difficulty": 5
+    },
+    {
+      "word": "Seiltänzer",
+      "difficulty": 5
+    },
+    {
+      "word": "Eisstockschießen",
       "difficulty": 5
     }
   ]

@@ -47,7 +47,7 @@ export function effectiveSetup(setup = {}, three) {
  * gezogen hat, kennt dieses Gerät nur, wenn es bei der Auflösung dabei war.
  */
 const SEEN_KEY = 'activity-seen-v1';
-const SEEN_LIMIT = 300; // unter der Kartenzahl, damit alte Begriffe irgendwann wieder drankommen
+const SEEN_LIMIT = 600; // unter der Kartenzahl, damit alte Begriffe irgendwann wieder drankommen
 
 const readSeen = () => {
     try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch { return []; }

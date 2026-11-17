@@ -179,6 +179,186 @@
     {
       "word": "Geburtstagstorte",
       "difficulty": 5
+    },
+    {
+      "word": "Gabel",
+      "difficulty": 3
+    },
+    {
+      "word": "Messer",
+      "difficulty": 3
+    },
+    {
+      "word": "Sofa",
+      "difficulty": 3
+    },
+    {
+      "word": "Lampe",
+      "difficulty": 3
+    },
+    {
+      "word": "Fernseher",
+      "difficulty": 3
+    },
+    {
+      "word": "Kamm",
+      "difficulty": 3
+    },
+    {
+      "word": "Eimer",
+      "difficulty": 3
+    },
+    {
+      "word": "Besen",
+      "difficulty": 3
+    },
+    {
+      "word": "Brot",
+      "difficulty": 3
+    },
+    {
+      "word": "Käse",
+      "difficulty": 3
+    },
+    {
+      "word": "Ei",
+      "difficulty": 3
+    },
+    {
+      "word": "Tür",
+      "difficulty": 3
+    },
+    {
+      "word": "Fenster",
+      "difficulty": 3
+    },
+    {
+      "word": "Briefumschlag",
+      "difficulty": 3
+    },
+    {
+      "word": "Wassermelone",
+      "difficulty": 3
+    },
+    {
+      "word": "Einkaufswagen",
+      "difficulty": 4
+    },
+    {
+      "word": "Zebrastreifen",
+      "difficulty": 4
+    },
+    {
+      "word": "Straßenbahn",
+      "difficulty": 4
+    },
+    {
+      "word": "Hochhaus",
+      "difficulty": 4
+    },
+    {
+      "word": "Wäscheständer",
+      "difficulty": 4
+    },
+    {
+      "word": "Gießkanne",
+      "difficulty": 4
+    },
+    {
+      "word": "Krankenwagen",
+      "difficulty": 4
+    },
+    {
+      "word": "Müllauto",
+      "difficulty": 4
+    },
+    {
+      "word": "Schubkarre",
+      "difficulty": 4
+    },
+    {
+      "word": "Nudelholz",
+      "difficulty": 4
+    },
+    {
+      "word": "Bagger",
+      "difficulty": 4
+    },
+    {
+      "word": "Pommes mit Ketchup",
+      "difficulty": 4
+    },
+    {
+      "word": "Bügelbrett",
+      "difficulty": 4
+    },
+    {
+      "word": "Dönerspieß",
+      "difficulty": 4
+    },
+    {
+      "word": "Hubschrauber",
+      "difficulty": 4
+    },
+    {
+      "word": "Falschparker mit Strafzettel",
+      "difficulty": 5
+    },
+    {
+      "word": "Pizzabote",
+      "difficulty": 5
+    },
+    {
+      "word": "Frühstück im Bett",
+      "difficulty": 5
+    },
+    {
+      "word": "Rohrbruch im Keller",
+      "difficulty": 5
+    },
+    {
+      "word": "Fahrstuhl steckt fest",
+      "difficulty": 5
+    },
+    {
+      "word": "Kassenschlange",
+      "difficulty": 5
+    },
+    {
+      "word": "Kaffeepause im Büro",
+      "difficulty": 5
+    },
+    {
+      "word": "Maler auf Leiter",
+      "difficulty": 5
+    },
+    {
+      "word": "Müllabfuhr am Morgen",
+      "difficulty": 5
+    },
+    {
+      "word": "Busfahrt im Regen",
+      "difficulty": 5
+    },
+    {
+      "word": "Spülmaschine einräumen",
+      "difficulty": 5
+    },
+    {
+      "word": "Stromausfall beim Abendessen",
+      "difficulty": 5
+    },
+    {
+      "word": "Umzugswagen",
+      "difficulty": 5
+    },
+    {
+      "word": "Fahrradreparatur am Straßenrand",
+      "difficulty": 5
+    },
+    {
+      "word": "Wäscheberg bügeln",
+      "difficulty": 5
     }
   ],
   "tiere_natur": [
@@ -361,6 +541,186 @@
     {
       "word": "Fliegenpilz",
       "difficulty": 5
+    },
+    {
+      "word": "Dachs",
+      "difficulty": 3
+    },
+    {
+      "word": "Löwenzahn",
+      "difficulty": 3
+    },
+    {
+      "word": "Stern",
+      "difficulty": 3
+    },
+    {
+      "word": "Blatt",
+      "difficulty": 3
+    },
+    {
+      "word": "Tannenbaum",
+      "difficulty": 3
+    },
+    {
+      "word": "Tukan",
+      "difficulty": 3
+    },
+    {
+      "word": "Gänseblümchen",
+      "difficulty": 3
+    },
+    {
+      "word": "Tannenzapfen",
+      "difficulty": 3
+    },
+    {
+      "word": "Wurm",
+      "difficulty": 3
+    },
+    {
+      "word": "Spatz",
+      "difficulty": 3
+    },
+    {
+      "word": "Rose",
+      "difficulty": 3
+    },
+    {
+      "word": "Truthahn",
+      "difficulty": 3
+    },
+    {
+      "word": "Reh",
+      "difficulty": 3
+    },
+    {
+      "word": "Küken",
+      "difficulty": 3
+    },
+    {
+      "word": "Krähe",
+      "difficulty": 3
+    },
+    {
+      "word": "Dromedar",
+      "difficulty": 4
+    },
+    {
+      "word": "Flusspferd",
+      "difficulty": 4
+    },
+    {
+      "word": "Wespennest",
+      "difficulty": 4
+    },
+    {
+      "word": "Leopard",
+      "difficulty": 4
+    },
+    {
+      "word": "Lama",
+      "difficulty": 4
+    },
+    {
+      "word": "Nashornkäfer",
+      "difficulty": 4
+    },
+    {
+      "word": "Kirschbaum",
+      "difficulty": 4
+    },
+    {
+      "word": "Trauerweide",
+      "difficulty": 4
+    },
+    {
+      "word": "Spinnennetz",
+      "difficulty": 4
+    },
+    {
+      "word": "Vogelnest",
+      "difficulty": 4
+    },
+    {
+      "word": "Höhle",
+      "difficulty": 4
+    },
+    {
+      "word": "Steinlawine",
+      "difficulty": 4
+    },
+    {
+      "word": "Falke",
+      "difficulty": 4
+    },
+    {
+      "word": "Gewitterwolke",
+      "difficulty": 4
+    },
+    {
+      "word": "Haifischflosse",
+      "difficulty": 4
+    },
+    {
+      "word": "Fuchs im Hühnerstall",
+      "difficulty": 5
+    },
+    {
+      "word": "Katze jagt Maus",
+      "difficulty": 5
+    },
+    {
+      "word": "Bär klaut Honig",
+      "difficulty": 5
+    },
+    {
+      "word": "Raupe wird Schmetterling",
+      "difficulty": 5
+    },
+    {
+      "word": "Vollmondnacht",
+      "difficulty": 5
+    },
+    {
+      "word": "Herbstwald mit Pilzen",
+      "difficulty": 5
+    },
+    {
+      "word": "Schäfer mit Schafherde",
+      "difficulty": 5
+    },
+    {
+      "word": "Sturm auf See",
+      "difficulty": 5
+    },
+    {
+      "word": "Hütte im Schnee",
+      "difficulty": 5
+    },
+    {
+      "word": "Bergsee mit Spiegelung",
+      "difficulty": 5
+    },
+    {
+      "word": "Zugvögel im Herbst",
+      "difficulty": 5
+    },
+    {
+      "word": "Kühe auf Weide",
+      "difficulty": 5
+    },
+    {
+      "word": "Eichhörnchen sammelt Nüsse",
+      "difficulty": 5
+    },
+    {
+      "word": "Gewitter über Feld",
+      "difficulty": 5
+    },
+    {
+      "word": "Affe auf Palme",
+      "difficulty": 5
     }
   ],
   "freizeit_kultur": [
@@ -542,6 +902,186 @@
     },
     {
       "word": "Sandburg am Strand",
+      "difficulty": 5
+    },
+    {
+      "word": "Würfel",
+      "difficulty": 3
+    },
+    {
+      "word": "Basketball",
+      "difficulty": 3
+    },
+    {
+      "word": "Kopfhörer",
+      "difficulty": 3
+    },
+    {
+      "word": "Flöte",
+      "difficulty": 3
+    },
+    {
+      "word": "Geige",
+      "difficulty": 3
+    },
+    {
+      "word": "Jojo",
+      "difficulty": 3
+    },
+    {
+      "word": "Hantel",
+      "difficulty": 3
+    },
+    {
+      "word": "Fernglas",
+      "difficulty": 3
+    },
+    {
+      "word": "Federball",
+      "difficulty": 3
+    },
+    {
+      "word": "Spielkarten",
+      "difficulty": 3
+    },
+    {
+      "word": "Krone",
+      "difficulty": 3
+    },
+    {
+      "word": "Zauberhut",
+      "difficulty": 3
+    },
+    {
+      "word": "Fahne",
+      "difficulty": 3
+    },
+    {
+      "word": "Rollschuh",
+      "difficulty": 3
+    },
+    {
+      "word": "Notenschlüssel",
+      "difficulty": 3
+    },
+    {
+      "word": "Tischtennisplatte",
+      "difficulty": 4
+    },
+    {
+      "word": "Dudelsack",
+      "difficulty": 4
+    },
+    {
+      "word": "Strandkorb",
+      "difficulty": 4
+    },
+    {
+      "word": "Schatzkarte",
+      "difficulty": 4
+    },
+    {
+      "word": "Bumerang",
+      "difficulty": 4
+    },
+    {
+      "word": "Hüpfburg",
+      "difficulty": 4
+    },
+    {
+      "word": "Schneeballschlacht",
+      "difficulty": 4
+    },
+    {
+      "word": "Basketballkorb",
+      "difficulty": 4
+    },
+    {
+      "word": "Wasserrutsche",
+      "difficulty": 4
+    },
+    {
+      "word": "Lebkuchenhaus",
+      "difficulty": 4
+    },
+    {
+      "word": "Ritterburg",
+      "difficulty": 4
+    },
+    {
+      "word": "Schlittschuhe",
+      "difficulty": 4
+    },
+    {
+      "word": "Spielkonsole",
+      "difficulty": 4
+    },
+    {
+      "word": "Wanderstiefel",
+      "difficulty": 4
+    },
+    {
+      "word": "Weihnachtsmarkt",
+      "difficulty": 4
+    },
+    {
+      "word": "Hochzeitstorte anschneiden",
+      "difficulty": 5
+    },
+    {
+      "word": "Pferderennen",
+      "difficulty": 5
+    },
+    {
+      "word": "Skispringer im Flug",
+      "difficulty": 5
+    },
+    {
+      "word": "Gitarrist am Straßenrand",
+      "difficulty": 5
+    },
+    {
+      "word": "Zeltlager am See",
+      "difficulty": 5
+    },
+    {
+      "word": "Grillparty im Garten",
+      "difficulty": 5
+    },
+    {
+      "word": "Schlittenfahrt im Schnee",
+      "difficulty": 5
+    },
+    {
+      "word": "Schatzsuche auf Insel",
+      "difficulty": 5
+    },
+    {
+      "word": "Karnevalsumzug",
+      "difficulty": 5
+    },
+    {
+      "word": "Ritterturnier",
+      "difficulty": 5
+    },
+    {
+      "word": "Filmdreh am Set",
+      "difficulty": 5
+    },
+    {
+      "word": "Elfmeter beim Fußball",
+      "difficulty": 5
+    },
+    {
+      "word": "Kostümparty",
+      "difficulty": 5
+    },
+    {
+      "word": "Weihnachtsfeier",
+      "difficulty": 5
+    },
+    {
+      "word": "Tanzabend im Club",
       "difficulty": 5
     }
   ]
