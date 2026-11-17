@@ -10,9 +10,9 @@ import MALEN from '../constants/activityMalen.json';
 import PANTOMIME from '../constants/activityPantomime.json';
 import {
     TEAM_KEYS, MIN_PLAYERS, FIELDS_PER_AREA, MAX_FALSE_REPORTS, HISTORY_LIMIT,
-    typeAt, shuffled, drawFromDeck, pickWatchers, movesFor, applyMoves, rankOf, globalPointsFor, OPEN_CHANCE,
+    typeFor, shuffled, drawFromDeck, pickWatchers, movesFor, applyMoves, rankOf, globalPointsFor, OPEN_CHANCE,
 } from './activityLogic';
-import { TYPE_INFO, TEAM_INFO } from './activityUi';
+import { TYPE_INFO, TEAM_INFO, seenWords, rememberWord } from './activityUi';
 import ActivityBoard from './ActivityBoard';
 import ActivityCanvas from './ActivityCanvas';
 import ActivitySetup from './ActivitySetup';
@@ -137,6 +137,10 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         return () => { cancelled = true; lock?.release().catch(() => {}); };
     }, [wakeWanted]);
 
+    // Aufgelöste Begriffe merken, damit sie in der nächsten Partie nicht wieder gezogen werden.
+    const revealedWord = turn?.stage === 'REVEAL' ? card?.word : null;
+    useEffect(() => { rememberWord(revealedWord); }, [revealedWord]);
+
     // ---- Host: Ergebnis genau einmal verrechnen ----
     useEffect(() => {
         if (!isHost || !playing || !turn?.result || turn.stage === 'REVEAL') return;
@@ -224,7 +228,7 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         if (!team) return null;
         const members = gs.teams[team].filter(isPresent);
         const count = gs.actorCount?.[team] || 0;
-        const type = typeAt(gs.positions[team] || 0);
+        const type = typeFor(gs.positions[team] || 0);
         const open = !gs.three && Math.random() < OPEN_CHANCE;
         const { watchers, guesser } = pickWatchers({
             mode: gs.cfg.watcher, three: gs.three, open, type, actorTeam: team, teams: gs.teams,
@@ -327,7 +331,8 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         const pool = poolFor(turn.type, d, cfg.categories || []);
         if (!pool.length) return;
         const key = `${turn.type}${d}`;
-        const { index, deck } = drawFromDeck(gameState.decks?.[key], pool.length);
+        const seen = seenWords();
+        const { index, deck } = drawFromDeck(gameState.decks?.[key], pool.length, Math.random, (i) => seen.has(pool[i].word));
         write({
             'gameState.turn.difficulty': d,
             'gameState.turn.card': index,
@@ -346,8 +351,10 @@ export default function ActivityEngine({ lobby, user, isHost, db, updateLobbySta
         if (turn?.actor !== me || skipsLeft === 0 || turn.result || turn.stage !== 'RUNNING' || serverNowMs() < turn.startAt) return;
         const pool = poolFor(turn.type, turn.difficulty, cfg.categories || []);
         const key = `${turn.type}${turn.difficulty}`;
-        const { index, deck } = drawFromDeck(gameState.decks?.[key], pool.length);
+        const seen = seenWords();
+        const { index, deck } = drawFromDeck(gameState.decks?.[key], pool.length, Math.random, (i) => seen.has(pool[i].word));
         // Der Timer läuft beim Tausch bewusst weiter.
+        rememberWord(card?.word);
         write({
             'gameState.turn.card': index,
             [`gameState.decks.${key}`]: deck,

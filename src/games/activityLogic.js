@@ -54,8 +54,8 @@ export function dealTeams(ids, count, random = Math.random) {
  * so, dass die zuletzt gezogene Karte nicht gleich wieder oben liegt.
  * Rückgabe: { index, deck } mit dem fortgeschriebenen Stapel.
  */
-export function drawFromDeck(deck, poolSize, random = Math.random) {
-    let order = deck?.order || [];
+export function drawFromDeck(deck, poolSize, random = Math.random, avoid = () => false) {
+    let order = [...(deck?.order || [])];
     let ptr = deck?.ptr || 0;
     if (order.length !== poolSize || ptr >= order.length) {
         const last = order[ptr - 1];
@@ -63,7 +63,17 @@ export function drawFromDeck(deck, poolSize, random = Math.random) {
         if (order.length > 1 && order[0] === last) [order[0], order[1]] = [order[1], order[0]];
         ptr = 0;
     }
+    // Erste nicht zu meidende Karte nach vorn holen; die übersprungenen bleiben im Stapel.
+    // Sind alle restlichen zu meiden, eben die nächste.
+    let i = ptr;
+    while (i < order.length && avoid(order[i])) i++;
+    if (i < order.length) [order[ptr], order[i]] = [order[i], order[ptr]];
     return { index: order[ptr], deck: { order, ptr: ptr + 1 } };
+}
+
+/** Typ des Versuchs: auf dem Startfeld zufällig, sonst durch das Feld bestimmt. */
+export function typeFor(position, random = Math.random) {
+    return position === 0 ? TYPES[Math.floor(random() * TYPES.length)] : typeAt(position);
 }
 
 /** Wer am seltensten dran war, bei Gleichstand der Zufall. */

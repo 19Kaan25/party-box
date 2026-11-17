@@ -265,6 +265,12 @@ die reine Logik prüft `node scripts/verify-activity-logic.mjs`.
   Kategorie-Schlüssel, Einträge `{ word, difficulty: 3|4|5, forbidden?: [5 Wörter] }`.
   Im `gameState` liegen nur Stapel-Indizes, nie Karten. Neue Karten mit
   `node scripts/validate-activity-cards.mjs` prüfen.
+- **Keine Wiederholung über Partien hinweg:** Jeder Stapel wird pro Partie frisch gemischt;
+  damit nicht dieselben Begriffe wiederkommen, merkt sich jedes Gerät gesehene Begriffe
+  (localStorage `activity-seen-v1`, letzte 300), und der ziehende Darsteller überspringt sie,
+  solange Ungesehene übrig sind (`drawFromDeck(…, avoid)`).
+- **Startfeld:** Typ des Versuchs auf Position 0 zufällig (`typeFor`), sonst begann jede
+  Partie mit Zeichnen.
 
 ## Spielzustand: `games.state` (Kurzform)
 

@@ -1,7 +1,7 @@
 // Rauchtest für die reine Activity-Logik. Aufruf: node scripts/verify-activity-logic.mjs
 import assert from 'node:assert/strict';
 import {
-    movesFor, applyMoves, drawFromDeck, pickWatchers, dealTeams, rankOf, typeAt,
+    movesFor, applyMoves, drawFromDeck, pickWatchers, dealTeams, rankOf, typeAt, typeFor,
     OPEN_OWN, OPEN_OTHER, OPEN_ACTOR, WATCHER_BONUS,
 } from '../src/games/activityLogic.js';
 
@@ -59,4 +59,22 @@ assert.equal(dealt.red.length + dealt.blue.length, 5);
 assert.equal(rankOf(5, [7, 5, 5, 2]), 2);
 assert.deepEqual([0, 1, 2, 3].map(typeAt), ['DRAW', 'MIME', 'EXPLAIN', 'DRAW']);
 
+// Gemiedene Karten (schon gesehen) kommen erst dran, wenn nichts anderes übrig ist.
+{
+    const avoid = (x) => x !== 3;
+    const r = drawFromDeck(undefined, 5, Math.random, avoid);
+    assert.equal(r.index, 3);
+    assert.equal(new Set(r.deck.order).size, 5);
+    const rest = new Set();
+    let d = r.deck;
+    for (let i = 0; i < 4; i++) { const n = drawFromDeck(d, 5, Math.random, () => true); d = n.deck; rest.add(n.index); }
+    assert.equal(rest.size, 4);
+    assert.ok(!rest.has(3));
+}
+// Startfeld: alle drei Typen kommen vor, danach entscheidet das Feld.
+{
+    const types = new Set(Array.from({ length: 60 }, () => typeFor(0)));
+    assert.equal(types.size, 3);
+    assert.equal(typeFor(4), typeAt(4));
+}
 console.log('OK — Activity-Logik verhält sich wie erwartet.');

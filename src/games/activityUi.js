@@ -37,3 +37,27 @@ export function effectiveSetup(setup = {}, three) {
         length: setup.length ?? (three ? 4 : 6),
     };
 }
+
+/**
+ * Gedächtnis pro Gerät: Begriffe, die hier schon aufgelöst oder getauscht
+ * wurden. Wer zieht (der Darsteller), überspringt sie, solange noch
+ * ungesehene im Stapel sind — sonst kommen dieselben Begriffe in jeder
+ * neuen Partie wieder, weil jeder Stapel frisch gemischt wird.
+ * shortcut: nur lokal pro Gerät; Begriffe, die ein anderer Darsteller schon
+ * gezogen hat, kennt dieses Gerät nur, wenn es bei der Auflösung dabei war.
+ */
+const SEEN_KEY = 'activity-seen-v1';
+const SEEN_LIMIT = 300; // unter der Kartenzahl, damit alte Begriffe irgendwann wieder drankommen
+
+const readSeen = () => {
+    try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch { return []; }
+};
+export const seenWords = () => new Set(readSeen());
+export function rememberWord(word) {
+    if (!word) return;
+    try {
+        const list = readSeen().filter((w) => w !== word);
+        list.push(word);
+        localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-SEEN_LIMIT)));
+    } catch { /* privater Modus: dann eben ohne Gedächtnis */ }
+}
