@@ -9,6 +9,7 @@ const GAME_NAMES = {
     IMPOSTER: 'Imposter',
     SPRUECHE_KLOPFER: 'Sprücheklopfer',
     ACTIVITY: 'Activity',
+    TABU: 'Tabu',
 };
 
 export default function GamePausedScreen({ lobby, user, onResume, onLeaveLobby }) {

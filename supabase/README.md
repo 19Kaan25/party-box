@@ -44,6 +44,8 @@ Ausführung siehe „Verifizieren" unten.
 | `20260808090000_avatar_bucket_size_limit.sql` | `avatars`-Bucket-Limit 256 KB → 1 MB, für die neue 512-px-Avatar-Auflösung |
 | `20260809090000_game_key_activity.sql` | Enum-Wert `activity` für `lobbies.current_game` — wie bei Sprücheklopfer allein in einer eigenen Datei |
 | `20260809090100_legacy_patch_activity.sql` | `legacy_apply_patch()` mappt `'ACTIVITY'` auf den neuen Enum-Wert |
+| `20260810090000_game_key_tabu.sql` | Enum-Wert `tabu` für `lobbies.current_game` — allein in einer eigenen Datei |
+| `20260810090100_legacy_patch_tabu.sql` | `legacy_apply_patch()` mappt `'TABU'` auf den neuen Enum-Wert |
 
 ## RPCs
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Settings, Shuffle, ArrowRight, Users, Minus, Plus } from 'lucide-react';
-import { TEAM_KEYS, MIN_PLAYERS, FIELDS_PER_AREA, dealTeams } from './activityLogic';
-import { TEAM_INFO, CATEGORY_NAMES, effectiveSetup } from './activityUi';
+import { MIN_PLAYERS, FIELDS_PER_AREA, dealTeams } from './activityLogic';
+import { TEAM_INFO, CATEGORY_NAMES, effectiveSetup, teamLayout } from './activityUi';
 import { TeamToken } from './ActivityBoard';
 
 const WATCHER_OPTIONS = [
@@ -27,7 +27,7 @@ const MAX_SKIPS = 99;
 const LENGTH_OPTIONS = [[3, 'Kurz'], [4, 'Mittel'], [6, 'Lang']];
 const SECOND_OPTIONS = [45, 60, 90];
 
-function Chips({ options, value, onChange }) {
+export function Chips({ options, value, onChange, active = 'bg-orange-600 border-orange-500' }) {
     return (
         <div className="flex flex-wrap gap-2">
             {options.map(([key, label]) => (
@@ -35,7 +35,7 @@ function Chips({ options, value, onChange }) {
                     key={String(key)}
                     onClick={() => onChange(key)}
                     className={`px-4 py-2 rounded-xl border text-sm transition-all ${value === key
-                        ? 'bg-orange-600 border-orange-500 text-white shadow-lg'
+                        ? `${active} text-white shadow-lg`
                         : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'}`}
                 >
                     {label}
@@ -45,7 +45,7 @@ function Chips({ options, value, onChange }) {
     );
 }
 
-function Section({ title, hint, children }) {
+export function Section({ title, hint, children }) {
     return (
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 mb-4">
             <label className="block text-sm font-medium text-slate-300 mb-2">{title}</label>
@@ -55,19 +55,10 @@ function Section({ title, hint, children }) {
     );
 }
 
-export default function ActivitySetup({ players, setup: rawSetup, isHost, updateSetup, onStart }) {
-    const three = players.length === MIN_PLAYERS;
-    const setup = effectiveSetup(rawSetup, three);
-    const ids = players.map((p) => p.id);
+/** Team-Einteilung (Anzahl, Mischen, Antippen = ins nächste Team). Auch von Tabu genutzt. */
+export function TeamSection({ players, layout, isHost, updateSetup, accent = 'bg-orange-600 border-orange-500' }) {
+    const { ids, maxTeams, teamCount, teamKeys, teams, unassigned } = layout;
     const nameOf = (id) => players.find((p) => p.id === id)?.name || '?';
-    const maxTeams = Math.max(2, Math.min(4, Math.floor(players.length / 2)));
-    const teamCount = Math.min(setup.teamCount, maxTeams);
-    const teamKeys = TEAM_KEYS.slice(0, teamCount);
-    // Weggegangene IDs fallen raus; wer in keinem Team steckt, ist "offen".
-    const teams = Object.fromEntries(teamKeys.map((k) => [k, (setup.teams[k] || []).filter((id) => ids.includes(id))]));
-    const assigned = new Set(Object.values(teams).flat());
-    const unassigned = ids.filter((id) => !assigned.has(id));
-
     const reshuffle = (count = teamCount) => updateSetup('teams', dealTeams(ids, count));
     const moveToNext = (id) => {
         if (!isHost) return;
@@ -77,6 +68,59 @@ export default function ActivitySetup({ players, setup: rawSetup, isHost, update
         next[to] = [...next[to], id];
         updateSetup('teams', next);
     };
+    return (
+        <Section title={<span className="flex items-center gap-2"><Users size={16} /> Teams</span>} hint="Spieler antippen, um ihn ins nächste Team zu schieben.">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {[2, 3, 4].filter((n) => n <= maxTeams).map((n) => (
+                    <button
+                        key={n}
+                        onClick={() => { updateSetup('teamCount', n); reshuffle(n); }}
+                        className={`px-3 py-1.5 rounded-xl border text-sm ${teamCount === n ? accent : 'bg-slate-900 border-slate-700 text-slate-300'}`}
+                    >
+                        {n} Teams
+                    </button>
+                ))}
+                <button onClick={() => reshuffle()} className="ml-auto px-3 py-1.5 rounded-xl border border-slate-600 bg-slate-800 text-sm flex items-center gap-1.5">
+                    <Shuffle size={14} /> Neu mischen
+                </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {teamKeys.map((k) => (
+                    <div key={k} className={`rounded-xl border-2 ${TEAM_INFO[k].ring} bg-slate-800/60 p-3`}>
+                        <p className={`font-bold mb-2 flex items-center gap-2 ${TEAM_INFO[k].text}`}>
+                            <TeamToken team={k} size={16} /> Team {TEAM_INFO[k].label}
+                            <span className="text-xs text-slate-500 font-normal">({teams[k].length})</span>
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {teams[k].map((id) => (
+                                <button key={id} onClick={() => moveToNext(id)} className="px-2.5 py-1 rounded-lg bg-slate-900 text-sm hover:bg-slate-700">
+                                    {nameOf(id)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {unassigned.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                    <span className="text-xs text-amber-400">Ohne Team:</span>
+                    {unassigned.map((id) => (
+                        <button key={id} onClick={() => moveToNext(id)} className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-sm">
+                            {nameOf(id)}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </Section>
+    );
+}
+
+export default function ActivitySetup({ players, setup: rawSetup, isHost, updateSetup, onStart }) {
+    const three = players.length === MIN_PLAYERS;
+    const setup = effectiveSetup(rawSetup, three);
+    const layout = teamLayout(players, setup);
+    const { teamCount, teamKeys, teams, unassigned } = layout;
+    const nameOf = (id) => players.find((p) => p.id === id)?.name || '?';
 
     let blockReason = null;
     if (players.length < MIN_PLAYERS) blockReason = `Ihr braucht mindestens ${MIN_PLAYERS} Spieler.`;
@@ -108,49 +152,7 @@ export default function ActivitySetup({ players, setup: rawSetup, isHost, update
                             </div>
                         </Section>
                     ) : (
-                        <Section title={<span className="flex items-center gap-2"><Users size={16} /> Teams</span>} hint="Spieler antippen, um ihn ins nächste Team zu schieben.">
-                            <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                {[2, 3, 4].filter((n) => n <= maxTeams).map((n) => (
-                                    <button
-                                        key={n}
-                                        onClick={() => { updateSetup('teamCount', n); reshuffle(n); }}
-                                        className={`px-3 py-1.5 rounded-xl border text-sm ${teamCount === n ? 'bg-orange-600 border-orange-500' : 'bg-slate-900 border-slate-700 text-slate-300'}`}
-                                    >
-                                        {n} Teams
-                                    </button>
-                                ))}
-                                <button onClick={() => reshuffle()} className="ml-auto px-3 py-1.5 rounded-xl border border-slate-600 bg-slate-800 text-sm flex items-center gap-1.5">
-                                    <Shuffle size={14} /> Neu mischen
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {teamKeys.map((k) => (
-                                    <div key={k} className={`rounded-xl border-2 ${TEAM_INFO[k].ring} bg-slate-800/60 p-3`}>
-                                        <p className={`font-bold mb-2 flex items-center gap-2 ${TEAM_INFO[k].text}`}>
-                                            <TeamToken team={k} size={16} /> Team {TEAM_INFO[k].label}
-                                            <span className="text-xs text-slate-500 font-normal">({teams[k].length})</span>
-                                        </p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {teams[k].map((id) => (
-                                                <button key={id} onClick={() => moveToNext(id)} className="px-2.5 py-1 rounded-lg bg-slate-900 text-sm hover:bg-slate-700">
-                                                    {nameOf(id)}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            {unassigned.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-                                    <span className="text-xs text-amber-400">Ohne Team:</span>
-                                    {unassigned.map((id) => (
-                                        <button key={id} onClick={() => moveToNext(id)} className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-sm">
-                                            {nameOf(id)}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </Section>
+                        <TeamSection players={players} layout={layout} isHost={isHost} updateSetup={updateSetup} />
                     )}
 
                     <Section title={`Kategorien (${setup.categories.length} gewählt)`}>

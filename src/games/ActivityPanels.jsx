@@ -3,7 +3,7 @@ import { X, Pause, Play, Ban, Flag, Minus, Plus, Vote, Check } from 'lucide-reac
 import { TYPE_INFO, TEAM_INFO } from './activityUi';
 import { MAX_FALSE_REPORTS } from './activityLogic';
 
-function Modal({ title, onClose, children }) {
+export function Modal({ title, onClose, children }) {
     return (
         <div className="fixed inset-0 z-[90] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
             <div

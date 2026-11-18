@@ -217,6 +217,23 @@ Der Begriff ist erst nach "Los" + Countdown sichtbar, Tauschen auch erst dann.
 ```
 Die Zeichnung steht NICHT im gameState (Broadcast-Kanal `activity:{code}`).
 
+**Tabu** (`TabuEngine.jsx`, nachgetragen 18.11.2026)
+Phasen: `SETUP → PLAYING → RESULTS`; ein Zug liegt in `turn` mit den Stufen
+`READY → RUNNING (⇄ PAUSED) → REVIEW` (in REVIEW ggf. erst Klauen, dann Auswertungsliste).
+```
+setup / cfg wie Activity   solo: bool (Jeder gegen jeden)   members: { [Seite]: uid[] }   order: Seite[]
+  (Seite = Team-Schlüssel, bei solo die Spieler-ID — Wertung/Reihenfolge laufen für beide gleich)
+deck: index[] (Pool aus poolFor(cfg), einmal beim Start gemischt)   ptr: erst bei der Verbuchung weitergerückt
+scores: { [Seite]: number }   stats: { [uid]: erratene Karten als Erklärer }   cycle / cycles: Umlauf
+explainCount: { [Seite]: n }   watchCount: { [uid]: n }   appliedN: zuletzt verbuchter Zug
+turn: { n, side, explainer, watchers (sehen die Karte), stage, startAt, endsAt, remainingMs, hold,
+        results: { [nr]: { r: 'OK'|'SKIP'|'TABU'|null, g? (Ratender), by? (Buzzer), n } }  ← nur der Erklärer
+        buzz: { [nr]: { by, n } }   ← Aufpasser; der Erklärer übernimmt nur die aktuelle nr
+        shown (Erklärer) / hostShown (Host): Kartenzahl bei Zeitablauf, es zählt das Maximum
+        steal: { v: 'OK'|'MISS', n } | null, aborted }
+Jeder Wert im Zug trägt die Zugnummer n — verspätete Patches aus dem Vorzug werden ignoriert.
+```
+
 ### 2.3 Wo gelesen und geschrieben wird
 
 | Ort | Operation | Ziel |

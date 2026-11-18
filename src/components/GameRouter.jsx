@@ -14,6 +14,7 @@ import WerBinIchEngine from '../games/WerBinIchEngine';
 import ImposterEngine from '../games/ImposterEngine';
 import SpruecheklopferEngine from '../games/SpruecheklopferEngine';
 import ActivityEngine from '../games/ActivityEngine';
+import TabuEngine from '../games/TabuEngine';
 
 export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProps }) {
     const { user } = authLogic;
@@ -121,6 +122,8 @@ export default function GameRouter({ authLogic, lobbyLogic, friendsLogic, uiProp
         // Activity braucht zusaetzlich den Online-Status: ein weggebrochener
         // Darsteller darf den Versuch nicht blockieren.
         case 'ACTIVITY': engine = <ActivityEngine {...engineProps} onlineIds={lobbyLogic.onlineIds} />; break;
+        // Tabu ebenso: ein weggebrochener Erklärer wird dem Host angezeigt.
+        case 'TABU': engine = <TabuEngine {...engineProps} onlineIds={lobbyLogic.onlineIds} />; break;
         default: engine = <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Lade Spiel...</div>;
     }
 

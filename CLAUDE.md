@@ -1,6 +1,6 @@
 # PartyBox — CLAUDE.md
 
-Multiplayer-Partyspiel-App (7 Minispiele) für Freundesgruppen im selben Raum.
+Multiplayer-Partyspiel-App (8 Minispiele) für Freundesgruppen im selben Raum.
 React SPA + Supabase, deutschsprachige UI. Ausführliche Analyse:
 [docs/codebase-overview.md](docs/codebase-overview.md).
 
@@ -121,9 +121,21 @@ npm run dev
 
 `npm run build` (Vite-Build nach `dist/`), `npm run preview`, `npm run lint` (ESLint 9 Flat Config).
 Es gibt **kein** `npm test`; stattdessen die Verifikationsskripte in `scripts/`
-(`verify-phase0*.sql` über `npx supabase db query --linked -f …`,
+(`verify-phase0*.sql` über `npx supabase db query --remote -f …`,
 `verify-phase0*.mjs` über `node`). Supabase-Projekt `wlgvwpkqtiymlpctgufb` wird direkt
 angesprochen — kein Emulator-Setup, lokale Entwicklung schreibt in die Produktions-DB.
+
+**Supabase-CLI immer mit `--remote`:** Die CLI zielt ohne Flag inzwischen auf einen
+lokalen Stack (`127.0.0.1:54322`) und bricht mit `ECONNREFUSED` ab, weil hier keiner
+läuft. `--linked` ist veraltet und wird in v4 entfernt.
+
+```bash
+npx supabase db push --remote
+```
+
+Neue Migrationen wendet der Nutzer selbst an; lesende Abfragen gehen mit
+`npx supabase db query --remote --read-only "…"` (ohne `--read-only` verlangt die CLI
+im Agent-Modus eine Bestätigung).
 
 > **Lint-Baseline:** `npm run lint` meldet 9 Probleme (7 Fehler, 2 Warnungen), alle
 > vorbestehend in `StadtLandFlussEngine.jsx` und `WerBinIchEngine.jsx`. Neue Arbeit
@@ -158,9 +170,11 @@ src/
                               AvatarCropModal (Zuschneiden vor dem Hochladen)
   components/friends/         FriendsPanel, InviteToasts, Avatar (mit Klick-Vorschau, überall wiederverwendet)
   components/lobby/           WelcomeScreen, LobbyWaitingScreen (Spielekatalog)
-  games/*Engine.jsx           7 Engines: StadtLandFluss, Codenames, Werwolf,
-                              WerBinIch, Imposter, Sprücheklopfer, Activity (je 400–770 Zeilen)
+  games/*Engine.jsx           8 Engines: StadtLandFluss, Codenames, Werwolf,
+                              WerBinIch, Imposter, Sprücheklopfer, Activity, Tabu (je 400–900 Zeilen)
   games/Activity*.jsx, activityLogic.js, activityUi.js  Activity: Brett, Zeichenfläche, Setup, Panels, reine Logik
+  games/Tabu*.jsx, tabuLogic.js, tabuUi.js  Tabu: Engine, Setup, reine Logik, Kartenpool/Standards
+  constants/tabuCards.json    Tabu-eigene Karten (6 Kategorien à 60), plus activityTabu.json
   games/ImposterSingleDevice.jsx  Imposter auf EINEM Handy (pass the phone)
   games/WerwolfSingleDevice.jsx   Werwolf auf EINEM Handy (Erzähler-Dashboard)
   components/RosterPanel.jsx      Mitspielerliste der Einzelgerät-Modi (Drag, Gäste)
@@ -271,6 +285,32 @@ die reine Logik prüft `node scripts/verify-activity-logic.mjs`.
   solange Ungesehene übrig sind (`drawFromDeck(…, avoid)`).
 - **Startfeld:** Typ des Versuchs auf Position 0 zufällig (`typeFor`), sonst begann jede
   Partie mit Zeichnen.
+
+## Tabu
+
+Klassisches Tabu: pro Zug so viele Karten wie möglich, Gegner buzzern. Teams oder
+„Jeder gegen jeden" (bei 3 Spielern fest). Baut auf Activity auf (Setup-Bausteine,
+`TEAM_INFO`, `shuffled`/`leastUsed`/`rankOf`, Gedächtnis-Helfer mit eigenem Schlüssel
+`tabu-seen-v1`); reine Logik in [tabuLogic.js](src/games/tabuLogic.js), geprüft von
+`node scripts/verify-tabu-logic.mjs`.
+
+- **Schreibrechte im Zug:** Kartenergebnisse `turn.results.{nr}` schreibt **nur der
+  Erklärer**; die aktuelle Karte ist die erste `nr` ohne Ergebnis. Aufpasser schreiben
+  **nur** `turn.buzz.{nr}` mit der Nummer der Karte, die sie gesehen haben — der
+  Erklärer-Client schließt ausschließlich die *aktuelle* Karte als `TABU` ab. Ein später
+  Buzzer trifft so nie die nächste Karte; Gleichzeitiges korrigiert die Auswertung.
+- **Verbucht wird nur vom Host, einmal** (`appliedN`), im selben Patch wie der nächste Zug.
+  Zeitablauf dürfen Host und Erklärer auslösen; Bereit/Läuft/Auswertung/nächster Zug
+  tragen `gameState.phase` (nicht optimistisch).
+- **Spielende nur am Ende eines Umlaufs** (jede Seite gleich viele Züge). „Rundenzahl"
+  zählt Umläufe = Runden × größte Teamgröße.
+- **Karten:** `activityTabu.json` (3 Kategorien, von Activity mitbenutzt) + `tabuCards.json`
+  (6 Tabu-eigene). Pool = `poolFor(cfg)`, feste Kategorie-Reihenfolge, damit alle Geräte
+  dieselben Stapel-Indizes auflösen. Neue Karten mit `node scripts/validate-activity-cards.mjs`
+  prüfen; bei `tabuCards.json` sollen die naheliegendsten Tabu-Wörter vorn stehen
+  (Einstellung „3 Tabu-Wörter" zeigt die ersten drei).
+- **Jeder gegen jeden:** niemand außer dem Erklärer sieht die Karte (alle raten), buzzern
+  dürfen alle; Klauen ist dort aus.
 
 ## Spielzustand: `games.state` (Kurzform)
 

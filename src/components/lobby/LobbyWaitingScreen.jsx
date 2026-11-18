@@ -220,6 +220,13 @@ export default function LobbyWaitingScreen({
                                     isHost={isHost}
                                     onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'ACTIVITY', { gameState: createInitialGameState('ACTIVITY') })}
                                 />
+                                <GameCard
+                                    title="Tabu"
+                                    desc="Erklären ohne verbotene Wörter — die Gegner buzzern mit."
+                                    color="cyan"
+                                    isHost={isHost}
+                                    onClick={() => updateLobbyStatus('GAME_IN_PROGRESS', 'TABU', { gameState: createInitialGameState('TABU') })}
+                                />
                             </div>
                         </div>
                     </div>
@@ -238,7 +245,8 @@ function GameCard({ title, desc, color, isHost, onClick }) {
         yellow: 'text-yellow-400 hover:border-yellow-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         emerald: 'text-emerald-400 hover:border-emerald-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
         pink: 'text-pink-400 hover:border-pink-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
-        orange: 'text-orange-400 hover:border-orange-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
+        orange: 'text-orange-400 hover:border-orange-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900',
+        cyan: 'text-cyan-400 hover:border-cyan-500 border-slate-700 bg-slate-900/50 hover:bg-slate-900'
     };
 
     return (

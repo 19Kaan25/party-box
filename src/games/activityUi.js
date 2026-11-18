@@ -1,6 +1,7 @@
 // Anzeige-Konstanten für Activity — eigene Datei wegen react-refresh
 // (eine .jsx-Datei darf nur Komponenten exportieren).
 import { Pencil, PersonStanding, MessageCircle } from 'lucide-react';
+import { TEAM_KEYS } from './activityLogic';
 
 /** Darstellungsarten: Farbe + Symbol + Text (nicht nur Farbe, Farbfehlsichtigkeit). */
 export const TYPE_INFO = {
@@ -38,6 +39,17 @@ export function effectiveSetup(setup = {}, three) {
     };
 }
 
+/** Team-Einteilung im Setup: weggegangene IDs fallen raus, wer in keinem Team steckt, ist "offen". */
+export function teamLayout(players, setup) {
+    const ids = players.map((p) => p.id);
+    const maxTeams = Math.max(2, Math.min(4, Math.floor(players.length / 2)));
+    const teamCount = Math.min(setup.teamCount, maxTeams);
+    const teamKeys = TEAM_KEYS.slice(0, teamCount);
+    const teams = Object.fromEntries(teamKeys.map((k) => [k, (setup.teams[k] || []).filter((id) => ids.includes(id))]));
+    const assigned = new Set(Object.values(teams).flat());
+    return { ids, maxTeams, teamCount, teamKeys, teams, unassigned: ids.filter((id) => !assigned.has(id)) };
+}
+
 /**
  * Gedächtnis pro Gerät: Begriffe, die hier schon aufgelöst oder getauscht
  * wurden. Wer zieht (der Darsteller), überspringt sie, solange noch
@@ -49,15 +61,16 @@ export function effectiveSetup(setup = {}, three) {
 const SEEN_KEY = 'activity-seen-v1';
 const SEEN_LIMIT = 600; // unter der Kartenzahl, damit alte Begriffe irgendwann wieder drankommen
 
-const readSeen = () => {
-    try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch { return []; }
+// key/limit als Parameter, damit Tabu ein eigenes Gedächtnis (tabu-seen-v1) nutzen kann.
+const readSeen = (key) => {
+    try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
 };
-export const seenWords = () => new Set(readSeen());
-export function rememberWord(word) {
+export const seenWords = (key = SEEN_KEY) => new Set(readSeen(key));
+export function rememberWord(word, key = SEEN_KEY, limit = SEEN_LIMIT) {
     if (!word) return;
     try {
-        const list = readSeen().filter((w) => w !== word);
+        const list = readSeen(key).filter((w) => w !== word);
         list.push(word);
-        localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-SEEN_LIMIT)));
+        localStorage.setItem(key, JSON.stringify(list.slice(-limit)));
     } catch { /* privater Modus: dann eben ohne Gedächtnis */ }
 }

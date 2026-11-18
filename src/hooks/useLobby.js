@@ -16,6 +16,7 @@ const GAME_KEY_TO_OLD = {
     stadt_land_fluss: 'STADT_LAND_FLUSS',
     sprueche_klopfer: 'SPRUECHE_KLOPFER',
     activity: 'ACTIVITY',
+    tabu: 'TABU',
 };
 
 /** Vom Spielerlabor vorbelegter Nickname; ausserhalb des Dev-Modus wirkungslos. */
